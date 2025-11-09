@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { exportToPDF } from "../components/ExportFunctions";
+import { Activity as ActivityType, ActivityCategory } from "../types";
 
 interface Verification {
   id: string;
@@ -20,20 +21,8 @@ interface Verification {
   applicant?: { name: string; email: string };
 }
 
-interface Activity {
-  id: string;
-  name: string;
-  category: string;
-  description: string;
-  startDate: string;
-  endDate?: string;
-  hoursPerWeek?: number;
-  totalHours?: number;
-  position?: string;
-  organization?: string;
-  verified: boolean;
-  notes?: string;
-}
+// Use Activity type from types.ts which includes createdAt and updatedAt
+type Activity = ActivityType;
 
 // Unified activity interface that combines verifications and activities
 interface UnifiedActivity {
@@ -54,7 +43,7 @@ interface UnifiedActivity {
   organizationName?: string; // From verification
 }
 
-const CATEGORIES = [
+const CATEGORIES: ActivityCategory[] = [
   "Sports",
   "Clubs",
   "Volunteer",
@@ -1131,9 +1120,20 @@ function ActivityForm({
   onClose: () => void;
   onSuccess: () => void;
 }) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    category: ActivityCategory;
+    description: string;
+    startDate: string;
+    endDate: string;
+    hoursPerWeek: string;
+    totalHours: string;
+    position: string;
+    organization: string;
+    notes: string;
+  }>({
     name: activity?.name || "",
-    category: activity?.category || "Other",
+    category: (activity?.category || "Other") as ActivityCategory,
     description: activity?.description || "",
     startDate: activity?.startDate || new Date().toISOString().split("T")[0],
     endDate: activity?.endDate || "",
@@ -1221,7 +1221,7 @@ function ActivityForm({
               <select
                 required
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value as ActivityCategory })}
                 className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
               >
                 {CATEGORIES.map((cat) => (
