@@ -9,17 +9,17 @@ function SignInContent() {
   const searchParams = useSearchParams();
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<"student" | "verifier" | null>(null);
+  const [selectedRole, setSelectedRole] = useState<"student" | "verifier" | "admin" | null>(null);
   
   // Get role from URL params if available
   useEffect(() => {
     const urlRole = searchParams.get("role");
-    if (urlRole && (urlRole === "student" || urlRole === "verifier")) {
-      setSelectedRole(urlRole as "student" | "verifier");
+    if (urlRole && (urlRole === "student" || urlRole === "verifier" || urlRole === "admin")) {
+      setSelectedRole(urlRole as "student" | "verifier" | "admin");
     }
   }, [searchParams]);
 
-  const handleGoogleSignIn = async (role: "student" | "verifier") => {
+  const handleGoogleSignIn = async (role: "student" | "verifier" | "admin") => {
     setError("");
     setIsLoading(true);
     setSelectedRole(role);
@@ -33,8 +33,13 @@ function SignInContent() {
       document.cookie = `signupRole=${finalRole}; path=/; max-age=300`; // 5 minutes
       
       // Use redirect: true to let NextAuth handle the OAuth flow
+      // Redirect admins to admin dashboard, others to regular dashboard
+      const callbackUrl = finalRole === "admin" 
+        ? `/admin?role=${finalRole}` 
+        : `/dashboard?role=${finalRole}`;
+      
       await signIn("google", {
-        callbackUrl: `/dashboard?role=${finalRole}`,
+        callbackUrl,
         redirect: true,
       });
       // Note: With redirect: true, execution won't continue here
@@ -89,6 +94,17 @@ function SignInContent() {
               <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
             </svg>
             {isLoading && selectedRole === "verifier" ? "Signing in..." : "Sign Up as Verifier"}
+          </button>
+
+          <button
+            onClick={() => handleGoogleSignIn("admin")}
+            disabled={isLoading}
+            className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+            {isLoading && selectedRole === "admin" ? "Signing in..." : "Sign Up as Admin"}
           </button>
         </div>
 

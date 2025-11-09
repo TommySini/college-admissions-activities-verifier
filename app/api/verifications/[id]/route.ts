@@ -28,42 +28,81 @@ export async function PATCH(
       );
     }
 
+    // Get full verification with relations
+    const fullVerification = await prisma.verification.findUnique({
+      where: { id },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        verifier: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        activity: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            category: true,
+            organization: true,
+          },
+        },
+      },
+    });
+
+    if (!fullVerification) {
+      return NextResponse.json(
+        { error: "Verification not found" },
+        { status: 404 }
+      );
+    }
+
     // Allow updating status or other fields
     const updateData: any = {};
+    const oldStatus = verification.status;
     
-    if (body.status && ["accepted", "rejected", "pending"].includes(body.status)) {
-      updateData.status = body.status;
+    // Map status values: "accepted" -> "verified", "rejected" -> "denied"
+    if (body.status) {
+      if (body.status === "accepted") {
+        updateData.status = "verified";
+      } else if (body.status === "rejected") {
+        updateData.status = "denied";
+      } else if (["pending", "verified", "denied"].includes(body.status)) {
+        updateData.status = body.status;
+      }
     }
     
-    // Check authorization
-    const isApplicant = 
-      (verification.applicantId && verification.applicantId === user.id) ||
-      verification.applicantEmail.toLowerCase() === user.email.toLowerCase();
-    const isOrganization = user.profileType === "Organization" && verification.organizationId === user.id;
+    // Check authorization - students can accept/reject verifications sent to them
+    // Verifiers can update verifications they issued
+    const isStudent = verification.studentId === user.id;
+    const isVerifier = verification.verifierId === user.id || (user.role === "verifier" || user.role === "admin");
     
-    if (!isApplicant && !isOrganization) {
+    if (!isStudent && !isVerifier) {
       return NextResponse.json(
         { error: "Unauthorized - You can only update your own verifications" },
         { status: 403 }
       );
     }
     
-    // Allow organizations to update verification details
-    if (isOrganization) {
-      if (body.title !== undefined) updateData.title = body.title;
-      if (body.description !== undefined) updateData.description = body.description;
-      if (body.startDate !== undefined) updateData.startDate = body.startDate;
-      if (body.endDate !== undefined) updateData.endDate = body.endDate;
-      if (body.position !== undefined) updateData.position = body.position;
-      if (body.category !== undefined) updateData.category = body.category;
-    }
-    
-    // Only allow status updates for applicants
-    if (isApplicant && !body.status) {
+    // Students can only update status (accept/reject)
+    if (isStudent && !body.status) {
       return NextResponse.json(
-        { error: "Applicants can only update verification status" },
+        { error: "Students can only update verification status" },
         { status: 403 }
       );
+    }
+    
+    // Verifiers can update notes
+    if (isVerifier && body.verifierNotes !== undefined) {
+      updateData.verifierNotes = body.verifierNotes;
     }
     
     if (Object.keys(updateData).length === 0) {
@@ -73,25 +112,73 @@ export async function PATCH(
       );
     }
 
-    // If applicant is updating status, link the applicantId
-    if (isApplicant && updateData.status) {
-      updateData.applicantId = user.id;
-    }
-
     // Update verification
     const updated = await prisma.verification.update({
       where: { id },
       data: updateData,
       include: {
-        organization: {
+        student: {
           select: {
             id: true,
             name: true,
             email: true,
           },
         },
+        verifier: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        activity: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            category: true,
+            organization: true,
+          },
+        },
       },
     });
+
+    // Update activity status if verification status changed
+    if (updateData.status && updateData.status !== oldStatus) {
+      await prisma.activity.update({
+        where: { id: verification.activityId },
+        data: {
+          status: updateData.status === "verified" ? "verified" : "denied",
+        },
+      });
+
+      // Send notification email to student when verifier changes status
+      if (isVerifier && updateData.status !== "pending") {
+        try {
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+            (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+          
+          await fetch(`${baseUrl}/api/send-student-notification-email`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              to: fullVerification.student.email,
+              studentName: fullVerification.student.name,
+              activityName: fullVerification.activity.name,
+              activityDescription: fullVerification.activity.description,
+              activityCategory: fullVerification.activity.category,
+              activityOrganization: fullVerification.activity.organization,
+              verifierName: fullVerification.verifier.name,
+              status: updateData.status,
+              dashboardUrl: `${baseUrl}/dashboard`,
+            }),
+          });
+        } catch (emailError) {
+          console.error("Error sending notification email:", emailError);
+          // Don't fail the update if email fails
+        }
+      }
+    }
 
     return NextResponse.json({ verification: updated });
   } catch (error) {
@@ -129,12 +216,12 @@ export async function DELETE(
     }
 
     // Check if user is authorized to delete
-    // Organizations can delete verifications they sent
-    // Applicants can delete verifications they received
+    // Verifiers can delete verifications they issued
+    // Students can delete verifications sent to them
     const isAuthorized =
-      (user.profileType === "Organization" && verification.organizationId === user.id) ||
-      (verification.applicantId === user.id) ||
-      (verification.applicantEmail.toLowerCase() === user.email.toLowerCase());
+      verification.verifierId === user.id ||
+      verification.studentId === user.id ||
+      (user.role === "admin");
 
     if (!isAuthorized) {
       return NextResponse.json(

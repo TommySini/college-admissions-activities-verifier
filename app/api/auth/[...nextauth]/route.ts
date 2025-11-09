@@ -31,27 +31,32 @@ export const authOptions: NextAuthOptions = {
 
         console.log("SignIn: Processing user", { email: user.email, name: user.name });
 
-        // Auto-assign role based on email
-        // Stanford.edu emails are automatically verifiers
-        // Otherwise, check verifier list or get from existing user
-        let role = "student";
+        // Try to read the selected role from cookies
+        // Note: In Next.js 13+ App Router, we need to use a different approach
+        // The cookie is set client-side, so we'll handle role update in the dashboard
+        // For now, we'll set a default role and let the dashboard update it
         
-        // Check existing user first to preserve their role
+        // Check existing user first
         const existingUser = await prisma.user.findUnique({
           where: { email: user.email },
         });
         
+        let role = "student"; // Default role for new users
+        
         if (existingUser) {
-          // Keep existing role
+          // For existing users, preserve their current role
+          // The role will be updated in the dashboard if they selected a different role
           role = existingUser.role;
+          console.log("SignIn: Existing user, preserving role", { email: user.email, role });
         } else {
-          // New user - assign role based on email
+          // New user - assign role based on email patterns
           if (user.email.endsWith("@stanford.edu")) {
             role = "verifier";
           } else if (VERIFIER_EMAILS.includes(user.email.toLowerCase())) {
             role = "verifier";
           }
           // Otherwise defaults to "student"
+          console.log("SignIn: New user, assigning default role", { email: user.email, role });
         }
 
         console.log("SignIn: Creating/updating user with role", { email: user.email, role });
@@ -80,8 +85,12 @@ export const authOptions: NextAuthOptions = {
           message: error?.message,
           code: error?.code,
           meta: error?.meta,
+          stack: error?.stack,
         });
+        // Log the full error for debugging
+        console.error("Full error object:", JSON.stringify(error, null, 2));
         // Return false to prevent sign in if database operation fails
+        // This will trigger AccessDenied error
         return false;
       }
     },

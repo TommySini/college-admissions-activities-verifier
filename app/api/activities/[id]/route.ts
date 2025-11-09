@@ -48,6 +48,7 @@ export async function PATCH(
     if (body.organization !== undefined) updateData.organization = body.organization;
     if (body.notes !== undefined) updateData.studentNotes = body.notes;
     if (body.verifierEmail !== undefined) updateData.supervisorEmail = body.verifierEmail;
+    if (body.attachments !== undefined) updateData.attachments = body.attachments;
 
     const updated = await prisma.activity.update({
       where: { id },

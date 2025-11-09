@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
       organization,
       notes,
       verifierEmail,
+      attachments,
     } = body;
 
     if (!name || !category || !description || !startDate) {
@@ -76,6 +77,7 @@ export async function POST(request: NextRequest) {
         organization: organization || undefined,
         studentNotes: notes || undefined,
         supervisorEmail: verifierEmail || undefined,
+        attachments: attachments || undefined,
         status: "pending",
       },
     });
