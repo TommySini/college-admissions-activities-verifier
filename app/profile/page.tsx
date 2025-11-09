@@ -9,11 +9,8 @@ interface UserProfile {
   id: string;
   email: string;
   name: string;
-  profileType: string;
-  bio?: string;
-  location?: string;
-  description?: string;
-  website?: string;
+  role: string;
+  image?: string;
   createdAt: string;
 }
 
@@ -47,25 +44,25 @@ export default function ProfilePage() {
 
   const fetchStats = async () => {
     try {
-      if (session?.user.profileType === "Organization") {
-        // For organizations, count all verifications they've issued as activities
+      if (session?.user.role === "verifier" || session?.user.role === "admin") {
+        // For verifiers/admins, count all verifications they've issued as activities
         const verificationsRes = await fetch("/api/verifications");
         const verificationsData = await verificationsRes.json();
         setTotalActivitiesCount(verificationsData.verifications?.length || 0);
       } else {
-        // For applicants, count accepted verifications + regular activities
+        // For students, count verified activities + regular activities
         const verificationsRes = await fetch("/api/verifications");
         const verificationsData = await verificationsRes.json();
-        const acceptedVerifications = verificationsData.verifications?.filter(
-          (v: any) => v.status === "accepted"
+        const verifiedActivities = verificationsData.verifications?.filter(
+          (v: any) => v.status === "verified"
         ) || [];
         
         const activitiesRes = await fetch("/api/activities");
         const activitiesData = await activitiesRes.json();
         const activities = activitiesData.activities || [];
         
-        // Total = accepted verifications + regular activities
-        setTotalActivitiesCount(acceptedVerifications.length + activities.length);
+        // Total = verified activities + regular activities
+        setTotalActivitiesCount(verifiedActivities.length + activities.length);
       }
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -84,7 +81,8 @@ export default function ProfilePage() {
     return null;
   }
 
-  const isOrganization = profile.profileType === "Organization";
+  const isVerifier = profile.role === "verifier" || profile.role === "admin";
+  const roleDisplay = profile.role === "verifier" ? "Verifier" : profile.role === "admin" ? "Administrator" : "Student";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900">
@@ -97,7 +95,7 @@ export default function ProfilePage() {
                 My Profile
               </h1>
               <p className="text-zinc-600 dark:text-zinc-400">
-                {isOrganization ? "Organization Profile" : "Applicant Profile"}
+                {roleDisplay} Profile
               </p>
             </div>
             <div className="flex gap-2">
@@ -123,9 +121,18 @@ export default function ProfilePage() {
             Profile Information
           </h2>
           <div className="space-y-4">
+            {profile.image && (
+              <div className="flex items-center gap-4 mb-4">
+                <img
+                  src={profile.image}
+                  alt={profile.name}
+                  className="w-20 h-20 rounded-full"
+                />
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">
-                {isOrganization ? "Organization Name" : "Name"}
+                Name
               </label>
               <p className="text-lg text-zinc-900 dark:text-zinc-50">{profile.name}</p>
             </div>
@@ -137,51 +144,12 @@ export default function ProfilePage() {
               <p className="text-lg text-zinc-900 dark:text-zinc-50">{profile.email}</p>
             </div>
 
-            {isOrganization ? (
-              <>
-                {profile.description && (
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">
-                      Description
-                    </label>
-                    <p className="text-zinc-900 dark:text-zinc-50">{profile.description}</p>
-                  </div>
-                )}
-                {profile.website && (
-                  <div>
-                    <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">
-                      Website
-                    </label>
-                    <a
-                      href={profile.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 dark:text-blue-400 hover:underline"
-                    >
-                      {profile.website}
-                    </a>
-                  </div>
-                )}
-              </>
-            ) : (
-              profile.bio && (
-                <div>
-                  <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">
-                    Bio
-                  </label>
-                  <p className="text-zinc-900 dark:text-zinc-50">{profile.bio}</p>
-                </div>
-              )
-            )}
-
-            {profile.location && (
-              <div>
-                <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">
-                  Location
-                </label>
-                <p className="text-zinc-900 dark:text-zinc-50">{profile.location}</p>
-              </div>
-            )}
+            <div>
+              <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">
+                Role
+              </label>
+              <p className="text-lg text-zinc-900 dark:text-zinc-50 capitalize">{profile.role}</p>
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">
@@ -198,7 +166,7 @@ export default function ProfilePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
-              {isOrganization ? "Issued Activities" : "Total Activities"}
+              {isVerifier ? "Issued Activities" : "Total Activities"}
             </h3>
             <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
               {totalActivitiesCount}
@@ -218,15 +186,15 @@ export default function ProfilePage() {
             >
               Go to Dashboard
             </Link>
-            {isOrganization && (
+            {isVerifier && (
               <Link
                 href="/dashboard"
                 className="px-6 py-3 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-50 rounded-lg font-medium hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
               >
-                Issue Verification Token
+                Verify Activities
               </Link>
             )}
-            {!isOrganization && (
+            {!isVerifier && (
               <Link
                 href="/dashboard"
                 className="px-6 py-3 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-50 rounded-lg font-medium hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"

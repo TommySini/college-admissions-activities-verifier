@@ -1,104 +1,114 @@
 "use client";
 
-import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
 
-export default function SignInPage() {
+function SignInContent() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const searchParams = useSearchParams();
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<"student" | "verifier" | null>(null);
+  
+  // Get role from URL params if available
+  useEffect(() => {
+    const urlRole = searchParams.get("role");
+    if (urlRole && (urlRole === "student" || urlRole === "verifier")) {
+      setSelectedRole(urlRole as "student" | "verifier");
+    }
+  }, [searchParams]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleSignIn = async (role: "student" | "verifier") => {
     setError("");
     setIsLoading(true);
+    setSelectedRole(role);
 
     try {
-      const result = await signIn("credentials", {
-        email: formData.email,
-        password: formData.password,
-        redirect: false,
+      // Get role from URL params if available, otherwise use the passed role
+      const urlRole = searchParams.get("role");
+      const finalRole = urlRole || role;
+      
+      // Store the selected role in a cookie to use in the callback
+      document.cookie = `signupRole=${finalRole}; path=/; max-age=300`; // 5 minutes
+      
+      // Use redirect: true to let NextAuth handle the OAuth flow
+      await signIn("google", {
+        callbackUrl: `/dashboard?role=${finalRole}`,
+        redirect: true,
       });
-
-      if (result?.error) {
-        setError("Invalid email or password");
-        setIsLoading(false);
-      } else {
-        router.push("/dashboard");
-        router.refresh();
-      }
-    } catch (err) {
-      setError("An error occurred. Please try again.");
+      // Note: With redirect: true, execution won't continue here
+      // The user will be redirected to Google, then back to the callback
+    } catch (err: any) {
+      console.error("Sign in error:", err);
+      setError(`An error occurred: ${err?.message || "Please check the browser console and ensure Google OAuth is configured."}`);
       setIsLoading(false);
+      setSelectedRole(null);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-zinc-800 rounded-lg p-8 max-w-md w-full shadow-xl">
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
-          Sign In
-        </h1>
-        <p className="text-zinc-600 dark:text-zinc-400 mb-6">
-          Sign in to your account
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-950 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-md w-full shadow-xl">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-blue-900 dark:text-blue-100 mb-2">
+            Actify
+          </h1>
+          <h2 className="text-xl text-gray-700 dark:text-gray-300 mb-4">
+            Activity Verification Platform
+          </h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Choose your role and sign in with Google
+          </p>
+        </div>
 
         {error && (
-          <div className="p-3 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-lg text-sm mb-4">
+          <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-lg text-sm">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              required
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Password
-            </label>
-            <input
-              type="password"
-              required
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
-            />
-          </div>
+        <div className="space-y-3">
+          <button
+            onClick={() => handleGoogleSignIn("student")}
+            disabled={isLoading}
+            className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+            {isLoading && selectedRole === "student" ? "Signing in..." : "Sign Up as Student"}
+          </button>
 
           <button
-            type="submit"
+            onClick={() => handleGoogleSignIn("verifier")}
             disabled={isLoading}
-            className="w-full px-6 py-3 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-black rounded-lg font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
           >
-            {isLoading ? "Signing in..." : "Sign In"}
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+            </svg>
+            {isLoading && selectedRole === "verifier" ? "Signing in..." : "Sign Up as Verifier"}
           </button>
-        </form>
+        </div>
 
-        <p className="mt-6 text-center text-sm text-zinc-600 dark:text-zinc-400">
-          Don't have an account?{" "}
-          <Link href="/auth/register" className="text-zinc-900 dark:text-zinc-50 font-medium hover:underline">
-            Sign up
-          </Link>
-        </p>
+        <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+          <p>Any Google email address can sign in.</p>
+          <p className="mt-2 text-xs">Note: @stanford.edu emails automatically get verifier access.</p>
+        </div>
       </div>
     </div>
   );
 }
 
+export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-950 flex items-center justify-center">
+        <div className="text-blue-600 dark:text-blue-400">Loading...</div>
+      </div>
+    }>
+      <SignInContent />
+    </Suspense>
+  );
+}

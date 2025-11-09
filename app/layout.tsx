@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "College Admissions Activities Verifier - All in One",
-  description: "Track and verify your extracurricular activities for college admissions",
+  title: "Actify - Activity Verification Platform",
+  description: "Making the college admissions process more efficient and trustworthy than ever. Track and verify your extracurricular activities for college applications.",
 };
 
 export default function RootLayout({

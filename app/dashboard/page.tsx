@@ -9,16 +9,12 @@ import { Activity as ActivityType, ActivityCategory } from "../types";
 
 interface Verification {
   id: string;
-  title: string;
-  description?: string;
-  startDate: string;
-  endDate?: string;
-  position?: string;
-  category?: string;
+  activityId?: string;
   status: string;
-  applicantEmail: string;
-  organization?: { name: string };
-  applicant?: { name: string; email: string };
+  verifierNotes?: string;
+  activity?: { id: string; name: string; category: string };
+  student?: { id: string; name: string; email: string };
+  verifier?: { id: string; name: string; email: string };
 }
 
 // Use Activity type from types.ts which includes createdAt and updatedAt
@@ -76,8 +72,26 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (session) {
+      // Check if user selected a role during signup
+      const urlParams = new URLSearchParams(window.location.search);
+      const signupRole = urlParams.get("role");
+      if (signupRole && (signupRole === "student" || signupRole === "verifier")) {
+        // Update role if different
+        if (session.user.role !== signupRole) {
+          fetch("/api/user/update-role", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ role: signupRole }),
+          }).then(() => {
+            // Reload to get updated session
+            window.location.href = "/dashboard";
+          });
+          return;
+        }
+      }
+      
       fetchVerifications();
-      if (session.user.profileType === "Applicant") {
+      if (session.user.role === "student") {
         fetchActivities();
       }
     }
@@ -174,27 +188,30 @@ export default function DashboardPage() {
     return null;
   }
 
-  const isOrganization = session.user.profileType === "Organization";
+  const isVerifier = session.user.role === "verifier" || session.user.role === "admin";
+  const isStudent = session.user.role === "student";
   const pendingVerifications = verifications.filter((v) => v.status === "pending");
-  const acceptedVerifications = verifications.filter((v) => v.status === "accepted");
+  const acceptedVerifications = verifications.filter((v) => v.status === "accepted" || v.status === "verified");
 
   // Merge accepted verifications with activities into unified list
   const unifiedActivities: UnifiedActivity[] = [
-    // Add accepted verifications as verified activities
-    ...acceptedVerifications.map((v) => ({
-      id: v.id,
-      name: v.title,
-      category: v.category || "Other",
-      description: v.description || "",
-      startDate: v.startDate,
-      endDate: v.endDate,
-      position: v.position,
-      organization: v.organization?.name || "",
-      verified: true,
-      verificationId: v.id,
-      verificationStatus: v.status,
-      organizationName: v.organization?.name,
-    })),
+    // Add accepted verifications as verified activities (only for students)
+    ...(isStudent ? acceptedVerifications
+      .filter((v) => v.activity) // Only include verifications with activities
+      .map((v) => ({
+        id: v.activity!.id,
+        name: v.activity!.name,
+        category: v.activity!.category || "Other",
+        description: v.verifierNotes || "",
+        startDate: activities.find((a) => a.id === v.activity!.id)?.startDate || new Date().toISOString(),
+        endDate: activities.find((a) => a.id === v.activity!.id)?.endDate,
+        position: activities.find((a) => a.id === v.activity!.id)?.role,
+        organization: v.verifier?.name || "",
+        verified: true,
+        verificationId: v.id,
+        verificationStatus: v.status,
+        organizationName: v.verifier?.name,
+      })) : []),
     // Add regular activities
     ...activities.map((a) => ({
       id: a.id,
@@ -203,12 +220,12 @@ export default function DashboardPage() {
       description: a.description,
       startDate: a.startDate,
       endDate: a.endDate,
-      position: a.position,
+      position: a.role,
       organization: a.organization,
-      verified: a.verified,
+      verified: verifications.some((v) => (v.activityId === a.id || v.activity?.id === a.id) && (v.status === "accepted" || v.status === "verified")),
       hoursPerWeek: a.hoursPerWeek,
       totalHours: a.totalHours,
-      notes: a.notes,
+      notes: a.studentNotes,
     })),
   ].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
 
@@ -223,7 +240,7 @@ export default function DashboardPage() {
                 {session.user.name}
               </h1>
               <p className="text-zinc-600 dark:text-zinc-400">
-                {isOrganization ? "Organization Dashboard" : "Applicant Dashboard"}
+                {isVerifier ? "Verifier Dashboard" : "Student Dashboard"}
               </p>
             </div>
             <div className="flex gap-2">
@@ -243,8 +260,8 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        {isOrganization ? (
-          /* Organization View */
+        {isVerifier ? (
+          /* Verifier View */
           <div>
             <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 shadow-sm mb-6">
               <div className="flex items-center justify-between">
@@ -253,7 +270,7 @@ export default function DashboardPage() {
                     Issue Verification Token
                   </h2>
                   <p className="text-zinc-600 dark:text-zinc-400">
-                    Send verification tokens to applicants who worked with your organization
+                    Send verification tokens to students who worked with you
                   </p>
                 </div>
                 <button
@@ -293,7 +310,7 @@ export default function DashboardPage() {
             </div>
           </div>
         ) : (
-          /* Applicant View */
+          /* Student View */
           <div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 shadow-sm">
@@ -580,36 +597,39 @@ function VerificationCard({
     });
   };
 
+  const activityName = verification.activity?.name || "Activity";
+  const category = verification.activity?.category || "Other";
+
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
           <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50 mb-1">
-            {verification.title}
+            {activityName}
           </h3>
           <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-2">
             {isOrganization ? (
-              <>Sent to <span className="font-medium">{verification.applicantEmail}</span></>
+              <>Sent to <span className="font-medium">{verification.student?.email || "Student"}</span></>
             ) : (
-              <>Verified by <span className="font-medium">{verification.organization?.name}</span></>
+              <>Verified by <span className="font-medium">{verification.verifier?.name || "Verifier"}</span></>
             )}
           </p>
-          {verification.category && (
+          {category && (
             <span className="inline-block px-2 py-1 text-xs font-medium bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded">
-              {verification.category}
+              {category}
             </span>
           )}
         </div>
         <span
           className={`ml-2 px-3 py-1 text-xs font-medium rounded ${
-            verification.status === "accepted"
+            verification.status === "accepted" || verification.status === "verified"
               ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
               : verification.status === "rejected"
               ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
               : "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
           }`}
         >
-          {verification.status === "accepted"
+          {verification.status === "accepted" || verification.status === "verified"
             ? "✓ Accepted"
             : verification.status === "rejected"
             ? "✗ Rejected"
@@ -617,24 +637,11 @@ function VerificationCard({
         </span>
       </div>
 
-      {verification.position && (
-        <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-2">
-          <span className="font-medium">Position:</span> {verification.position}
-        </p>
-      )}
-
-      {verification.description && (
+      {verification.verifierNotes && (
         <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-3">
-          {verification.description}
+          {verification.verifierNotes}
         </p>
       )}
-
-      <div className="text-xs text-zinc-500 dark:text-zinc-500 mb-4">
-        <div>
-          <span className="font-medium">Dates:</span> {formatDate(verification.startDate)}
-          {verification.endDate ? ` - ${formatDate(verification.endDate)}` : " - Present"}
-        </div>
-      </div>
 
       <div className="flex gap-2">
         {!isOrganization && verification.status === "pending" && (
@@ -682,7 +689,7 @@ function IssueTokenForm({
   onSuccess: () => void;
 }) {
   const [formData, setFormData] = useState({
-    applicantEmail: "",
+    studentEmail: "",
     title: "",
     description: "",
     startDate: new Date().toISOString().split("T")[0],
@@ -735,13 +742,13 @@ function IssueTokenForm({
 
           <div>
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Applicant Email *
+              Student Email *
             </label>
             <input
               type="email"
               required
-              value={formData.applicantEmail}
-              onChange={(e) => setFormData({ ...formData, applicantEmail: e.target.value })}
+              value={formData.studentEmail}
+              onChange={(e) => setFormData({ ...formData, studentEmail: e.target.value })}
               className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
             />
           </div>

@@ -16,11 +16,8 @@ export async function GET(request: NextRequest) {
         id: true,
         email: true,
         name: true,
-        profileType: true,
-        bio: true,
-        location: true,
-        description: true,
-        website: true,
+        role: true,
+        image: true,
         createdAt: true,
       },
     });

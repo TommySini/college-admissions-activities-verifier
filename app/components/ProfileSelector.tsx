@@ -193,7 +193,7 @@ export default function ProfileSelector() {
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-zinc-800 rounded-lg p-8 max-w-md w-full shadow-xl">
         <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
-          College Admissions Activities Verifier
+          Actify
         </h1>
         <p className="text-zinc-600 dark:text-zinc-400 mb-6">
           Get started by creating or selecting a profile

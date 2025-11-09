@@ -12,34 +12,55 @@ export async function GET(request: NextRequest) {
 
     let verifications;
 
-    if (user.profileType === "Organization") {
+    if (user.role === "verifier" || user.role === "admin") {
+      // Verifiers see verifications they've issued
       verifications = await prisma.verification.findMany({
-        where: { organizationId: user.id },
-        include: {
-          applicant: {
+        where: { verifierId: user.id },
+        select: {
+          id: true,
+          activityId: true,
+          status: true,
+          verifierNotes: true,
+          student: {
             select: {
               id: true,
               name: true,
               email: true,
             },
           },
+          activity: {
+            select: {
+              id: true,
+              name: true,
+              category: true,
+            },
+          },
         },
         orderBy: { createdAt: "desc" },
       });
     } else {
+      // Students see verifications sent to them
       verifications = await prisma.verification.findMany({
         where: {
-          OR: [
-            { applicantId: user.id },
-            { applicantEmail: user.email },
-          ],
+          studentId: user.id,
         },
-        include: {
-          organization: {
+        select: {
+          id: true,
+          activityId: true,
+          status: true,
+          verifierNotes: true,
+          verifier: {
             select: {
               id: true,
               name: true,
               email: true,
+            },
+          },
+          activity: {
+            select: {
+              id: true,
+              name: true,
+              category: true,
             },
           },
         },
@@ -65,47 +86,71 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (user.profileType !== "Organization") {
+    if (user.role !== "verifier" && user.role !== "admin") {
       return NextResponse.json(
-        { error: "Only organizations can create verifications" },
+        { error: "Only verifiers can create verifications" },
         { status: 403 }
       );
     }
 
     const body = await request.json();
-    const { applicantEmail, title, description, startDate, endDate, position, category } = body;
+    const { studentEmail, title, description, startDate, endDate, position, category } = body;
 
-    if (!applicantEmail || !title || !startDate) {
+    if (!studentEmail || !title || !startDate) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // Try to find applicant by email
-    const applicant = await prisma.user.findUnique({
-      where: { email: applicantEmail },
+    // Try to find student by email
+    const student = await prisma.user.findUnique({
+      where: { email: studentEmail },
     });
 
-    const verification = await prisma.verification.create({
+    if (!student) {
+      return NextResponse.json(
+        { error: "Student not found with that email" },
+        { status: 404 }
+      );
+    }
+
+    // Create an activity for this verification
+    const activity = await prisma.activity.create({
       data: {
-        organizationId: user.id,
-        applicantId: applicant?.id,
-        applicantEmail,
-        title,
-        description,
+        studentId: student.id,
+        name: title,
+        category: category || "Other",
+        description: description || "",
+        role: position,
         startDate,
-        endDate,
-        position,
-        category,
+        endDate: endDate || undefined,
         status: "pending",
       },
+    });
+
+    // Create verification linked to the activity
+    const verification = await prisma.verification.create({
+      data: {
+        activityId: activity.id,
+        verifierId: user.id,
+        studentId: student.id,
+        status: "pending",
+        verifierNotes: description || undefined,
+      },
       include: {
-        applicant: {
+        student: {
           select: {
             id: true,
             name: true,
             email: true,
+          },
+        },
+        activity: {
+          select: {
+            id: true,
+            name: true,
+            category: true,
           },
         },
       },

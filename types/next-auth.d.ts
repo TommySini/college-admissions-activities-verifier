@@ -7,7 +7,8 @@ declare module "next-auth" {
       id: string;
       email: string;
       name: string;
-      profileType: string;
+      role: string; // "student" | "verifier" | "admin"
+      image?: string;
     };
   }
 
@@ -15,14 +16,15 @@ declare module "next-auth" {
     id: string;
     email: string;
     name: string;
-    profileType: string;
+    role: string;
+    image?: string;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
     id: string;
-    profileType: string;
+    role: string;
+    email: string;
   }
 }
-
