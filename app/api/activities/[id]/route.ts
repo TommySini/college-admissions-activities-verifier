@@ -28,16 +28,30 @@ export async function PATCH(
       );
     }
 
-    if (activity.userId !== user.id) {
+    if (activity.studentId !== user.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 403 }
       );
     }
 
+    // Map form fields to schema fields
+    const updateData: any = {};
+    if (body.name) updateData.name = body.name;
+    if (body.category) updateData.category = body.category;
+    if (body.description) updateData.description = body.description;
+    if (body.startDate) updateData.startDate = body.startDate;
+    if (body.endDate !== undefined) updateData.endDate = body.endDate;
+    if (body.hoursPerWeek !== undefined) updateData.hoursPerWeek = body.hoursPerWeek;
+    if (body.totalHours !== undefined) updateData.totalHours = body.totalHours;
+    if (body.position !== undefined) updateData.role = body.position;
+    if (body.organization !== undefined) updateData.organization = body.organization;
+    if (body.notes !== undefined) updateData.studentNotes = body.notes;
+    if (body.verifierEmail !== undefined) updateData.supervisorEmail = body.verifierEmail;
+
     const updated = await prisma.activity.update({
       where: { id },
-      data: body,
+      data: updateData,
     });
 
     return NextResponse.json({ activity: updated });
@@ -75,7 +89,7 @@ export async function DELETE(
       );
     }
 
-    if (activity.userId !== user.id) {
+    if (activity.studentId !== user.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 403 }

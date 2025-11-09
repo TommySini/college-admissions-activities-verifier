@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     }
 
     const activities = await prisma.activity.findMany({
-      where: { userId: user.id },
+      where: { studentId: user.id },
       orderBy: { createdAt: "desc" },
     });
 
@@ -33,9 +33,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (user.profileType !== "Applicant") {
+    if (user.role !== "student") {
       return NextResponse.json(
-        { error: "Only applicants can create activities" },
+        { error: "Only students can create activities" },
         { status: 403 }
       );
     }
@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
       position,
       organization,
       notes,
+      verifierEmail,
     } = body;
 
     if (!name || !category || !description || !startDate) {
@@ -63,20 +64,24 @@ export async function POST(request: NextRequest) {
 
     const activity = await prisma.activity.create({
       data: {
-        userId: user.id,
+        studentId: user.id,
         name,
         category,
         description,
         startDate,
-        endDate,
-        hoursPerWeek,
-        totalHours,
-        position,
-        organization,
-        notes,
-        verified: false,
+        endDate: endDate || undefined,
+        hoursPerWeek: hoursPerWeek ? parseFloat(hoursPerWeek) : undefined,
+        totalHours: totalHours ? parseFloat(totalHours) : undefined,
+        role: position || undefined,
+        organization: organization || undefined,
+        studentNotes: notes || undefined,
+        supervisorEmail: verifierEmail || undefined,
+        status: "pending",
       },
     });
+
+    // Note: Email sending is now handled separately via the "Send Email" button
+    // This allows users to save the activity first, then send the email when ready
 
     return NextResponse.json({ activity }, { status: 201 });
   } catch (error) {

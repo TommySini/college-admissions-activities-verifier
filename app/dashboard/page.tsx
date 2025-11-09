@@ -1138,6 +1138,7 @@ function ActivityForm({
     position: string;
     organization: string;
     notes: string;
+    verifierEmail: string;
   }>({
     name: activity?.name || "",
     category: (activity?.category || "Other") as ActivityCategory,
@@ -1149,6 +1150,7 @@ function ActivityForm({
     position: activity?.position || "",
     organization: activity?.organization || "",
     notes: activity?.notes || "",
+    verifierEmail: activity?.supervisorEmail || "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -1176,6 +1178,7 @@ function ActivityForm({
           position: formData.position || undefined,
           organization: formData.organization || undefined,
           notes: formData.notes || undefined,
+          verifierEmail: formData.verifierEmail || undefined,
         }),
       });
 
@@ -1185,6 +1188,33 @@ function ActivityForm({
         setError(data.error || "Failed to save activity");
         setIsSubmitting(false);
         return;
+      }
+
+      // If verifier email is provided and this is a new activity, offer to send email
+      if (formData.verifierEmail && !activity) {
+        const sendEmail = window.confirm(
+          "Activity created! Would you like to send a verification email to " + formData.verifierEmail + "?"
+        );
+        if (sendEmail) {
+          try {
+            const emailResponse = await fetch("/api/send-verification-email-for-activity", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                activityId: data.activity.id,
+                verifierEmail: formData.verifierEmail,
+              }),
+            });
+            const emailData = await emailResponse.json();
+            if (emailResponse.ok) {
+              alert("Verification email sent successfully!");
+            } else {
+              alert(emailData.error || "Failed to send email");
+            }
+          } catch (err) {
+            console.error("Error sending email:", err);
+          }
+        }
       }
 
       onSuccess();
@@ -1330,6 +1360,58 @@ function ActivityForm({
                 className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+              Verifier Email
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="email"
+                value={formData.verifierEmail}
+                onChange={(e) => setFormData({ ...formData, verifierEmail: e.target.value })}
+                placeholder="e.g., main@weeklytheta.com"
+                className="flex-1 px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
+              />
+              {formData.verifierEmail && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!activity) {
+                      alert("Please save the activity first before sending the email.");
+                      return;
+                    }
+                    try {
+                      const response = await fetch("/api/send-verification-email-for-activity", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          activityId: activity.id,
+                          verifierEmail: formData.verifierEmail,
+                        }),
+                      });
+                      const data = await response.json();
+                      if (response.ok) {
+                        alert("Verification email sent successfully!");
+                      } else {
+                        alert(data.error || "Failed to send email");
+                      }
+                    } catch (err) {
+                      alert("An error occurred while sending the email");
+                    }
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!activity}
+                  title={!activity ? "Save the activity first" : "Send verification email"}
+                >
+                  Send Email
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+              Enter the email of the person who can verify this activity. Click "Send Email" to send them a verification request.
+            </p>
           </div>
 
           <div>
