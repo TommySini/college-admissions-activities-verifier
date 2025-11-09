@@ -6,8 +6,10 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
+  // For local development with SQLite, you can use a separate .env.local file
+  // For production, DATABASE_URL will point to Supabase PostgreSQL
 }
 
 model User {
