@@ -35,6 +35,25 @@ interface Activity {
   notes?: string;
 }
 
+// Unified activity interface that combines verifications and activities
+interface UnifiedActivity {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  startDate: string;
+  endDate?: string;
+  position?: string;
+  organization?: string;
+  verified: boolean;
+  hoursPerWeek?: number;
+  totalHours?: number;
+  notes?: string;
+  verificationId?: string; // If this came from a verification
+  verificationStatus?: string; // "pending", "accepted", "rejected"
+  organizationName?: string; // From verification
+}
+
 const CATEGORIES = [
   "Sports",
   "Clubs",
@@ -170,6 +189,40 @@ export default function DashboardPage() {
   const pendingVerifications = verifications.filter((v) => v.status === "pending");
   const acceptedVerifications = verifications.filter((v) => v.status === "accepted");
 
+  // Merge accepted verifications with activities into unified list
+  const unifiedActivities: UnifiedActivity[] = [
+    // Add accepted verifications as verified activities
+    ...acceptedVerifications.map((v) => ({
+      id: v.id,
+      name: v.title,
+      category: v.category || "Other",
+      description: v.description || "",
+      startDate: v.startDate,
+      endDate: v.endDate,
+      position: v.position,
+      organization: v.organization?.name || "",
+      verified: true,
+      verificationId: v.id,
+      verificationStatus: v.status,
+      organizationName: v.organization?.name,
+    })),
+    // Add regular activities
+    ...activities.map((a) => ({
+      id: a.id,
+      name: a.name,
+      category: a.category,
+      description: a.description,
+      startDate: a.startDate,
+      endDate: a.endDate,
+      position: a.position,
+      organization: a.organization,
+      verified: a.verified,
+      hoursPerWeek: a.hoursPerWeek,
+      totalHours: a.totalHours,
+      notes: a.notes,
+    })),
+  ].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -257,7 +310,7 @@ export default function DashboardPage() {
               <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 shadow-sm">
                 <div className="text-sm text-zinc-600 dark:text-zinc-400">Verified</div>
                 <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {acceptedVerifications.length}
+                  {unifiedActivities.filter((a) => a.verified).length}
                 </div>
               </div>
               <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 shadow-sm">
@@ -267,47 +320,20 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 shadow-sm">
-                <div className="text-sm text-zinc-600 dark:text-zinc-400">My Activities</div>
+                <div className="text-sm text-zinc-600 dark:text-zinc-400">Unverified</div>
                 <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-                  {activities.length}
+                  {unifiedActivities.filter((a) => !a.verified).length}
                 </div>
               </div>
               <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 shadow-sm">
                 <div className="text-sm text-zinc-600 dark:text-zinc-400">Total</div>
                 <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-                  {verifications.length + activities.length}
+                  {unifiedActivities.length}
                 </div>
               </div>
             </div>
 
-            {/* Export Button */}
-            {(acceptedVerifications.length > 0 || activities.length > 0) && (
-              <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 shadow-sm mb-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-1">
-                      Export Activities
-                    </h3>
-                    <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                      Download your activities as PDF
-                    </p>
-                  </div>
-                  <button
-                    onClick={() =>
-                      exportToPDF(
-                        acceptedVerifications,
-                        activities,
-                        session?.user.name || "Profile"
-                      )
-                    }
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors text-sm"
-                  >
-                    Export PDF
-                  </button>
-                </div>
-              </div>
-            )}
-
+            {/* Pending Verifications Section */}
             {pendingVerifications.length > 0 && (
               <div className="mb-6">
                 <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50 mb-4">
@@ -329,37 +355,16 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {acceptedVerifications.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50 mb-4">
-                  Verified Activities
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {acceptedVerifications.map((verification) => (
-                    <VerificationCard
-                      key={verification.id}
-                      verification={verification}
-                      isOrganization={false}
-                      onAcceptReject={handleAcceptReject}
-                      onDelete={handleDeleteVerification}
-                      onEdit={handleEditVerification}
-                      updatingId={updatingId}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Manage Activities Section */}
+            {/* Unified Activities Section */}
             <div className="mb-6">
               <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 shadow-sm mb-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50 mb-1">
-                      Manage Activities
+                      All Activities
                     </h3>
                     <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                      Add and manage your activities. Request verification from organizations.
+                      Your verified and unverified activities in one place
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -383,74 +388,134 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {activities.filter(
+              {/* Export Button */}
+              {unifiedActivities.length > 0 && (
+                <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 shadow-sm mb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-1">
+                        Export Activities
+                      </h3>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                        Download your activities as PDF
+                      </p>
+                    </div>
+                    <button
+                      onClick={() =>
+                        exportToPDF(
+                          acceptedVerifications,
+                          activities,
+                          session?.user.name || "Profile"
+                        )
+                      }
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors text-sm"
+                    >
+                      Export PDF
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {unifiedActivities.filter(
                 (a) =>
                   a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                   a.description.toLowerCase().includes(searchQuery.toLowerCase())
               ).length === 0 ? (
                 <div className="bg-white dark:bg-zinc-800 rounded-lg p-12 text-center shadow-sm">
                   <p className="text-zinc-600 dark:text-zinc-400">
-                    {activities.length === 0
+                    {unifiedActivities.length === 0
                       ? "No activities yet. Click 'Add Activity' to get started!"
                       : "No activities match your search."}
                   </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {activities
+                  {unifiedActivities
                     .filter(
                       (a) =>
                         a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                         a.description.toLowerCase().includes(searchQuery.toLowerCase())
                     )
-                    .map((activity) => (
-                      <ActivityCard
-                        key={activity.id}
-                        activity={activity}
-                        onEdit={() => {
-                          setEditingActivity(activity);
-                          setShowActivityForm(true);
-                        }}
-                        onDelete={async () => {
-                          if (confirm("Are you sure you want to delete this activity?")) {
-                            try {
-                              await fetch(`/api/activities/${activity.id}`, {
-                                method: "DELETE",
-                              });
-                              fetchActivities();
-                            } catch (error) {
-                              console.error("Error deleting activity:", error);
-                            }
-                          }
-                        }}
-                        onRequestVerification={async () => {
-                          const orgEmail = prompt(
-                            "Enter the organization's email address to request verification:"
+                    .map((activity) => {
+                      // If it's from a verification, show VerificationCard
+                      if (activity.verificationId) {
+                        const verification = acceptedVerifications.find(
+                          (v) => v.id === activity.verificationId
+                        );
+                        if (verification) {
+                          return (
+                            <VerificationCard
+                              key={activity.id}
+                              verification={verification}
+                              isOrganization={false}
+                              onAcceptReject={handleAcceptReject}
+                              onDelete={handleDeleteVerification}
+                              onEdit={handleEditVerification}
+                              updatingId={updatingId}
+                            />
                           );
-                          if (orgEmail) {
-                            try {
-                              const response = await fetch(
-                                `/api/activities/${activity.id}/request-verification`,
-                                {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ organizationEmail: orgEmail }),
-                                }
-                              );
-                              const data = await response.json();
-                              if (response.ok) {
-                                alert("Verification request sent!");
-                                fetchVerifications();
-                              } else {
-                                alert(data.error || "Failed to send verification request");
+                        }
+                      }
+                      // Otherwise, show ActivityCard
+                      const activityData = activities.find((a) => a.id === activity.id);
+                      if (activityData) {
+                        return (
+                          <ActivityCard
+                            key={activity.id}
+                            activity={activityData}
+                            onEdit={() => {
+                              setEditingActivity(activityData);
+                              setShowActivityForm(true);
+                            }}
+                            onDelete={async () => {
+                              if (!confirm("Are you sure you want to delete this activity?")) {
+                                return;
                               }
-                            } catch (error) {
-                              alert("An error occurred. Please try again.");
-                            }
-                          }
-                        }}
-                      />
-                    ))}
+                              try {
+                                const response = await fetch(`/api/activities/${activity.id}`, {
+                                  method: "DELETE",
+                                });
+                                if (!response.ok) {
+                                  alert("Failed to delete activity");
+                                  return;
+                                }
+                                fetchActivities();
+                              } catch (error) {
+                                console.error("Error deleting activity:", error);
+                                alert("An error occurred. Please try again.");
+                              }
+                            }}
+                            onRequestVerification={async () => {
+                              const orgEmail = prompt(
+                                "Enter the organization's email address to request verification:"
+                              );
+                              if (orgEmail) {
+                                try {
+                                  const response = await fetch(
+                                    `/api/activities/${activity.id}/request-verification`,
+                                    {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ organizationEmail: orgEmail }),
+                                    }
+                                  );
+                                  const data = await response.json();
+                                  if (response.ok) {
+                                    alert("Verification request sent!");
+                                    fetchVerifications();
+                                  } else {
+                                    alert(data.error || "Failed to send verification request");
+                                  }
+                                } catch (error) {
+                                  alert("An error occurred. Please try again.");
+                                }
+                              }
+                            }}
+                          />
+                        );
+                      }
+                      return null;
+                    })}
                 </div>
               )}
             </div>

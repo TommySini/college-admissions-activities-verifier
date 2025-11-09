@@ -22,8 +22,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [verificationCount, setVerificationCount] = useState(0);
-  const [activityCount, setActivityCount] = useState(0);
+  const [totalActivitiesCount, setTotalActivitiesCount] = useState(0);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -48,14 +47,25 @@ export default function ProfilePage() {
 
   const fetchStats = async () => {
     try {
-      const verificationsRes = await fetch("/api/verifications");
-      const verificationsData = await verificationsRes.json();
-      setVerificationCount(verificationsData.verifications?.length || 0);
-
-      if (session?.user.profileType === "Applicant") {
+      if (session?.user.profileType === "Organization") {
+        // For organizations, count all verifications they've issued as activities
+        const verificationsRes = await fetch("/api/verifications");
+        const verificationsData = await verificationsRes.json();
+        setTotalActivitiesCount(verificationsData.verifications?.length || 0);
+      } else {
+        // For applicants, count accepted verifications + regular activities
+        const verificationsRes = await fetch("/api/verifications");
+        const verificationsData = await verificationsRes.json();
+        const acceptedVerifications = verificationsData.verifications?.filter(
+          (v: any) => v.status === "accepted"
+        ) || [];
+        
         const activitiesRes = await fetch("/api/activities");
         const activitiesData = await activitiesRes.json();
-        setActivityCount(activitiesData.activities?.length || 0);
+        const activities = activitiesData.activities || [];
+        
+        // Total = accepted verifications + regular activities
+        setTotalActivitiesCount(acceptedVerifications.length + activities.length);
       }
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -188,22 +198,12 @@ export default function ProfilePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
-              {isOrganization ? "Issued Verifications" : "Verifications"}
+              {isOrganization ? "Issued Activities" : "Total Activities"}
             </h3>
             <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-              {verificationCount}
+              {totalActivitiesCount}
             </p>
           </div>
-          {!isOrganization && (
-            <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
-                My Activities
-              </h3>
-              <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-                {activityCount}
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Quick Actions */}

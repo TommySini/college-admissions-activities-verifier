@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useProfile } from "../context/ProfileContext";
-import { ProfileType } from "../types";
+import { ProfileType, OrganizationProfile, ApplicantProfile } from "../types";
 
 export default function ProfileSelector() {
   const { currentProfile, allProfiles, createProfile, setCurrentProfile, switchProfile } =
@@ -28,7 +28,7 @@ export default function ProfileSelector() {
         description: formData.description || undefined,
         website: formData.website || undefined,
         location: formData.location || undefined,
-      });
+      } as Omit<OrganizationProfile, "id" | "createdAt" | "updatedAt">);
     } else {
       createProfile({
         name: formData.name,
@@ -36,7 +36,7 @@ export default function ProfileSelector() {
         profileType: "Applicant",
         bio: formData.bio || undefined,
         location: formData.location || undefined,
-      });
+      } as Omit<ApplicantProfile, "id" | "createdAt" | "updatedAt">);
     }
     setShowCreateForm(false);
     setFormData({
