@@ -33,15 +33,33 @@ interface Activity {
   updatedAt: string;
 }
 
+interface Organization {
+  id: string;
+  name: string;
+  description?: string | null;
+  category?: string | null;
+  leadership?: string | null;
+  presidentName?: string | null;
+  isSchoolClub: boolean;
+  contactEmail?: string | null;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  createdAt: string;
+  createdBy: {
+    id: string;
+    name: string | null;
+    email: string;
+  } | null;
+}
+
 interface Analytics {
   mostCommonCategories: { category: string; count: number }[];
   verificationByStatus: { status: string; count: number }[];
   totalActivities: number;
   totalStudents: number;
-  totalVerifiers: number;
+  totalOrganizations: number;
 }
 
-type Tab = "dashboard" | "analytics" | "export";
+type Tab = "dashboard" | "analytics" | "organizations" | "export";
 
 export default function AdminDashboardPage() {
   const { data: session, status } = useSession();
@@ -54,6 +72,9 @@ export default function AdminDashboardPage() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [organizationsLoading, setOrganizationsLoading] = useState(true);
+  const [organizationActionId, setOrganizationActionId] = useState<string | null>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -126,9 +147,21 @@ export default function AdminDashboardPage() {
       if (session.user.role === "admin") {
         fetchStudents();
         fetchAnalytics();
+        fetchOrganizations();
       }
     }
   }, [session]);
+
+  useEffect(() => {
+    if (
+      activeTab === "organizations" &&
+      session?.user.role === "admin" &&
+      !organizationsLoading &&
+      organizations.length === 0
+    ) {
+      fetchOrganizations();
+    }
+  }, [activeTab, session?.user.role, organizations.length, organizationsLoading]);
 
   const fetchStudents = async () => {
     try {
@@ -155,6 +188,57 @@ export default function AdminDashboardPage() {
       setAnalytics(data);
     } catch (error) {
       console.error("Error fetching analytics:", error);
+    }
+  };
+
+  const fetchOrganizations = async () => {
+    try {
+      setOrganizationsLoading(true);
+      const response = await fetch("/api/admin/organizations");
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Error fetching organizations:", data.error);
+        alert(data.error || "Failed to fetch organizations.");
+        return;
+      }
+
+      setOrganizations(data.organizations || []);
+    } catch (error) {
+      console.error("Error fetching organizations:", error);
+      alert("Failed to fetch organizations. Check the console for details.");
+    } finally {
+      setOrganizationsLoading(false);
+    }
+  };
+
+  const handleOrganizationDecision = async (organizationId: string, action: "approve" | "reject") => {
+    try {
+      setOrganizationActionId(organizationId);
+      const response = await fetch(`/api/admin/organizations/${organizationId}/${action}`, {
+        method: "POST",
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error(`Failed to ${action} organization:`, data.error);
+        alert(data.error || `Failed to ${action} organization.`);
+        return;
+      }
+
+      setOrganizations((prev) =>
+        prev.map((organization) =>
+          organization.id === organizationId
+            ? { ...organization, status: action === "approve" ? "APPROVED" : "REJECTED" }
+            : organization
+        )
+      );
+      fetchAnalytics();
+    } catch (error) {
+      console.error(`Error trying to ${action} organization:`, error);
+      alert(`Failed to ${action} organization. Please try again.`);
+    } finally {
+      setOrganizationActionId(null);
     }
   };
 
@@ -232,6 +316,16 @@ export default function AdminDashboardPage() {
                 }`}
               >
                 Analytics
+              </button>
+              <button
+                onClick={() => setActiveTab("organizations")}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === "organizations"
+                    ? "bg-blue-50 text-blue-700 border border-blue-200"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                }`}
+              >
+                Organizations
               </button>
               <button
                 onClick={() => setActiveTab("export")}
@@ -493,9 +587,11 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="text-sm text-gray-600 mb-1">Total Verifiers</div>
+                <div className="text-sm text-gray-600 mb-1">
+                  Approved Organizations
+                </div>
                 <div className="text-3xl font-bold text-gray-900">
-                  {analytics.totalVerifiers}
+                  {analytics.totalOrganizations}
                 </div>
               </div>
             </div>
@@ -618,6 +714,151 @@ export default function AdminDashboardPage() {
                   })}
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "organizations" && (
+          <div>
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                Organization Approvals
+              </h1>
+              <p className="text-gray-600 max-w-2xl">
+                Review organization submissions from students. Approving an organization makes it visible to students
+                and signals that it can support activity verification.
+              </p>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              {organizationsLoading ? (
+                <div className="p-10 text-center text-sm text-gray-500">
+                  Loading organization submissions…
+                </div>
+              ) : organizations.length === 0 ? (
+                <div className="p-10 text-center text-sm text-gray-500">
+                  No organization submissions yet.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Organization
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Details
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Submitted By
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {organizations.map((organization) => (
+                        <tr key={organization.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 align-top">
+                            <div className="flex items-center gap-3">
+                              <div>
+                                <div className="text-sm font-semibold text-gray-900">{organization.name}</div>
+                                <div className="text-xs text-gray-500 mt-1">
+                                  Submitted {new Date(organization.createdAt).toLocaleDateString()}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600 align-top">
+                            <div className="space-y-2">
+                              <p>{organization.description || "No description provided."}</p>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-500">
+                                <div>
+                                  <span className="font-medium text-gray-600">Category:</span>{" "}
+                                  {organization.category || "—"}
+                                </div>
+                                <div>
+                                  <span className="font-medium text-gray-600">President:</span>{" "}
+                                  {organization.presidentName || "—"}
+                                </div>
+                                <div className="sm:col-span-2">
+                                  <span className="font-medium text-gray-600">Leadership & Advisor:</span>{" "}
+                                  {organization.leadership || "—"}
+                                </div>
+                                <div>
+                                  <span className="font-medium text-gray-600">Type:</span>{" "}
+                                  {organization.isSchoolClub ? "TBS club" : "External organization"}
+                                </div>
+                                <div>
+                                  <span className="font-medium text-gray-600">Contact:</span>{" "}
+                                  {organization.contactEmail || "—"}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600 align-top">
+                            {organization.createdBy ? (
+                              <div>
+                                <div className="font-medium text-gray-800">
+                                  {organization.createdBy.name || "Unknown"}
+                                </div>
+                                <div className="text-xs text-gray-500">{organization.createdBy.email}</div>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-400">—</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-right align-top">
+                            <div className="inline-flex items-center gap-2">
+                              <span
+                                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                                  organization.status === "APPROVED"
+                                    ? "bg-green-100 text-green-700 border border-green-200"
+                                    : organization.status === "REJECTED"
+                                    ? "bg-red-100 text-red-700 border border-red-200"
+                                    : "bg-amber-100 text-amber-700 border border-amber-200"
+                                }`}
+                              >
+                                {organization.status.charAt(0) + organization.status.slice(1).toLowerCase()}
+                              </span>
+                              <button
+                                onClick={() => handleOrganizationDecision(organization.id, "reject")}
+                                disabled={
+                                  organizationActionId === organization.id ||
+                                  organization.status === "REJECTED"
+                                }
+                                className="px-3 py-1 text-sm font-medium rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {organizationActionId === organization.id && organization.status !== "REJECTED"
+                                  ? "Updating..."
+                                  : organization.status === "REJECTED"
+                                  ? "Rejected"
+                                  : "Reject"}
+                              </button>
+                              <button
+                                onClick={() => handleOrganizationDecision(organization.id, "approve")}
+                                disabled={
+                                  organizationActionId === organization.id ||
+                                  organization.status === "APPROVED"
+                                }
+                                className="px-3 py-1 text-sm font-medium rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {organizationActionId === organization.id && organization.status !== "APPROVED"
+                                  ? "Updating..."
+                                  : organization.status === "APPROVED"
+                                  ? "Approved"
+                                  : "Approve"}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         )}

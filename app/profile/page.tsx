@@ -44,8 +44,8 @@ export default function ProfilePage() {
 
   const fetchStats = async () => {
     try {
-      if (session?.user.role === "verifier" || session?.user.role === "admin") {
-        // For verifiers/admins, count all verifications they've issued as activities
+      if (session?.user.role === "admin") {
+        // For admins, count total verifications issued
         const verificationsRes = await fetch("/api/verifications");
         const verificationsData = await verificationsRes.json();
         setTotalActivitiesCount(verificationsData.verifications?.length || 0);
@@ -81,8 +81,8 @@ export default function ProfilePage() {
     return null;
   }
 
-  const isVerifier = profile.role === "verifier" || profile.role === "admin";
-  const roleDisplay = profile.role === "verifier" ? "Verifier" : profile.role === "admin" ? "Administrator" : "Student";
+  const isAdmin = profile.role === "admin";
+  const roleDisplay = isAdmin ? "Administrator" : "Student";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900">
@@ -166,7 +166,7 @@ export default function ProfilePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
-              {isVerifier ? "Issued Activities" : "Total Activities"}
+              {isAdmin ? "Total Verifications" : "Total Activities"}
             </h3>
             <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
               {totalActivitiesCount}
@@ -186,15 +186,7 @@ export default function ProfilePage() {
             >
               Go to Dashboard
             </Link>
-            {isVerifier && (
-              <Link
-                href="/dashboard"
-                className="px-6 py-3 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-50 rounded-lg font-medium hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-              >
-                Verify Activities
-              </Link>
-            )}
-            {!isVerifier && (
+            {!isAdmin && (
               <Link
                 href="/dashboard"
                 className="px-6 py-3 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-50 rounded-lg font-medium hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"

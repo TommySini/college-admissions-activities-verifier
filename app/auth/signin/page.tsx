@@ -9,17 +9,17 @@ function SignInContent() {
   const searchParams = useSearchParams();
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<"student" | "verifier" | "admin" | null>(null);
+  const [selectedRole, setSelectedRole] = useState<"student" | "admin" | null>(null);
   
   // Get role from URL params if available
   useEffect(() => {
     const urlRole = searchParams.get("role");
-    if (urlRole && (urlRole === "student" || urlRole === "verifier" || urlRole === "admin")) {
-      setSelectedRole(urlRole as "student" | "verifier" | "admin");
+    if (urlRole && (urlRole === "student" || urlRole === "admin")) {
+      setSelectedRole(urlRole as "student" | "admin");
     }
   }, [searchParams]);
 
-  const handleGoogleSignIn = async (role: "student" | "verifier" | "admin") => {
+  const handleGoogleSignIn = async (role: "student" | "admin") => {
     setError("");
     setIsLoading(true);
     setSelectedRole(role);
@@ -27,7 +27,7 @@ function SignInContent() {
     try {
       // Get role from URL params if available, otherwise use the passed role
       const urlRole = searchParams.get("role");
-      const finalRole = urlRole || role;
+      const finalRole = urlRole === "student" || urlRole === "admin" ? urlRole : role;
       
       // Store the selected role in a cookie to use in the callback
       document.cookie = `signupRole=${finalRole}; path=/; max-age=300`; // 5 minutes
@@ -86,17 +86,6 @@ function SignInContent() {
           </button>
 
           <button
-            onClick={() => handleGoogleSignIn("verifier")}
-            disabled={isLoading}
-            className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
-            </svg>
-            {isLoading && selectedRole === "verifier" ? "Signing in..." : "Sign Up as Verifier"}
-          </button>
-
-          <button
             onClick={() => handleGoogleSignIn("admin")}
             disabled={isLoading}
             className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
@@ -110,7 +99,6 @@ function SignInContent() {
 
         <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
           <p>Any Google email address can sign in.</p>
-          <p className="mt-2 text-xs">Note: @stanford.edu emails automatically get verifier access.</p>
         </div>
       </div>
     </div>

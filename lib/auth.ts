@@ -21,7 +21,7 @@ export async function getCurrentUser() {
   return user;
 }
 
-export async function requireRole(role: "student" | "verifier" | "admin") {
+export async function requireRole(role: "student" | "admin") {
   const user = await getCurrentUser();
   
   if (!user) {

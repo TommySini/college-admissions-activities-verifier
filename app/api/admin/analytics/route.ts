@@ -83,7 +83,9 @@ export async function GET(request: NextRequest) {
       verificationByStatus,
       totalActivities: activities.length,
       totalStudents: await prisma.user.count({ where: { role: "student" } }),
-      totalVerifiers: await prisma.user.count({ where: { role: "verifier" } }),
+      totalOrganizations: await prisma.organization.count({
+        where: { status: "APPROVED" },
+      }),
     });
   } catch (error) {
     console.error("Error fetching analytics:", error);

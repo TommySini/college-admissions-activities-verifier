@@ -2,10 +2,6 @@ import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
 
-// List of verifier emails (teachers/club advisors)
-// In production, this could be stored in the database or environment variables
-const VERIFIER_EMAILS = process.env.VERIFIER_EMAILS?.split(",") || [];
-
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
@@ -31,11 +27,6 @@ export const authOptions: NextAuthOptions = {
 
         console.log("SignIn: Processing user", { email: user.email, name: user.name });
 
-        // Try to read the selected role from cookies
-        // Note: In Next.js 13+ App Router, we need to use a different approach
-        // The cookie is set client-side, so we'll handle role update in the dashboard
-        // For now, we'll set a default role and let the dashboard update it
-        
         // Check existing user first
         const existingUser = await prisma.user.findUnique({
           where: { email: user.email },
@@ -44,18 +35,10 @@ export const authOptions: NextAuthOptions = {
         let role = "student"; // Default role for new users
         
         if (existingUser) {
-          // For existing users, preserve their current role
-          // The role will be updated in the dashboard if they selected a different role
-          role = existingUser.role;
-          console.log("SignIn: Existing user, preserving role", { email: user.email, role });
+          // Coerce legacy verifier accounts back to student
+          role = existingUser.role === "verifier" ? "student" : existingUser.role;
+          console.log("SignIn: Existing user, using role", { email: user.email, role });
         } else {
-          // New user - assign role based on email patterns
-          if (user.email.endsWith("@stanford.edu")) {
-            role = "verifier";
-          } else if (VERIFIER_EMAILS.includes(user.email.toLowerCase())) {
-            role = "verifier";
-          }
-          // Otherwise defaults to "student"
           console.log("SignIn: New user, assigning default role", { email: user.email, role });
         }
 
@@ -103,7 +86,7 @@ export const authOptions: NextAuthOptions = {
 
         if (dbUser) {
           token.id = dbUser.id;
-          token.role = dbUser.role;
+          token.role = dbUser.role === "verifier" ? "student" : dbUser.role;
           token.email = dbUser.email;
         }
       }

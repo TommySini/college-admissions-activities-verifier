@@ -27,184 +27,7 @@ interface Club {
   highlights?: string[];
 }
 
-const CLUBS: Club[] = [
-  {
-    id: "club-student-council",
-    name: "Student Council",
-    category: "Leadership",
-    description:
-      "Represent the student body, plan school-wide events, and collaborate with administrators to enhance school culture.",
-    meetingSchedule: "Mondays • 3:15 – 4:30 PM",
-    location: "Room 204 • Activities Wing",
-    advisor: "Ms. Alvarez",
-    contactEmail: "studentcouncil@actifyhs.org",
-    highlights: [
-      "Open to grades 9 – 12",
-      "Leadership workshops each semester",
-      "Hosts the annual Winter Formal and Spirit Week",
-    ],
-  },
-  {
-    id: "club-robotics",
-    name: "Robotics & Engineering",
-    category: "STEM",
-    description:
-      "Design, build, and program robots for regional competitions while exploring engineering disciplines and teamwork.",
-    meetingSchedule: "Tuesdays & Thursdays • 3:30 – 5:30 PM",
-    location: "Innovation Lab • Lower Level",
-    advisor: "Dr. Chen",
-    contactEmail: "robotics@actifyhs.org",
-    highlights: [
-      "Competes in FIRST Robotics Challenge",
-      "Access to 3D printers and CNC tools",
-      "Beginner-friendly onboarding in September",
-    ],
-  },
-  {
-    id: "club-green-team",
-    name: "Green Team",
-    category: "Community Service",
-    description:
-      "Lead sustainability initiatives, manage the campus garden, and partner with local organizations for environmental advocacy.",
-    meetingSchedule: "Wednesdays • 3:20 – 4:30 PM",
-    location: "Room 118 • Science Building",
-    advisor: "Mr. Patel",
-    contactEmail: "greenteam@actifyhs.org",
-    highlights: [
-      "Organizes Earth Week campus-wide",
-      "Hosts quarterly community clean-ups",
-      "Manages recycling and composting on campus",
-    ],
-  },
-  {
-    id: "club-chorale",
-    name: "Chorale Ensemble",
-    category: "Arts",
-    description:
-      "Perform choral works from classical to contemporary genres. Vocal training, music theory, and seasonal performances.",
-    meetingSchedule: "Tuesdays • 3:15 – 4:45 PM",
-    location: "Performing Arts Center • Choir Room",
-    advisor: "Mrs. Lang",
-    contactEmail: "chorale@actifyhs.org",
-    highlights: [
-      "Performs at winter and spring concerts",
-      "Auditions in September & January",
-      "Collaborates with theater and orchestra",
-    ],
-  },
-  {
-    id: "club-model-un",
-    name: "Model United Nations",
-    category: "Academic",
-    description:
-      "Debate global issues, draft resolutions, and represent countries at regional conferences with other schools.",
-    meetingSchedule: "Fridays • 3:15 – 4:30 PM",
-    location: "Room 305 • Humanities Hall",
-    advisor: "Mr. Davenport",
-    contactEmail: "mun@actifyhs.org",
-    highlights: [
-      "Travels to three conferences annually",
-      "Open to newcomers—training provided",
-      "Hosts our school’s spring invitational",
-    ],
-  },
-  {
-    id: "club-latinx-alliance",
-    name: "Latinx Student Alliance",
-    category: "Culture & Identity",
-    description:
-      "Celebrate Latinx culture, host educational events, and create a supportive community for students and allies.",
-    meetingSchedule: "Wednesdays • 3:30 – 4:30 PM",
-    location: "Community Commons",
-    advisor: "Ms. Rivera",
-    contactEmail: "latinxalliance@actifyhs.org",
-    highlights: [
-      "Leads Hispanic Heritage Month programming",
-      "Partners with local cultural organizations",
-      "Hosts monthly family nights",
-    ],
-  },
-  {
-    id: "club-fitness",
-    name: "Mind & Body Wellness Club",
-    category: "Wellness",
-    description:
-      "Explore mindfulness, yoga, nutrition, and overall wellness through student-led workshops and guest speakers.",
-    meetingSchedule: "Mondays • 3:20 – 4:20 PM",
-    location: "Fitness Studio • Athletics Center",
-    advisor: "Coach Williams",
-    contactEmail: "wellnessclub@actifyhs.org",
-    highlights: [
-      "Weekly yoga and meditation sessions",
-      "Hosts Wellness Week each spring",
-      "Collaborates with school counselors",
-    ],
-  },
-  {
-    id: "club-journalism",
-    name: "Digital Journalism & Media",
-    category: "Academic",
-    description:
-      "Produce the school’s digital newspaper and podcast. Learn reporting, storytelling, and multimedia production.",
-    meetingSchedule: "Tuesdays • 3:15 – 4:45 PM",
-    location: "Media Lab • Library",
-    advisor: "Ms. Nguyen",
-    contactEmail: "journalism@actifyhs.org",
-    highlights: [
-      "Publishes monthly digital issues",
-      "Hosts workshops with local journalists",
-      "Opportunities in photography & design",
-    ],
-  },
-  {
-    id: "club-debate",
-    name: "Speech & Debate",
-    category: "Academic",
-    description:
-      "Sharpen public speaking and argumentation by competing in speech, Lincoln-Douglas, and policy debate formats.",
-    meetingSchedule: "Mondays & Thursdays • 3:30 – 5:30 PM",
-    location: "Room 210 • Humanities Hall",
-    advisor: "Mr. Rios",
-    contactEmail: "debate@actifyhs.org",
-    highlights: [
-      "Weekly practice rounds & coaching",
-      "Travels to state and national tournaments",
-      "Beginner workshops in September",
-    ],
-  },
-  {
-    id: "club-girls-who-code",
-    name: "Girls Who Code",
-    category: "STEM",
-    description:
-      "Support female and non-binary students in coding through collaborative projects, mentorship, and real-world applications.",
-    meetingSchedule: "Wednesdays • 3:15 – 4:45 PM",
-    location: "Innovation Lab • Lower Level",
-    advisor: "Mrs. Thompson",
-    contactEmail: "gwc@actifyhs.org",
-    highlights: [
-      "Project teams build community-focused apps",
-      "Mentorship from alumnae in tech fields",
-      "Hosts annual Spring Hackathon",
-    ],
-  },
-  {
-    id: "club-intramural-sports",
-    name: "Intramural Sports League",
-    category: "Athletics",
-    description:
-      "Join friendly, rotating seasonal leagues—basketball, futsal, pickleball, and ultimate frisbee. Open to all skill levels.",
-    meetingSchedule: "Daily rotation • 3:30 – 5:00 PM",
-    location: "Athletics Center & Turf Field",
-    advisor: "Coach Martinez",
-    contactEmail: "intramurals@actifyhs.org",
-    highlights: [
-      "Seasonal tournaments with prizes",
-      "Open-gym hours on Fridays",
-      "Co-ed teams encouraged",
-    ],
-  },
-];
+const CLUBS: Club[] = [];
 
 const CATEGORY_LABELS: Record<ClubCategory, string> = {
   Academic: "Academic",
@@ -234,9 +57,7 @@ export default function ClubsPage() {
       return;
     }
 
-    if (session.user.role === "verifier") {
-      router.push("/dashboard");
-    } else if (session.user.role === "admin") {
+    if (session.user.role === "admin") {
       router.push("/admin");
     }
   }, [router, session]);
@@ -335,10 +156,10 @@ export default function ClubsPage() {
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
-                href="mailto:activities@actifyhs.org?subject=Start a Club Inquiry"
+                href="/organizations"
                 className="px-5 py-3 rounded-lg bg-blue-600 text-white text-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors"
               >
-                Start a New Club
+                Submit an Organization
               </Link>
               <Link
                 href="/dashboard"

@@ -65,6 +65,12 @@ export interface Activity {
   organization?: string;
   verified: boolean;
   notes?: string;
+  role?: string;
+  supervisorEmail?: string | null;
+  verifierEmail?: string | null;
+  studentNotes?: string | null;
+  verificationStatus?: string;
+  attachments?: string | null;
   createdAt: string;
   updatedAt: string;
   applicantId?: string; // Link to applicant profile if added by user

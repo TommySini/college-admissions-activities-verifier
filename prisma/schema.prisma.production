@@ -14,7 +14,7 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String
-  role      String   @default("student") // "student" or "verifier" or "admin"
+  role      String   @default("student") // "student" or "admin"
   image     String?  // Profile picture from OAuth
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -23,6 +23,7 @@ model User {
   verifiedActivities Verification[] @relation("VerifierVerifications")
   studentActivities Verification[] @relation("StudentVerifications")
   activities         Activity[]
+  organizationsCreated Organization[] @relation("OrganizationCreator")
 
   @@map("users")
 }
@@ -70,5 +71,30 @@ model Activity {
   verification  Verification?
 
   @@map("activities")
+}
+
+enum OrganizationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Organization {
+  id             String             @id @default(cuid())
+  name           String
+  description    String?
+  category       String?
+  leadership     String?
+  presidentName  String?
+  isSchoolClub   Boolean            @default(true)
+  contactEmail   String?
+  status         OrganizationStatus @default(PENDING)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  createdById    String
+
+  createdBy      User               @relation("OrganizationCreator", fields: [createdById], references: [id])
+
+  @@map("organizations")
 }
 

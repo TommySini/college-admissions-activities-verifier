@@ -12,6 +12,13 @@ interface Verification {
   activityId?: string;
   status: string;
   verifierNotes?: string;
+  title?: string;
+  description?: string;
+  startDate?: string;
+  endDate?: string;
+  position?: string;
+  category?: string;
+  createdAt?: string;
   activity?: { id: string; name: string; category: string };
   student?: { id: string; name: string; email: string };
   verifier?: { id: string; name: string; email: string };
@@ -277,7 +284,7 @@ export default function DashboardPage() {
     );
   }
 
-  const isVerifier = session.user.role === "verifier";
+  const isVerifier = false;
   const isStudent = session.user.role === "student";
   const pendingVerifications = verifications.filter((v) => v.status === "pending");
   const acceptedVerifications = verifications.filter((v) => v.status === "accepted" || v.status === "verified");
@@ -322,12 +329,12 @@ export default function DashboardPage() {
           startDate: a.startDate,
           endDate: a.endDate,
           position: a.role,
-          organization: a.organization,
+          organization: a.organization || undefined,
           verified: !!verification,
           verifierEmail: verification?.verifier?.email || null,
           hoursPerWeek: a.hoursPerWeek,
           totalHours: a.totalHours,
-          notes: a.studentNotes,
+          notes: a.studentNotes || a.notes || undefined,
         };
       }),
   ].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
@@ -346,9 +353,7 @@ export default function DashboardPage() {
                 <span className="text-xl font-bold text-gray-900">Actify</span>
               </Link>
               <div className="h-6 w-px bg-gray-300 mx-2"></div>
-              <span className="text-sm text-gray-500">
-                {isVerifier ? "Verifier Portal" : "Student Portal"}
-              </span>
+              <span className="text-sm text-gray-500">Student Portal</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-3 pr-4 border-r border-gray-200">
@@ -365,12 +370,20 @@ export default function DashboardPage() {
                 )}
               </div>
               {isStudent && (
-                <Link
-                  href="/clubs"
-                  className="px-4 py-2 text-sm font-medium text-blue-700 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
-                >
-                  Clubs
-                </Link>
+                <>
+                  <Link
+                    href="/clubs"
+                    className="px-4 py-2 text-sm font-medium text-blue-700 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    Clubs
+                  </Link>
+                  <Link
+                    href="/organizations"
+                    className="px-4 py-2 text-sm font-medium text-green-700 hover:text-green-900 hover:bg-green-50 rounded-lg transition-colors"
+                  >
+                    Organizations
+                  </Link>
+                </>
               )}
               <Link
                 href="/profile"
@@ -396,9 +409,7 @@ export default function DashboardPage() {
             Welcome back, {session.user.name?.split(" ")[0] || "there"}!
           </h1>
           <p className="text-gray-600">
-            {isVerifier 
-              ? "Review and verify student activity submissions" 
-              : "Manage your activities and track verification status"}
+            Manage your activities, track verification status, and submit organizations for approval.
           </p>
         </div>
 
@@ -1712,7 +1723,7 @@ function ActivityForm({
 
       // Update the activity state if this was a new activity
       if (!activity && data.activity) {
-        setEditingActivity(data.activity);
+        onActivityCreated?.(data.activity);
       }
 
       onSuccess();

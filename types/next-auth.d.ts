@@ -7,7 +7,7 @@ declare module "next-auth" {
       id: string;
       email: string;
       name: string;
-      role: string; // "student" | "verifier" | "admin"
+      role: string; // "student" | "admin"
       image?: string;
     };
   }
