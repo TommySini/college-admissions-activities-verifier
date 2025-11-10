@@ -364,6 +364,14 @@ export default function DashboardPage() {
                   />
                 )}
               </div>
+              {isStudent && (
+                <Link
+                  href="/clubs"
+                  className="px-4 py-2 text-sm font-medium text-blue-700 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
+                >
+                  Clubs
+                </Link>
+              )}
               <Link
                 href="/profile"
                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
