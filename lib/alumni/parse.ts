@@ -1,4 +1,3 @@
-import * as pdfParse from "pdf-parse";
 import mammoth from "mammoth";
 import { readFile } from "fs/promises";
 import OpenAI from "openai";
@@ -41,8 +40,10 @@ interface ParsedData {
 async function extractText(filePath: string, mimeType: string): Promise<string> {
   try {
     if (mimeType === "application/pdf") {
+      // Use dynamic import for pdf-parse to handle ESM issues
+      const pdfParse = (await import("pdf-parse")).default;
       const dataBuffer = await readFile(filePath);
-      const data = await (pdfParse as any).default(dataBuffer);
+      const data = await pdfParse(dataBuffer);
       return data.text;
     } else if (
       mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
