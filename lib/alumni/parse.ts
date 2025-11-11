@@ -40,9 +40,20 @@ interface ParsedData {
 async function extractText(filePath: string, mimeType: string): Promise<string> {
   try {
     if (mimeType === "application/pdf") {
-      // TODO: PDF parsing has ESM compatibility issues with Next.js
-      // For now, recommend users convert to TXT or DOCX
-      throw new Error("PDF parsing is temporarily unavailable. Please upload a TXT or DOCX file instead.");
+      // Use pdfjs-dist for PDF parsing
+      const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+      const dataBuffer = await readFile(filePath);
+      const loadingTask = pdfjsLib.getDocument({ data: dataBuffer });
+      const pdf = await loadingTask.promise;
+      
+      let fullText = "";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((item: any) => item.str).join(" ");
+        fullText += pageText + "\n";
+      }
+      return fullText;
     } else if (
       mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
       mimeType === "application/msword"

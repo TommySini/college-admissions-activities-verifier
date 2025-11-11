@@ -310,11 +310,8 @@ export default function UploadApplicationPage() {
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Upload Your Application File</h2>
             <p className="text-gray-600 mb-6">
-              Upload your college admissions document (DOCX or TXT recommended). Our AI will extract activities, essays, and results.
+              Upload your college admissions document (PDF, DOCX, or TXT). Our AI will extract activities, essays, and results.
             </p>
-            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
-              <strong>Note:</strong> PDF support is temporarily unavailable. Please upload a TXT or DOCX file for best results.
-            </div>
 
             <div className="mb-6">
               <label className="block w-full">
