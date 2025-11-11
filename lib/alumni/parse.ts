@@ -40,31 +40,12 @@ interface ParsedData {
 async function extractText(filePath: string, mimeType: string): Promise<string> {
   try {
     if (mimeType === "application/pdf") {
-      // Use pdfjs-dist for PDF parsing
-      const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
-      
-      // Disable worker for server-side usage
-      pdfjsLib.GlobalWorkerOptions.workerSrc = "";
-      
-      const dataBuffer = await readFile(filePath);
-      // Convert Buffer to Uint8Array
-      const uint8Array = new Uint8Array(dataBuffer);
-      const loadingTask = pdfjsLib.getDocument({ 
-        data: uint8Array,
-        useWorkerFetch: false,
-        isEvalSupported: false,
-        useSystemFonts: true,
-      });
-      const pdf = await loadingTask.promise;
-      
-      let fullText = "";
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items.map((item: any) => item.str).join(" ");
-        fullText += pageText + "\n";
-      }
-      return fullText;
+      // PDF parsing is complex in Next.js server environment
+      // Recommend converting to TXT or DOCX for now
+      throw new Error(
+        "PDF parsing requires additional setup. Please convert your PDF to TXT or DOCX format. " +
+        "You can do this by opening the PDF and using 'Save As' → 'Plain Text' or 'Word Document'."
+      );
     } else if (
       mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
       mimeType === "application/msword"
