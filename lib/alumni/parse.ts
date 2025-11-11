@@ -1,4 +1,4 @@
-import pdf from "pdf-parse";
+import * as pdfParse from "pdf-parse";
 import mammoth from "mammoth";
 import { readFile } from "fs/promises";
 import OpenAI from "openai";
@@ -42,7 +42,7 @@ async function extractText(filePath: string, mimeType: string): Promise<string> 
   try {
     if (mimeType === "application/pdf") {
       const dataBuffer = await readFile(filePath);
-      const data = await pdf(dataBuffer);
+      const data = await (pdfParse as any).default(dataBuffer);
       return data.text;
     } else if (
       mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
