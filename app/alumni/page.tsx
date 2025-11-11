@@ -295,19 +295,24 @@ function ProfileCard({ profile }: { profile: Profile }) {
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-all">
-      {/* Header Info */}
-      <div className="mb-6">
-        <div className="flex items-center gap-2 mb-2">
-          <h3 className="text-lg font-semibold text-gray-900">
-            {profile.displayName || "Anonymous Alumni"}
-          </h3>
-          {getPrivacyBadge()}
-        </div>
+      {/* Folder - Centered and Larger */}
+      <div 
+        className="flex justify-center mb-6 cursor-pointer"
+        onClick={() => router.push(`/alumni/${application.id}`)}
+      >
+        <Folder color="#5227FF" size={2.5} items={paperItems} />
+      </div>
+
+      {/* Profile Info Below Folder */}
+      <div className="mb-4 text-center">
+        <h3 className="text-lg font-semibold text-gray-900 mb-1">
+          {profile.displayName || "Anonymous Alumni"}
+        </h3>
         {profile.intendedMajor && (
           <p className="text-sm text-gray-600 mb-2">{profile.intendedMajor}</p>
         )}
         {profile.careerInterestTags.length > 0 && (
-          <div className="flex gap-1 flex-wrap">
+          <div className="flex gap-1 flex-wrap justify-center">
             {profile.careerInterestTags.slice(0, 3).map((tag) => (
               <span key={tag} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-md">
                 {tag}
@@ -315,14 +320,6 @@ function ProfileCard({ profile }: { profile: Profile }) {
             ))}
           </div>
         )}
-      </div>
-
-      {/* Folder - Centered and Larger */}
-      <div 
-        className="flex justify-center mb-6 cursor-pointer"
-        onClick={() => router.push(`/alumni/${application.id}`)}
-      >
-        <Folder color="#5227FF" size={2.5} items={paperItems} />
       </div>
 
       {/* Preview on Hover */}
