@@ -20,10 +20,16 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  verifiedActivities   Verification[] @relation("VerifierVerifications")
-  studentActivities    Verification[] @relation("StudentVerifications")
-  activities           Activity[]
-  organizationsCreated Organization[] @relation("OrganizationCreator")
+  verifiedActivities     Verification[]              @relation("VerifierVerifications")
+  studentActivities      Verification[]              @relation("StudentVerifications")
+  activities             Activity[]
+  organizationsCreated   Organization[]              @relation("OrganizationCreator")
+  opportunitiesPosted    VolunteeringOpportunity[]   @relation("OpportunityPoster")
+  opportunitiesApproved  VolunteeringOpportunity[]   @relation("OpportunityApprover")
+  participations         VolunteeringParticipation[] @relation("StudentParticipations")
+  verifiedParticipations VolunteeringParticipation[] @relation("ParticipationVerifier")
+  studentGoals           VolunteeringGoal[]          @relation("StudentGoals")
+  createdGoals           VolunteeringGoal[]          @relation("GoalCreator")
 
   @@map("users")
 }
@@ -67,8 +73,9 @@ model Activity {
   updatedAt       DateTime @updatedAt
 
   // Relations
-  student      User          @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  verification Verification?
+  student                   User                       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  verification              Verification?
+  volunteeringParticipation VolunteeringParticipation?
 
   @@map("activities")
 }
@@ -93,7 +100,121 @@ model Organization {
   updatedAt     DateTime           @updatedAt
   createdById   String
 
-  createdBy User @relation("OrganizationCreator", fields: [createdById], references: [id])
+  createdBy                 User                      @relation("OrganizationCreator", fields: [createdById], references: [id])
+  volunteeringOpportunities VolunteeringOpportunity[]
 
   @@map("organizations")
+}
+
+model VolunteeringOpportunity {
+  id             String  @id @default(cuid())
+  title          String
+  description    String
+  organization   String // Organization name
+  organizationId String? // Optional link to Organization model
+  category       String // e.g., "Environment", "Education", "Healthcare", etc.
+  location       String? // City, address, or "Remote"
+  isOnline       Boolean @default(false) // Strictly online opportunity
+  contactEmail   String?
+  contactPhone   String?
+  website        String?
+
+  // Time & Commitment
+  startDate       DateTime
+  endDate         DateTime?
+  isOngoing       Boolean   @default(false)
+  hoursPerSession Float?
+  totalHours      Float?
+  commitmentLevel String? // "Low", "Medium", "High"
+
+  // Requirements
+  ageRequirement String? // e.g., "16+", "18+"
+  skillsRequired String? // Comma-separated or JSON
+  maxVolunteers  Int?
+
+  // Status & Approval
+  status       String  @default("pending") // "pending", "approved", "rejected", "archived"
+  postedById   String // User who posted (student, club, admin)
+  approvedById String? // Admin who approved
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  postedBy        User                        @relation("OpportunityPoster", fields: [postedById], references: [id])
+  approvedBy      User?                       @relation("OpportunityApprover", fields: [approvedById], references: [id])
+  organizationRef Organization?               @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  participations  VolunteeringParticipation[]
+
+  @@map("volunteering_opportunities")
+}
+
+model VolunteeringParticipation {
+  id            String  @id @default(cuid())
+  opportunityId String? // Nullable for manual logs
+  studentId     String
+  activityId    String? @unique // Link to Activity model (if logged as activity)
+
+  // Participation Details
+  startDate    DateTime
+  endDate      DateTime?
+  totalHours   Float
+  hoursPerWeek Float?
+  status       String    @default("active") // "active", "completed", "cancelled"
+
+  // Manual Log Fields (for past hours logging)
+  isManualLog         Boolean @default(false)
+  organizationName    String? // For manual logs
+  activityName        String? // For manual logs
+  activityDescription String? // For manual logs
+  serviceSheetUrl     String? // URL to uploaded service sheet
+
+  // Verification
+  verified          Boolean   @default(false)
+  verifiedBy        String? // User ID of verifier
+  verifiedAt        DateTime?
+  verificationNotes String?
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  opportunity VolunteeringOpportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  student     User                     @relation("StudentParticipations", fields: [studentId], references: [id], onDelete: Cascade)
+  activity    Activity?                @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  verifier    User?                    @relation("ParticipationVerifier", fields: [verifiedBy], references: [id], onDelete: SetNull)
+
+  @@map("volunteering_participations")
+}
+
+model Settings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model VolunteeringGoal {
+  id          String    @id @default(cuid())
+  studentId   String // Student the goal is for
+  createdById String // Who created the goal (student, admin, or club president)
+  goalType    String    @default("personal") // "personal", "admin_assigned", "club_recommended"
+  targetHours Float // Target hours to reach
+  targetDate  DateTime? // Optional target date
+  description String? // Optional description/notes
+  status      String    @default("active") // "active", "completed", "cancelled"
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  student   User @relation("StudentGoals", fields: [studentId], references: [id], onDelete: Cascade)
+  createdBy User @relation("GoalCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@map("volunteering_goals")
 }
