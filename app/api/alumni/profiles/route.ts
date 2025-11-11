@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     const where: any = {};
 
     if (major) {
-      where.intendedMajor = { contains: major, mode: "insensitive" };
+      where.intendedMajor = { contains: major };
     }
 
     if (tags) {
