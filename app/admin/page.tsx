@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useColors } from "../context/ColorContext";
 
 interface Student {
   id: string;
@@ -59,7 +60,7 @@ interface Analytics {
   totalOrganizations: number;
 }
 
-type Tab = "dashboard" | "analytics" | "organizations" | "export";
+type Tab = "dashboard" | "analytics" | "organizations" | "export" | "settings";
 
 export default function AdminDashboardPage() {
   const { data: session, status } = useSession();
@@ -75,6 +76,9 @@ export default function AdminDashboardPage() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [organizationsLoading, setOrganizationsLoading] = useState(true);
   const [organizationActionId, setOrganizationActionId] = useState<string | null>(null);
+  const [studentParticipations, setStudentParticipations] = useState<any[]>([]);
+  const [participationsLoading, setParticipationsLoading] = useState(false);
+  const [selectedParticipation, setSelectedParticipation] = useState<any | null>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -188,6 +192,21 @@ export default function AdminDashboardPage() {
       setAnalytics(data);
     } catch (error) {
       console.error("Error fetching analytics:", error);
+    }
+  };
+
+  const fetchStudentParticipations = async (studentId: string) => {
+    try {
+      setParticipationsLoading(true);
+      const response = await fetch(`/api/admin/students/${studentId}/participations`);
+      const data = await response.json();
+      if (response.ok) {
+        setStudentParticipations(data.participations || []);
+      }
+    } catch (error) {
+      console.error("Error fetching student participations:", error);
+    } finally {
+      setParticipationsLoading(false);
     }
   };
 
@@ -336,6 +355,16 @@ export default function AdminDashboardPage() {
                 }`}
               >
                 Export
+              </button>
+              <button
+                onClick={() => setActiveTab("settings")}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === "settings"
+                    ? "bg-blue-50 text-blue-700 border border-blue-200"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                }`}
+              >
+                Settings
               </button>
             </div>
 
@@ -543,6 +572,7 @@ export default function AdminDashboardPage() {
                               onClick={() => {
                                 setSelectedStudent(student);
                                 setShowProfileModal(true);
+                                fetchStudentParticipations(student.id);
                               }}
                               className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
                             >
@@ -896,6 +926,8 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         )}
+
+        {activeTab === "settings" && <SettingsTab />}
       </div>
 
       {/* Student Profile Modal */}
@@ -968,7 +1000,7 @@ export default function AdminDashboardPage() {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 Activities
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-4 mb-8">
                 {selectedStudent.activities.length === 0 ? (
                   <p className="text-gray-500 text-center py-8">
                     No activities found
@@ -1042,10 +1074,402 @@ export default function AdminDashboardPage() {
                   ))
                 )}
               </div>
+
+              {/* Volunteering Participations */}
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Volunteering Hours
+              </h3>
+              {participationsLoading ? (
+                <p className="text-gray-500 text-center py-8">Loading...</p>
+              ) : (
+                <div className="space-y-4">
+                  {studentParticipations.length === 0 ? (
+                    <p className="text-gray-500 text-center py-8">
+                      No volunteering hours logged
+                    </p>
+                  ) : (
+                    studentParticipations.map((participation) => (
+                      <div
+                        key={participation.id}
+                        className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow cursor-pointer"
+                        onClick={() => setSelectedParticipation(participation)}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-900">
+                              {participation.isManualLog
+                                ? participation.activityName || "Manual Log"
+                                : participation.opportunity?.title || "Unknown Opportunity"}
+                            </h4>
+                            <p className="text-sm text-gray-600 mt-1">
+                              {participation.isManualLog
+                                ? participation.organizationName || "N/A"
+                                : participation.opportunity?.organization || "N/A"}
+                            </p>
+                            {participation.isManualLog && participation.activityDescription && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                {participation.activityDescription}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <span className="px-2.5 py-1 text-xs font-medium rounded bg-blue-100 text-blue-700">
+                              {participation.totalHours}h
+                            </span>
+                            <span
+                              className={`px-2.5 py-1 text-xs font-medium rounded ${
+                                participation.status === "completed"
+                                  ? "bg-green-100 text-green-700"
+                                  : participation.status === "cancelled"
+                                  ? "bg-red-100 text-red-700"
+                                  : "bg-amber-100 text-amber-700"
+                              }`}
+                            >
+                              {participation.status}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mt-3 text-sm">
+                          <div>
+                            <span className="text-gray-600">Dates: </span>
+                            <span className="font-medium text-gray-900">
+                              {new Date(participation.startDate).toLocaleDateString()}
+                              {participation.endDate &&
+                                ` - ${new Date(participation.endDate).toLocaleDateString()}`}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Type: </span>
+                            <span className="font-medium text-gray-900">
+                              {participation.isManualLog ? "Manual Log" : "Opportunity"}
+                            </span>
+                          </div>
+                          {participation.serviceSheetUrl && (
+                            <div className="col-span-2">
+                              <span className="text-gray-600">Service Sheet: </span>
+                              <a
+                                href={participation.serviceSheetUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                View/Download
+                              </a>
+                            </div>
+                          )}
+                          <div className="col-span-2">
+                            <span className="text-gray-600">Verified: </span>
+                            <span className="font-medium text-gray-900">
+                              {participation.verified ? "Yes" : "No"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
+
+      {/* Participation Detail Modal */}
+      {selectedParticipation && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setSelectedParticipation(null);
+            }
+          }}
+        >
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  {selectedParticipation.isManualLog
+                    ? selectedParticipation.activityName || "Manual Log"
+                    : selectedParticipation.opportunity?.title || "Volunteering Participation"}
+                </h2>
+                <p className="text-sm text-gray-600">
+                  {selectedParticipation.isManualLog
+                    ? selectedParticipation.organizationName || "N/A"
+                    : selectedParticipation.opportunity?.organization || "N/A"}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedParticipation(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div className="px-6 py-4 overflow-y-auto flex-1">
+              <div className="space-y-4">
+                <div>
+                  <span className="text-sm text-gray-600">Total Hours: </span>
+                  <span className="text-lg font-semibold text-gray-900">
+                    {selectedParticipation.totalHours}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-600">Status: </span>
+                  <span
+                    className={`px-2.5 py-1 text-xs font-medium rounded ${
+                      selectedParticipation.status === "completed"
+                        ? "bg-green-100 text-green-700"
+                        : selectedParticipation.status === "cancelled"
+                        ? "bg-red-100 text-red-700"
+                        : "bg-amber-100 text-amber-700"
+                    }`}
+                  >
+                    {selectedParticipation.status}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-600">Dates: </span>
+                  <span className="font-medium text-gray-900">
+                    {new Date(selectedParticipation.startDate).toLocaleDateString()}
+                    {selectedParticipation.endDate &&
+                      ` - ${new Date(selectedParticipation.endDate).toLocaleDateString()}`}
+                  </span>
+                </div>
+                {selectedParticipation.isManualLog && selectedParticipation.activityDescription && (
+                  <div>
+                    <span className="text-sm text-gray-600">Description: </span>
+                    <p className="text-gray-900 mt-1">{selectedParticipation.activityDescription}</p>
+                  </div>
+                )}
+                {selectedParticipation.serviceSheetUrl && (
+                  <div>
+                    <span className="text-sm text-gray-600">Service Sheet: </span>
+                    <div className="mt-2">
+                      <a
+                        href={selectedParticipation.serviceSheetUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                          />
+                        </svg>
+                        View/Download Service Sheet
+                      </a>
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <span className="text-sm text-gray-600">Verified: </span>
+                  <span className="font-medium text-gray-900">
+                    {selectedParticipation.verified ? "Yes" : "No"}
+                  </span>
+                  {selectedParticipation.verifier && (
+                    <div className="mt-1 text-sm text-gray-600">
+                      Verified by: {selectedParticipation.verifier.name} ({selectedParticipation.verifier.email})
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SettingsTab() {
+  const colors = useColors();
+  const [primaryColor, setPrimaryColor] = useState(colors.primary);
+  const [tertiaryColor, setTertiaryColor] = useState(colors.tertiary);
+  const [accentColor, setAccentColor] = useState(colors.accent);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  useEffect(() => {
+    setPrimaryColor(colors.primary);
+    setTertiaryColor(colors.tertiary);
+    setAccentColor(colors.accent);
+  }, [colors]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch("/api/settings/colors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          primary: primaryColor,
+          tertiary: tertiaryColor,
+          accent: accentColor,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({ type: "success", text: "Colors saved successfully! Refresh the page to see changes." });
+        // Reload to apply new colors
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        setMessage({ type: "error", text: data.error || "Failed to save colors" });
+      }
+    } catch (error) {
+      setMessage({ type: "error", text: "Failed to save colors. Please try again." });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto">
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">School Color Settings</h2>
+        <p className="text-gray-600">
+          Customize the color scheme for your school. These colors will be used throughout the site.
+        </p>
+      </div>
+
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 space-y-6">
+        {/* Primary Color */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Primary Color (Logo, Main Buttons)
+          </label>
+          <div className="flex items-center gap-4">
+            <input
+              type="color"
+              value={primaryColor}
+              onChange={(e) => setPrimaryColor(e.target.value)}
+              className="w-20 h-12 rounded-lg border border-gray-300 cursor-pointer"
+            />
+            <input
+              type="text"
+              value={primaryColor}
+              onChange={(e) => setPrimaryColor(e.target.value)}
+              placeholder="#7d95b9"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <div
+              className="w-12 h-12 rounded-lg border border-gray-300"
+              style={{ backgroundColor: primaryColor }}
+            />
+          </div>
+          <p className="text-xs text-gray-500 mt-1">Default: #7d95b9</p>
+        </div>
+
+        {/* Tertiary Color */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Tertiary Color (Secondary Elements)
+          </label>
+          <div className="flex items-center gap-4">
+            <input
+              type="color"
+              value={tertiaryColor}
+              onChange={(e) => setTertiaryColor(e.target.value)}
+              className="w-20 h-12 rounded-lg border border-gray-300 cursor-pointer"
+            />
+            <input
+              type="text"
+              value={tertiaryColor}
+              onChange={(e) => setTertiaryColor(e.target.value)}
+              placeholder="#a4c4e0"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <div
+              className="w-12 h-12 rounded-lg border border-gray-300"
+              style={{ backgroundColor: tertiaryColor }}
+            />
+          </div>
+          <p className="text-xs text-gray-500 mt-1">Default: #a4c4e0</p>
+        </div>
+
+        {/* Accent Color */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Accent Color (Rarely Used)
+          </label>
+          <div className="flex items-center gap-4">
+            <input
+              type="color"
+              value={accentColor}
+              onChange={(e) => setAccentColor(e.target.value)}
+              className="w-20 h-12 rounded-lg border border-gray-300 cursor-pointer"
+            />
+            <input
+              type="text"
+              value={accentColor}
+              onChange={(e) => setAccentColor(e.target.value)}
+              placeholder="#c2dcf2"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <div
+              className="w-12 h-12 rounded-lg border border-gray-300"
+              style={{ backgroundColor: accentColor }}
+            />
+          </div>
+          <p className="text-xs text-gray-500 mt-1">Default: #c2dcf2</p>
+        </div>
+
+        {/* Message */}
+        {message && (
+          <div
+            className={`p-4 rounded-lg ${
+              message.type === "success"
+                ? "bg-green-50 text-green-800 border border-green-200"
+                : "bg-red-50 text-red-800 border border-red-200"
+            }`}
+          >
+            {message.text}
+          </div>
+        )}
+
+        {/* Save Button */}
+        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? "Saving..." : "Save Colors"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
