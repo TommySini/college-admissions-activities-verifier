@@ -43,7 +43,9 @@ async function extractText(filePath: string, mimeType: string): Promise<string> 
       // Use pdfjs-dist for PDF parsing
       const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
       const dataBuffer = await readFile(filePath);
-      const loadingTask = pdfjsLib.getDocument({ data: dataBuffer });
+      // Convert Buffer to Uint8Array
+      const uint8Array = new Uint8Array(dataBuffer);
+      const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
       const pdf = await loadingTask.promise;
       
       let fullText = "";
