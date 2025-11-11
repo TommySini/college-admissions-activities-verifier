@@ -30,6 +30,7 @@ model User {
   verifiedParticipations VolunteeringParticipation[] @relation("ParticipationVerifier")
   studentGoals           VolunteeringGoal[]          @relation("StudentGoals")
   createdGoals           VolunteeringGoal[]          @relation("GoalCreator")
+  alumniProfile          AlumniProfile?
 
   @@map("users")
 }
@@ -217,4 +218,94 @@ model VolunteeringGoal {
   createdBy User @relation("GoalCreator", fields: [createdById], references: [id], onDelete: Cascade)
 
   @@map("volunteering_goals")
+}
+
+enum AlumniPrivacy {
+  ANONYMOUS
+  PSEUDONYM
+  FULL
+}
+
+model AlumniProfile {
+  id               String         @id @default(cuid())
+  userId           String         @unique
+  privacy          AlumniPrivacy  @default(ANONYMOUS)
+  displayName      String?
+  contactEmail     String?
+  intendedMajor    String?
+  careerInterestTags String?      // JSON string array
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  // Relations
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applications AlumniApplication[]
+
+  @@index([privacy])
+  @@map("alumni_profiles")
+}
+
+model AlumniApplication {
+  id              String   @id @default(cuid())
+  alumniId        String
+  sourceFileUrl   String
+  sourceFileMime  String
+  parseStatus     String   @default("pending") // "pending", "success", "failed"
+  parseError      String?
+  rawText         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  alumniProfile      AlumniProfile         @relation(fields: [alumniId], references: [id], onDelete: Cascade)
+  extractedActivities ExtractedActivity[]
+  extractedEssays    ExtractedEssay[]
+  admissionResults   AdmissionResult[]
+
+  @@map("alumni_applications")
+}
+
+model ExtractedActivity {
+  id            String  @id @default(cuid())
+  applicationId String
+  title         String
+  description   String?
+  role          String?
+  organization  String?
+  hours         Float?
+  years         String? // e.g., "9-12" or "11-12"
+
+  // Relations
+  application AlumniApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("extracted_activities")
+}
+
+model ExtractedEssay {
+  id            String  @id @default(cuid())
+  applicationId String
+  topic         String
+  prompt        String?
+  summary       String? // Short summary
+  tags          String? // JSON string array
+
+  // Relations
+  application AlumniApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("extracted_essays")
+}
+
+model AdmissionResult {
+  id            String  @id @default(cuid())
+  applicationId String
+  collegeName   String
+  decision      String  // "admit", "waitlist", "deny"
+  decisionRound String? // "ED", "EA", "RD"
+  rankBucket    String? // "top5", "top10", "other"
+
+  // Relations
+  application AlumniApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([rankBucket])
+  @@map("admission_results")
 }
