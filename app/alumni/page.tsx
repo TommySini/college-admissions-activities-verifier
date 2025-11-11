@@ -239,6 +239,7 @@ export default function AlumniDatabasePage() {
 
 function ProfileCard({ profile }: { profile: Profile }) {
   const router = useRouter();
+  const [hoveredPaper, setHoveredPaper] = useState<number | null>(null);
   const application = profile.applications[0]; // Show first application
 
   if (!application) return null;
@@ -258,41 +259,97 @@ function ProfileCard({ profile }: { profile: Profile }) {
 
   const topAdmit = application.results.find((r) => r.decision === "admit" && r.rankBucket === "top5");
 
+  // Create paper items with more detailed content
   const paperItems = [
-    <div key="1" className="p-1 text-[8px] text-gray-600">Activities: {application.activitiesCount}</div>,
-    <div key="2" className="p-1 text-[8px] text-gray-600">Essays: {application.essaysCount}</div>,
-    <div key="3" className="p-1 text-[8px] text-gray-600">Results: {application.resultsCount}</div>,
+    <div 
+      key="activities" 
+      className="p-3 text-xs flex flex-col items-center justify-center h-full"
+      onMouseEnter={() => setHoveredPaper(0)}
+      onMouseLeave={() => setHoveredPaper(null)}
+    >
+      <div className="font-bold text-blue-600 text-lg mb-1">📋</div>
+      <div className="font-semibold text-gray-800">Activities</div>
+      <div className="text-gray-500">{application.activitiesCount}</div>
+    </div>,
+    <div 
+      key="essays" 
+      className="p-3 text-xs flex flex-col items-center justify-center h-full"
+      onMouseEnter={() => setHoveredPaper(1)}
+      onMouseLeave={() => setHoveredPaper(null)}
+    >
+      <div className="font-bold text-purple-600 text-lg mb-1">✍️</div>
+      <div className="font-semibold text-gray-800">Essays</div>
+      <div className="text-gray-500">{application.essaysCount}</div>
+    </div>,
+    <div 
+      key="results" 
+      className="p-3 text-xs flex flex-col items-center justify-center h-full"
+      onMouseEnter={() => setHoveredPaper(2)}
+      onMouseLeave={() => setHoveredPaper(null)}
+    >
+      <div className="font-bold text-green-600 text-lg mb-1">🎓</div>
+      <div className="font-semibold text-gray-800">Results</div>
+      <div className="text-gray-500">{application.resultsCount}</div>
+    </div>,
   ];
 
   return (
-    <div
-      onClick={() => router.push(`/alumni/${application.id}`)}
-      className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-all cursor-pointer"
-    >
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-lg font-semibold text-gray-900">
-              {profile.displayName || "Anonymous Alumni"}
-            </h3>
-            {getPrivacyBadge()}
+    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-all">
+      {/* Header Info */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-2">
+          <h3 className="text-lg font-semibold text-gray-900">
+            {profile.displayName || "Anonymous Alumni"}
+          </h3>
+          {getPrivacyBadge()}
+        </div>
+        {profile.intendedMajor && (
+          <p className="text-sm text-gray-600 mb-2">{profile.intendedMajor}</p>
+        )}
+        {profile.careerInterestTags.length > 0 && (
+          <div className="flex gap-1 flex-wrap">
+            {profile.careerInterestTags.slice(0, 3).map((tag) => (
+              <span key={tag} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-md">
+                {tag}
+              </span>
+            ))}
           </div>
-          {profile.intendedMajor && (
-            <p className="text-sm text-gray-600 mb-2">{profile.intendedMajor}</p>
+        )}
+      </div>
+
+      {/* Folder - Centered and Larger */}
+      <div 
+        className="flex justify-center mb-6 cursor-pointer"
+        onClick={() => router.push(`/alumni/${application.id}`)}
+      >
+        <Folder color="#5227FF" size={2.5} items={paperItems} />
+      </div>
+
+      {/* Preview on Hover */}
+      {hoveredPaper !== null && (
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200 min-h-[60px]">
+          {hoveredPaper === 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-700 mb-1">📋 Activities Preview</p>
+              <p className="text-xs text-gray-600">{application.activitiesCount} extracurricular activities</p>
+            </div>
           )}
-          {profile.careerInterestTags.length > 0 && (
-            <div className="flex gap-1 flex-wrap mb-3">
-              {profile.careerInterestTags.slice(0, 3).map((tag) => (
-                <span key={tag} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-md">
-                  {tag}
-                </span>
-              ))}
+          {hoveredPaper === 1 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-700 mb-1">✍️ Essays Preview</p>
+              <p className="text-xs text-gray-600">{application.essaysCount} essay topics and summaries</p>
+            </div>
+          )}
+          {hoveredPaper === 2 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-700 mb-1">🎓 Results Preview</p>
+              <p className="text-xs text-gray-600">{application.resultsCount} college admission decisions</p>
             </div>
           )}
         </div>
-        <Folder color="#5227FF" size={1.2} items={paperItems} />
-      </div>
+      )}
 
+      {/* Top Admit Badge */}
       {topAdmit && (
         <div className="mb-3 p-2 bg-purple-50 border border-purple-200 rounded-lg">
           <p className="text-xs font-medium text-purple-900">🎉 Top 5 Admit</p>
@@ -300,9 +357,13 @@ function ProfileCard({ profile }: { profile: Profile }) {
         </div>
       )}
 
-      <div className="text-xs text-gray-500">
-        <p>{application.activitiesCount} activities • {application.essaysCount} essays • {application.resultsCount} results</p>
-      </div>
+      {/* Click to View */}
+      <button
+        onClick={() => router.push(`/alumni/${application.id}`)}
+        className="w-full px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+      >
+        View Full Application
+      </button>
     </div>
   );
 }
