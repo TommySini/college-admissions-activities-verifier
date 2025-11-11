@@ -5,46 +5,36 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-type ClubCategory =
-  | "Academic"
-  | "Arts"
-  | "Community Service"
-  | "Culture & Identity"
-  | "Leadership"
-  | "STEM"
-  | "Wellness"
-  | "Athletics";
+type OrganizationStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 interface Club {
   id: string;
   name: string;
-  category: ClubCategory;
-  description: string;
-  meetingSchedule: string;
-  location: string;
-  advisor: string;
-  contactEmail: string;
-  highlights?: string[];
+  description?: string | null;
+  category?: string | null;
+  leadership?: string | null;
+  presidentName?: string | null;
+  isSchoolClub: boolean;
+  contactEmail?: string | null;
+  status: OrganizationStatus;
+  createdAt: string;
+  updatedAt: string;
 }
 
-const CLUBS: Club[] = [];
-
-const CATEGORY_LABELS: Record<ClubCategory, string> = {
-  Academic: "Academic",
-  Arts: "Arts",
-  "Community Service": "Community Service",
-  "Culture & Identity": "Culture & Identity",
-  Leadership: "Leadership",
-  STEM: "STEM",
-  Wellness: "Wellness",
-  Athletics: "Athletics",
+const statusStyles: Record<OrganizationStatus, string> = {
+  PENDING: "bg-amber-100 text-amber-700 border border-amber-200",
+  APPROVED: "bg-green-100 text-green-700 border border-green-200",
+  REJECTED: "bg-red-100 text-red-700 border border-red-200",
 };
 
 export default function ClubsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [clubs, setClubs] = useState<Club[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState<ClubCategory | "All">("All");
+  const [activeCategory, setActiveCategory] = useState<string>("All");
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -62,28 +52,65 @@ export default function ClubsPage() {
     }
   }, [router, session]);
 
+  useEffect(() => {
+    if (session) {
+      fetchClubs();
+    }
+  }, [session]);
+
+  const fetchClubs = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/clubs");
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Failed to load clubs");
+        return;
+      }
+
+      setClubs(data.clubs || []);
+    } catch (err) {
+      console.error("Error loading clubs:", err);
+      setError("Failed to load clubs");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Extract unique categories from clubs data
+  const categories = useMemo(() => {
+    const uniqueCategories = new Set<string>();
+    clubs.forEach((club) => {
+      if (club.category && club.category.trim()) {
+        uniqueCategories.add(club.category.trim());
+      }
+    });
+    return Array.from(uniqueCategories).sort();
+  }, [clubs]);
+
   const filteredClubs = useMemo(() => {
-    let clubs = CLUBS;
+    let filtered = clubs;
 
     if (activeCategory !== "All") {
-      clubs = clubs.filter((club) => club.category === activeCategory);
+      filtered = filtered.filter((club) => club.category === activeCategory);
     }
 
     if (search.trim()) {
       const query = search.toLowerCase();
-      clubs = clubs.filter(
+      filtered = filtered.filter(
         (club) =>
           club.name.toLowerCase().includes(query) ||
-          club.description.toLowerCase().includes(query) ||
-          club.advisor.toLowerCase().includes(query) ||
-          club.highlights?.some((item) => item.toLowerCase().includes(query))
+          club.description?.toLowerCase().includes(query) ||
+          club.leadership?.toLowerCase().includes(query) ||
+          club.presidentName?.toLowerCase().includes(query)
       );
     }
 
-    return clubs;
-  }, [activeCategory, search]);
+    return filtered;
+  }, [clubs, activeCategory, search]);
 
-  if (status === "loading") {
+  if (status === "loading" || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <p className="text-gray-500">Loading your student portal…</p>
@@ -171,6 +198,12 @@ export default function ClubsPage() {
           </div>
         </header>
 
+        {error && (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
         {/* Search & Filters */}
         <section className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 mb-10">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
@@ -197,7 +230,7 @@ export default function ClubsPage() {
                   type="text"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Try “Robotics”, “Service”, or “Leadership”"
+                  placeholder="Try 'Robotics', 'Service', or 'Leadership'"
                   className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 text-sm text-slate-700 placeholder:text-slate-400"
                 />
               </div>
@@ -216,18 +249,18 @@ export default function ClubsPage() {
                 >
                   All Clubs
                 </button>
-                {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                {categories.map((category) => (
                   <button
-                    key={key}
+                    key={category}
                     type="button"
-                    onClick={() => setActiveCategory(key as ClubCategory)}
+                    onClick={() => setActiveCategory(category)}
                     className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
-                      activeCategory === key
+                      activeCategory === category
                         ? "bg-blue-600 text-white border-blue-600"
                         : "bg-white text-slate-600 border-slate-300 hover:bg-slate-100"
                     }`}
                   >
-                    {label}
+                    {category}
                   </button>
                 ))}
               </div>
@@ -280,117 +313,85 @@ export default function ClubsPage() {
                 >
                   <div className="p-6 flex flex-col gap-4 h-full">
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-xs uppercase tracking-wide font-semibold text-blue-600">
-                          {club.category}
-                        </p>
+                      <div className="flex-1">
+                        {club.category && (
+                          <p className="text-xs uppercase tracking-wide font-semibold text-blue-600">
+                            {club.category}
+                          </p>
+                        )}
                         <h3 className="text-xl font-semibold text-slate-900 mt-1">{club.name}</h3>
                       </div>
-                      <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-medium border border-blue-100">
-                        {club.meetingSchedule.split("•")[0].trim()}
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${statusStyles[club.status]}`}>
+                        {club.status.charAt(0) + club.status.slice(1).toLowerCase()}
                       </span>
                     </div>
 
-                    <p className="text-sm text-slate-600 leading-relaxed">{club.description}</p>
+                    <p className="text-sm text-slate-600 leading-relaxed">
+                      {club.description || "No description provided."}
+                    </p>
 
-                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-600 space-y-2">
-                      <div className="flex items-start gap-3">
-                        <span className="text-slate-400 mt-0.5">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
-                            className="w-5 h-5"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M8.625 12.75h6.75m-6.75 3H12m3.75-9H12m-9 .375v12.75c0 1.012.818 1.83 1.83 1.83h12.75c1.012 0 1.83-.818 1.83-1.83V6.375c0-1.012-.818-1.83-1.83-1.83H4.83c-1.012 0-1.83.818-1.83 1.83z"
-                            />
-                          </svg>
-                        </span>
-                        <div>
-                          <p className="font-medium text-slate-900">Meeting Times</p>
-                          <p>{club.meetingSchedule}</p>
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-600 space-y-3">
+                      {club.leadership && (
+                        <div className="flex items-start gap-3">
+                          <span className="text-slate-400 mt-0.5">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth={1.5}
+                              stroke="currentColor"
+                              className="w-5 h-5"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
+                              />
+                            </svg>
+                          </span>
+                          <div>
+                            <p className="font-medium text-slate-900">Leadership & Advisor</p>
+                            <p>{club.leadership}</p>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <span className="text-slate-400 mt-0.5">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
-                            className="w-5 h-5"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M12 7.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M12 3v4.5M12 16.5V21M3 12h4.5M16.5 12H21M5.636 5.636l3.182 3.182M15.182 15.182l3.182 3.182M5.636 18.364l3.182-3.182M15.182 8.818l3.182-3.182"
-                            />
-                          </svg>
-                        </span>
-                        <div>
-                          <p className="font-medium text-slate-900">Advisor</p>
-                          <p>{club.advisor}</p>
+                      )}
+                      {club.presidentName && (
+                        <div className="flex items-start gap-3">
+                          <span className="text-slate-400 mt-0.5">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth={1.5}
+                              stroke="currentColor"
+                              className="w-5 h-5"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                              />
+                            </svg>
+                          </span>
+                          <div>
+                            <p className="font-medium text-slate-900">President / Lead</p>
+                            <p>{club.presidentName}</p>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <span className="text-slate-400 mt-0.5">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
-                            className="w-5 h-5"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M19.5 10.5c0 7.456-7.5 11.25-7.5 11.25S4.5 17.956 4.5 10.5a7.5 7.5 0 1115 0z"
-                            />
-                          </svg>
-                        </span>
-                        <div>
-                          <p className="font-medium text-slate-900">Location</p>
-                          <p>{club.location}</p>
-                        </div>
-                      </div>
+                      )}
                     </div>
 
                     <div className="mt-auto">
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {club.highlights?.map((highlight) => (
-                          <span
-                            key={highlight}
-                            className="inline-flex items-center px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-medium"
-                          >
-                            {highlight}
-                          </span>
-                        ))}
-                      </div>
-                      <a
-                        href={`mailto:${club.contactEmail}?subject=${encodeURIComponent(
-                          `Interested in ${club.name}`
-                        )}`}
-                        className="inline-flex items-center justify-center w-full px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
-                      >
-                        Contact Club Leaders
-                      </a>
+                      {club.contactEmail && (
+                        <a
+                          href={`mailto:${club.contactEmail}?subject=${encodeURIComponent(
+                            `Interested in ${club.name}`
+                          )}`}
+                          className="inline-flex items-center justify-center w-full px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
+                        >
+                          Contact Club Leaders
+                        </a>
+                      )}
                     </div>
                   </div>
                 </article>
@@ -416,5 +417,3 @@ export default function ClubsPage() {
     </div>
   );
 }
-
-
