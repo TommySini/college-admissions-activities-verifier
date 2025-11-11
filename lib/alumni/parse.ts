@@ -41,7 +41,8 @@ async function extractText(filePath: string, mimeType: string): Promise<string> 
   try {
     if (mimeType === "application/pdf") {
       // Use dynamic import for pdf-parse to handle ESM issues
-      const pdfParse = (await import("pdf-parse")).default;
+      const pdfParseModule = await import("pdf-parse");
+      const pdfParse = pdfParseModule.default || pdfParseModule;
       const dataBuffer = await readFile(filePath);
       const data = await pdfParse(dataBuffer);
       return data.text;
