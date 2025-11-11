@@ -42,10 +42,19 @@ async function extractText(filePath: string, mimeType: string): Promise<string> 
     if (mimeType === "application/pdf") {
       // Use pdfjs-dist for PDF parsing
       const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+      
+      // Disable worker for server-side usage
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+      
       const dataBuffer = await readFile(filePath);
       // Convert Buffer to Uint8Array
       const uint8Array = new Uint8Array(dataBuffer);
-      const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
+      const loadingTask = pdfjsLib.getDocument({ 
+        data: uint8Array,
+        useWorkerFetch: false,
+        isEvalSupported: false,
+        useSystemFonts: true,
+      });
       const pdf = await loadingTask.promise;
       
       let fullText = "";
