@@ -294,17 +294,17 @@ function ProfileCard({ profile }: { profile: Profile }) {
   ];
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-all">
-      {/* Folder - Centered and Larger */}
-      <div 
-        className="flex justify-center mb-6 cursor-pointer"
-        onClick={() => router.push(`/alumni/${application.id}`)}
-      >
+    <div 
+      className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-lg transition-all cursor-pointer"
+      onClick={() => router.push(`/alumni/${application.id}`)}
+    >
+      {/* Folder - Centered */}
+      <div className="flex justify-center mb-6">
         <Folder color="#5227FF" size={2.5} items={paperItems} />
       </div>
 
       {/* Profile Info Below Folder */}
-      <div className="mb-4 text-center">
+      <div className="text-center">
         <h3 className="text-lg font-semibold text-gray-900 mb-1">
           {profile.displayName || "Anonymous Alumni"}
         </h3>
@@ -312,7 +312,7 @@ function ProfileCard({ profile }: { profile: Profile }) {
           <p className="text-sm text-gray-600 mb-2">{profile.intendedMajor}</p>
         )}
         {profile.careerInterestTags.length > 0 && (
-          <div className="flex gap-1 flex-wrap justify-center">
+          <div className="flex gap-1 flex-wrap justify-center mb-3">
             {profile.careerInterestTags.slice(0, 3).map((tag) => (
               <span key={tag} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-md">
                 {tag}
@@ -320,47 +320,20 @@ function ProfileCard({ profile }: { profile: Profile }) {
             ))}
           </div>
         )}
+
+        {/* Top Admit Badge */}
+        {topAdmit && (
+          <div className="mb-3 p-2 bg-purple-50 border border-purple-200 rounded-lg inline-block">
+            <p className="text-xs font-medium text-purple-900">🎉 Top 5 Admit</p>
+            <p className="text-xs text-purple-700">{topAdmit.collegeName}</p>
+          </div>
+        )}
+
+        {/* Stats */}
+        <div className="text-xs text-gray-500 mt-2">
+          {application.activitiesCount} activities • {application.essaysCount} essays • {application.resultsCount} results
+        </div>
       </div>
-
-      {/* Preview on Hover */}
-      {hoveredPaper !== null && (
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200 min-h-[60px]">
-          {hoveredPaper === 0 && (
-            <div>
-              <p className="text-xs font-semibold text-gray-700 mb-1">📋 Activities Preview</p>
-              <p className="text-xs text-gray-600">{application.activitiesCount} extracurricular activities</p>
-            </div>
-          )}
-          {hoveredPaper === 1 && (
-            <div>
-              <p className="text-xs font-semibold text-gray-700 mb-1">✍️ Essays Preview</p>
-              <p className="text-xs text-gray-600">{application.essaysCount} essay topics and summaries</p>
-            </div>
-          )}
-          {hoveredPaper === 2 && (
-            <div>
-              <p className="text-xs font-semibold text-gray-700 mb-1">🎓 Results Preview</p>
-              <p className="text-xs text-gray-600">{application.resultsCount} college admission decisions</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Top Admit Badge */}
-      {topAdmit && (
-        <div className="mb-3 p-2 bg-purple-50 border border-purple-200 rounded-lg">
-          <p className="text-xs font-medium text-purple-900">🎉 Top 5 Admit</p>
-          <p className="text-xs text-purple-700">{topAdmit.collegeName}</p>
-        </div>
-      )}
-
-      {/* Click to View */}
-      <button
-        onClick={() => router.push(`/alumni/${application.id}`)}
-        className="w-full px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
-      >
-        View Full Application
-      </button>
     </div>
   );
 }
