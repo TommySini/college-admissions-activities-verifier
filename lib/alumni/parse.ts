@@ -40,12 +40,9 @@ interface ParsedData {
 async function extractText(filePath: string, mimeType: string): Promise<string> {
   try {
     if (mimeType === "application/pdf") {
-      // Use dynamic import for pdf-parse to handle ESM issues
-      const pdfParseModule = await import("pdf-parse");
-      const pdfParse = pdfParseModule.default || pdfParseModule;
-      const dataBuffer = await readFile(filePath);
-      const data = await pdfParse(dataBuffer);
-      return data.text;
+      // TODO: PDF parsing has ESM compatibility issues with Next.js
+      // For now, recommend users convert to TXT or DOCX
+      throw new Error("PDF parsing is temporarily unavailable. Please upload a TXT or DOCX file instead.");
     } else if (
       mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
       mimeType === "application/msword"
