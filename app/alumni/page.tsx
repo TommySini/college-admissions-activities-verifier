@@ -219,17 +219,16 @@ export default function AlumniDatabasePage() {
           {profiles.length} {profiles.length === 1 ? "profile" : "profiles"} found
         </p>
 
-        {/* Profiles Grid */}
+        {/* Profiles Grid - UI TO BE REDESIGNED */}
         {profiles.length === 0 ? (
           <div className="bg-white rounded-xl p-12 text-center border border-gray-200">
             <p className="text-gray-600 mb-2 font-medium">No profiles found</p>
             <p className="text-sm text-gray-500">Try adjusting your filters or be the first to upload!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {profiles.map((profile) => (
-              <ProfileCard key={profile.id} profile={profile} />
-            ))}
+          <div className="bg-white rounded-xl p-12 text-center border border-gray-200">
+            <p className="text-gray-600 mb-2 font-medium">{profiles.length} profiles ready to display</p>
+            <p className="text-sm text-gray-500">UI design in progress...</p>
           </div>
         )}
       </div>
@@ -237,104 +236,5 @@ export default function AlumniDatabasePage() {
   );
 }
 
-function ProfileCard({ profile }: { profile: Profile }) {
-  const router = useRouter();
-  const [hoveredPaper, setHoveredPaper] = useState<number | null>(null);
-  const application = profile.applications[0]; // Show first application
-
-  if (!application) return null;
-
-  const getPrivacyBadge = () => {
-    const colors = {
-      ANONYMOUS: "bg-gray-100 text-gray-700",
-      PSEUDONYM: "bg-blue-100 text-blue-700",
-      FULL: "bg-green-100 text-green-700",
-    };
-    return (
-      <span className={`px-2 py-1 text-xs rounded-md ${colors[profile.privacy as keyof typeof colors]}`}>
-        {profile.privacy}
-      </span>
-    );
-  };
-
-  const topAdmit = application.results.find((r) => r.decision === "admit" && r.rankBucket === "top5");
-
-  // Create paper items with more detailed content
-  const paperItems = [
-    <div 
-      key="activities" 
-      className="p-3 text-xs flex flex-col items-center justify-center h-full"
-      onMouseEnter={() => setHoveredPaper(0)}
-      onMouseLeave={() => setHoveredPaper(null)}
-    >
-      <div className="font-bold text-blue-600 text-lg mb-1">📋</div>
-      <div className="font-semibold text-gray-800">Activities</div>
-      <div className="text-gray-500">{application.activitiesCount}</div>
-    </div>,
-    <div 
-      key="essays" 
-      className="p-3 text-xs flex flex-col items-center justify-center h-full"
-      onMouseEnter={() => setHoveredPaper(1)}
-      onMouseLeave={() => setHoveredPaper(null)}
-    >
-      <div className="font-bold text-purple-600 text-lg mb-1">✍️</div>
-      <div className="font-semibold text-gray-800">Essays</div>
-      <div className="text-gray-500">{application.essaysCount}</div>
-    </div>,
-    <div 
-      key="results" 
-      className="p-3 text-xs flex flex-col items-center justify-center h-full"
-      onMouseEnter={() => setHoveredPaper(2)}
-      onMouseLeave={() => setHoveredPaper(null)}
-    >
-      <div className="font-bold text-green-600 text-lg mb-1">🎓</div>
-      <div className="font-semibold text-gray-800">Results</div>
-      <div className="text-gray-500">{application.resultsCount}</div>
-    </div>,
-  ];
-
-  return (
-    <div 
-      className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-lg transition-all cursor-pointer"
-      onClick={() => router.push(`/alumni/${application.id}`)}
-    >
-      {/* Folder - Centered */}
-      <div className="flex justify-center mb-6">
-        <Folder color="#5227FF" size={2.5} items={paperItems} />
-      </div>
-
-      {/* Profile Info Below Folder */}
-      <div className="text-center">
-        <h3 className="text-lg font-semibold text-gray-900 mb-1">
-          {profile.displayName || "Anonymous Alumni"}
-        </h3>
-        {profile.intendedMajor && (
-          <p className="text-sm text-gray-600 mb-2">{profile.intendedMajor}</p>
-        )}
-        {profile.careerInterestTags.length > 0 && (
-          <div className="flex gap-1 flex-wrap justify-center mb-3">
-            {profile.careerInterestTags.slice(0, 3).map((tag) => (
-              <span key={tag} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-md">
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Top Admit Badge */}
-        {topAdmit && (
-          <div className="mb-3 p-2 bg-purple-50 border border-purple-200 rounded-lg inline-block">
-            <p className="text-xs font-medium text-purple-900">🎉 Top 5 Admit</p>
-            <p className="text-xs text-purple-700">{topAdmit.collegeName}</p>
-          </div>
-        )}
-
-        {/* Stats */}
-        <div className="text-xs text-gray-500 mt-2">
-          {application.activitiesCount} activities • {application.essaysCount} essays • {application.resultsCount} results
-        </div>
-      </div>
-    </div>
-  );
-}
+// ProfileCard component removed - to be redesigned
 
