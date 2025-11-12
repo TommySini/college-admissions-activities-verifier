@@ -95,7 +95,7 @@ export default function VolunteeringPage() {
   const [completionParticipations, setCompletionParticipations] = useState<any[]>([]);
   const [showCompletionPrompt, setShowCompletionPrompt] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  const [chartTimeRange, setChartTimeRange] = useState<"1W" | "1M" | "6M" | "1Y" | "all">("1M");
+  const [chartTimeRange, setChartTimeRange] = useState<"1W" | "1M" | "6M" | "1Y" | "2Y" | "all">("1M");
   const [showLogHoursModal, setShowLogHoursModal] = useState(false);
   const [hoveredBarIndex, setHoveredBarIndex] = useState<number | null>(null);
   const [showActivityDetailModal, setShowActivityDetailModal] = useState(false);
@@ -729,8 +729,8 @@ export default function VolunteeringPage() {
 
               {/* Statistics Grid - 3 Boxes in Horizontal Row */}
               <div className="mb-6 w-full">
-                <div className="grid gap-2 w-full px-2 items-end" style={{ gridTemplateColumns: "1.25fr 1fr 1fr 1fr" }}>
-                  {/* Total Hours - 1.25x larger */}
+                <div className="grid gap-2 w-full px-2 items-end" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+                  {/* Total Hours */}
                   <div
                     className="flex items-center justify-center rounded-lg aspect-square min-w-0"
                     style={{ 
@@ -748,14 +748,12 @@ export default function VolunteeringPage() {
                     </div>
               </div>
 
-                  {/* Monthly Hours Bar Chart - Spans 2 columns */}
+                  {/* Monthly Hours Bar Chart */}
                   <div
-                    className="flex items-end justify-center rounded-lg min-w-0 p-2 relative"
+                    className="flex items-end justify-center rounded-lg min-w-0 p-2 relative aspect-square"
                         style={{
                       backgroundColor: colors.accent,
-                      boxShadow: "0 0 12px rgba(0, 0, 0, 0.2)",
-                      gridColumn: 'span 2',
-                      height: '100%'
+                      boxShadow: "0 0 12px rgba(0, 0, 0, 0.2)"
                     }}
                   >
                     {stats.monthlyHoursData.length > 0 ? (
@@ -940,6 +938,21 @@ export default function VolunteeringPage() {
                       }
                     >
                       1Y
+                    </button>
+                    <button
+                      onClick={() => setChartTimeRange("2Y")}
+                      className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                        chartTimeRange === "2Y"
+                          ? "text-white"
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                      style={
+                        chartTimeRange === "2Y"
+                          ? { backgroundColor: colors.primary, fontFamily: "'Nunito', sans-serif", boxShadow: "0 0 10px rgba(0, 0, 0, 0.2)" }
+                          : { backgroundColor: "transparent", fontFamily: "'Nunito', sans-serif" }
+                      }
+                    >
+                      2Y
                     </button>
                     <button
                       onClick={() => setChartTimeRange("all")}
