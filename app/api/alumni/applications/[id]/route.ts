@@ -26,6 +26,7 @@ function applyPrivacyFilter(application: any) {
       ...essay,
       tags: essay.tags ? JSON.parse(essay.tags) : [],
     })),
+    awards: application.extractedAwards,
     results: application.admissionResults,
   };
 
@@ -62,6 +63,7 @@ export async function GET(
         alumniProfile: true,
         extractedActivities: true,
         extractedEssays: true,
+        extractedAwards: true,
         admissionResults: true,
       },
     });
