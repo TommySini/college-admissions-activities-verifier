@@ -43,7 +43,6 @@ export async function POST(request: NextRequest) {
     
     const {
       organizationName,
-      activityName,
       activityDescription,
       startDate,
       endDate,
@@ -52,16 +51,15 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!organizationName || !activityName || !activityDescription || !startDate || totalHours === undefined) {
+    if (!organizationName || !activityDescription || !startDate || totalHours === undefined) {
       console.error("Validation failed - missing required fields:", {
         organizationName: !!organizationName,
-        activityName: !!activityName,
         activityDescription: !!activityDescription,
         startDate: !!startDate,
         totalHours: totalHours !== undefined,
       });
       return NextResponse.json(
-        { error: "Missing required fields: organizationName, activityName, activityDescription, startDate, totalHours" },
+        { error: "Missing required fields: organizationName, activityDescription, startDate, totalHours" },
         { status: 400 }
       );
     }
@@ -96,7 +94,7 @@ export async function POST(request: NextRequest) {
       status: "completed" as const,
       isManualLog: true,
       organizationName: organizationName.trim(),
-      activityName: activityName.trim(),
+      activityName: null,
       activityDescription: activityDescription.trim(),
       serviceSheetUrl: serviceSheetUrl?.trim() || null,
       verified: false,
@@ -131,7 +129,7 @@ export async function POST(request: NextRequest) {
         ${participationData.status},
         ${participationData.isManualLog ? 1 : 0},
         ${participationData.organizationName},
-        ${participationData.activityName},
+        NULL,
         ${participationData.activityDescription},
         ${participationData.serviceSheetUrl},
         ${participationData.verified ? 1 : 0},
