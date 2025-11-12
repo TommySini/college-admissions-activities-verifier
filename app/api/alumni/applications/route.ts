@@ -27,16 +27,10 @@ export async function GET(request: NextRequest) {
     const applications = await prisma.alumniApplication.findMany({
       where,
       include: {
-        alumniProfile: {
-          select: {
-            id: true,
-            privacy: true,
-            displayName: true,
-            intendedMajor: true,
-          },
-        },
+        alumniProfile: true,
         extractedActivities: true,
         extractedEssays: true,
+        extractedAwards: true,
         admissionResults: true,
       },
       orderBy: { createdAt: "desc" },

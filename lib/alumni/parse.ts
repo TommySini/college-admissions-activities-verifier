@@ -26,10 +26,18 @@ interface ParsedResult {
   decisionRound?: "ED" | "EA" | "RD";
 }
 
+interface ParsedAward {
+  title: string;
+  level?: string;
+  year?: string;
+  description?: string;
+}
+
 interface ParsedData {
   activities: ParsedActivity[];
   essays: ParsedEssay[];
   results: ParsedResult[];
+  awards: ParsedAward[];
   intendedMajor?: string;
   careerInterestTags?: string[];
 }
@@ -76,6 +84,7 @@ async function parseWithAI(rawText: string): Promise<ParsedData> {
       activities: [],
       essays: [],
       results: [],
+      awards: [],
     };
   }
 
@@ -110,6 +119,14 @@ Return a JSON object with this exact structure:
       "decisionRound": "ED"
     }
   ],
+  "awards": [
+    {
+      "title": "Award name",
+      "level": "national",
+      "year": "2023",
+      "description": "Brief description"
+    }
+  ],
   "intendedMajor": "Major or field of study",
   "careerInterestTags": ["finance", "technology", "healthcare"]
 }
@@ -117,6 +134,7 @@ Return a JSON object with this exact structure:
 Notes:
 - For "decision", use only: "admit", "waitlist", or "deny"
 - For "decisionRound", use only: "ED", "EA", or "RD" (or omit if unknown)
+- For "level", use: "national", "state", "regional", or "school" (or omit if unknown)
 - Extract as much as you can find; if sections are missing, return empty arrays
 - For careerInterestTags, infer from activities, essays, and stated interests
 
@@ -210,6 +228,19 @@ export async function parseApplicationFile(
             decision: result.decision,
             decisionRound: result.decisionRound || null,
             rankBucket: getRankBucket(result.collegeName),
+          })),
+        });
+      }
+
+      // Create awards
+      if (parsedData.awards && parsedData.awards.length > 0) {
+        await tx.extractedAward.createMany({
+          data: parsedData.awards.map((award) => ({
+            applicationId,
+            title: award.title,
+            level: award.level || null,
+            year: award.year || null,
+            description: award.description || null,
           })),
         });
       }

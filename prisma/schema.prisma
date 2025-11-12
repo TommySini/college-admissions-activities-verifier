@@ -261,6 +261,7 @@ model AlumniApplication {
   extractedActivities ExtractedActivity[]
   extractedEssays    ExtractedEssay[]
   admissionResults   AdmissionResult[]
+  extractedAwards    ExtractedAward[]
 
   @@map("alumni_applications")
 }
@@ -308,4 +309,18 @@ model AdmissionResult {
 
   @@index([rankBucket])
   @@map("admission_results")
+}
+
+model ExtractedAward {
+  id            String  @id @default(cuid())
+  applicationId String
+  title         String
+  level         String? // "national", "state", "regional", "school"
+  year          String? // e.g., "2023" or "11th grade"
+  description   String?
+
+  // Relations
+  application AlumniApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("extracted_awards")
 }
