@@ -32,7 +32,7 @@ interface HoursChartProps {
     tertiary: string;
     accent: string;
   };
-  timeRange?: "1W" | "1M" | "6M" | "1Y" | "all";
+  timeRange?: "1W" | "1M" | "6M" | "1Y" | "2Y" | "all";
 }
 
 export function HoursChart({
@@ -106,6 +106,8 @@ export function HoursChart({
       daysToShow = 180;
     } else if (timeRange === "1Y") {
       daysToShow = 365;
+    } else if (timeRange === "2Y") {
+      daysToShow = 730;
     } else if (timeRange === "all") {
       // Find the earliest participation date
       const earliestDate = participations.length > 0
