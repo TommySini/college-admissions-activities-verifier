@@ -5,8 +5,9 @@ import { getCurrentUser } from "@/lib/auth";
 // GET - List participations with filtering
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
+      console.log("Unauthorized: No user found in GET /api/volunteering-participations");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

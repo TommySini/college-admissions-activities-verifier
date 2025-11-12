@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 
 // GET - Get goals for current user or specific student (if admin)
 export async function GET(request: NextRequest) {
@@ -59,12 +60,55 @@ export async function GET(request: NextRequest) {
 // POST - Create new goal
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    console.log("POST /api/volunteering-goals - Attempting to get current user");
+    let user = await getCurrentUser();
+    console.log("POST /api/volunteering-goals - User:", user ? { id: user.id, email: user.email, role: user.role } : "null");
+
+    // Fallback to decoding the NextAuth JWT token if getCurrentUser fails
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      console.log("POST /api/volunteering-goals - No user from getCurrentUser, attempting token fallback");
+      try {
+        const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+        console.log("POST /api/volunteering-goals - Token:", token ? { email: token.email, id: token.sub, role: token.role } : "null");
+        if (token?.email) {
+          user = await prisma.user.upsert({
+            where: { email: token.email },
+            update: {
+              name: token.name || "",
+              role: (token.role as string) || "student",
+            },
+            create: {
+              email: token.email,
+              name: token.name || "",
+              role: (token.role as string) || "student",
+            },
+          });
+          console.log("POST /api/volunteering-goals - User from token/upsert:", user ? { id: user.id, email: user.email, role: user.role } : "null");
+        }
+      } catch (tokenError) {
+        console.error("POST /api/volunteering-goals - Error decoding token:", tokenError);
+      }
     }
 
-    const body = await request.json();
+    if (!user) {
+      console.log("POST /api/volunteering-goals - Unauthorized: No user found after fallback");
+      return NextResponse.json({
+        error: "Unauthorized",
+        message: "Please sign in to create a goal",
+      }, { status: 401 });
+    }
+
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error("Error parsing request body:", parseError);
+      return NextResponse.json(
+        { error: "Invalid request body" },
+        { status: 400 }
+      );
+    }
+
     const { studentId, targetHours, targetDate, description, goalType } = body;
 
     if (!targetHours || targetHours <= 0) {
