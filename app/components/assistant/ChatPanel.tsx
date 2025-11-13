@@ -235,13 +235,15 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
       </div>
 
       {/* Input */}
-      <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+      <div className="border-t border-gray-200 bg-gray-50">
         <AIInputWithSuggestions
           actions={CUSTOM_ACTIONS}
-          defaultSelected="Summarize"
           placeholder="Ask me anything about your activities..."
           onSubmit={handleSubmit}
           disabled={isLoading}
+          className="py-0"
+          minHeight={48}
+          maxHeight={150}
         />
       </div>
     </div>

@@ -101,9 +101,9 @@ export function AIInputWithSuggestions({
     };
 
     return (
-        <div className={cn("w-full py-4", className)}>
-            <div className="relative max-w-xl w-full mx-auto">
-                <div className="relative border border-black/10 dark:border-white/10 focus-within:border-black/20 dark:focus-within:border-white/20 rounded-2xl bg-black/[0.03] dark:bg-white/[0.03]">
+        <div className={cn("w-full py-2", className)}>
+            <div className="relative w-full">
+                <div className="relative border border-gray-200 dark:border-gray-700 focus-within:border-blue-400 dark:focus-within:border-blue-500 rounded-xl bg-white dark:bg-gray-800 shadow-sm">
                     <div className="flex flex-col">
                         <div
                             className="overflow-y-auto"
@@ -115,7 +115,7 @@ export function AIInputWithSuggestions({
                                 placeholder={placeholder}
                                 disabled={disabled}
                                 className={cn(
-                                    "max-w-xl w-full rounded-2xl pr-10 pt-3 pb-3 placeholder:text-black/70 dark:placeholder:text-white/70 border-none focus:ring text-black dark:text-white resize-none text-wrap bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 leading-[1.2]",
+                                    "w-full rounded-xl pr-10 pt-2 pb-2 px-3 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-none text-gray-900 dark:text-gray-100 resize-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 leading-relaxed text-sm",
                                     `min-h-[${minHeight}px]`
                                 )}
                                 value={inputValue}
@@ -162,17 +162,22 @@ export function AIInputWithSuggestions({
                         </div>
                     </div>
 
-                    <CornerRightDown
+                    <button
+                        type="button"
+                        onClick={handleSubmit}
+                        disabled={disabled || !inputValue.trim()}
                         className={cn(
-                            "absolute right-3 top-3 w-4 h-4 transition-all duration-200 dark:text-white",
-                            inputValue
-                                ? "opacity-100 scale-100"
-                                : "opacity-30 scale-95"
+                            "absolute right-2 top-2 p-1.5 rounded-md transition-all duration-200",
+                            inputValue.trim() && !disabled
+                                ? "bg-blue-600 hover:bg-blue-700 text-white"
+                                : "bg-gray-200 text-gray-400 cursor-not-allowed"
                         )}
-                    />
+                    >
+                        <CornerRightDown className="w-4 h-4" />
+                    </button>
                 </div>
             </div>
-            <div className="flex flex-wrap gap-1.5 mt-2 max-w-xl mx-auto justify-start px-4">
+            <div className="flex flex-wrap gap-2 mt-2 justify-center px-2">
                 {actions.filter((item) => item.text !== selectedItem).map(
                     ({ text, icon: Icon, colors }) => (
                         <button
@@ -180,17 +185,17 @@ export function AIInputWithSuggestions({
                             key={text}
                             disabled={disabled}
                             className={cn(
-                                "px-3 py-1.5 text-xs font-medium rounded-full",
+                                "px-3 py-1.5 text-xs font-medium rounded-lg",
                                 "border transition-all duration-200",
-                                "border-black/10 dark:border-white/10 bg-white dark:bg-gray-900 hover:bg-black/5 dark:hover:bg-white/5",
-                                "flex-shrink-0",
+                                "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700",
+                                "flex-shrink-0 shadow-sm",
                                 disabled && "opacity-50 cursor-not-allowed"
                             )}
                             onClick={() => toggleItem(text)}
                         >
                             <div className="flex items-center gap-1.5">
-                                <Icon className={cn("h-4 w-4", colors.icon)} />
-                                <span className="text-black/70 dark:text-white/70 whitespace-nowrap">
+                                <Icon className={cn("h-3.5 w-3.5", colors.icon)} />
+                                <span className="text-gray-700 dark:text-gray-300 whitespace-nowrap">
                                     {text}
                                 </span>
                             </div>
