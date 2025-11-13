@@ -377,7 +377,7 @@ export function OpportunitiesListing() {
           <FilterPanel
             currentFilters={currentFilters}
             onFiltersChange={handleFiltersChange}
-            userSchoolId={session?.user?.schoolId}
+            userSchoolId={(session?.user as any)?.schoolId}
           />
         </SheetContent>
       </Sheet>

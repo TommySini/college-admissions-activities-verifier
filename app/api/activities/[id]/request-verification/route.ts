@@ -36,37 +36,43 @@ export async function POST(
       );
     }
 
-    if (activity.userId !== user.id) {
+    if (activity.studentId !== user.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 403 }
       );
     }
 
-    // Find organization by email
-    const organization = await prisma.user.findUnique({
+    // Find verifier user by email
+    const verifier = await prisma.user.findUnique({
       where: { email: organizationEmail },
     });
 
-    if (!organization || organization.profileType !== "Organization") {
+    if (!verifier) {
       return NextResponse.json(
-        { error: "Organization not found with that email" },
+        { error: "Verifier not found with that email" },
         { status: 404 }
+      );
+    }
+
+    // Check if verification already exists for this activity
+    const existingVerification = await prisma.verification.findUnique({
+      where: { activityId: id },
+    });
+
+    if (existingVerification) {
+      return NextResponse.json(
+        { error: "Verification request already exists for this activity" },
+        { status: 400 }
       );
     }
 
     // Create verification request
     const verification = await prisma.verification.create({
       data: {
-        organizationId: organization.id,
-        applicantId: user.id,
-        applicantEmail: user.email,
-        title: activity.name,
-        description: activity.description,
-        startDate: activity.startDate,
-        endDate: activity.endDate || undefined,
-        position: activity.position || undefined,
-        category: activity.category || undefined,
+        activityId: id,
+        verifierId: verifier.id,
+        studentId: user.id,
         status: "pending",
       },
     });

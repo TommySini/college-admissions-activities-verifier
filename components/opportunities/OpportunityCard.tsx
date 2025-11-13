@@ -205,7 +205,7 @@ export function OpportunityCard({
               const awards = Array.isArray(edition.awardTypes)
                 ? edition.awardTypes
                 : (typeof edition.awardTypes === "string"
-                    ? edition.awardTypes.split(/[,\s]+/).map(s => s.trim()).filter(Boolean)
+                    ? edition.awardTypes.split(/[,\s]+/).map((s: string) => s.trim()).filter(Boolean)
                     : []);
               
               if (awards.length === 0) return null;
@@ -216,7 +216,7 @@ export function OpportunityCard({
                   <div>
                     <p className="font-medium text-slate-900">Awards</p>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {awards.map((award) => (
+                      {awards.map((award: string) => (
                         <Badge key={award} variant="outline" className="text-xs">
                           {String(award).replace(/_/g, " ")}
                         </Badge>

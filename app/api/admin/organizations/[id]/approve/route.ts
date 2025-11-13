@@ -7,7 +7,7 @@ import { OrganizationStatus } from "@prisma/client";
 
 export async function POST(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -20,8 +20,10 @@ export async function POST(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const { id } = await params;
+
     const organization = await prisma.organization.update({
-      where: { id: params.id },
+      where: { id },
       data: { status: OrganizationStatus.APPROVED },
     });
 

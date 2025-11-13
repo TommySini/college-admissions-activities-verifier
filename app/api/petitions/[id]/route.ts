@@ -138,7 +138,7 @@ export async function PATCH(
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Invalid review data", details: error.errors },
+        { error: "Invalid review data", details: error.issues },
         { status: 400 }
       );
     }

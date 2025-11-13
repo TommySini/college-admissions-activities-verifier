@@ -14,9 +14,9 @@ export async function GET(request: NextRequest) {
     const schools = await prisma.school.findMany({
       where: {
         OR: [
-          { name: { contains: q, mode: "insensitive" } },
-          { city: { contains: q, mode: "insensitive" } },
-          { state: { contains: q, mode: "insensitive" } },
+          { name: { contains: q } },
+          { city: { contains: q } },
+          { state: { contains: q } },
         ],
       },
       select: {
