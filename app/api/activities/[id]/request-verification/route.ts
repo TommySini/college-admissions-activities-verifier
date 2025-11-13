@@ -55,6 +55,18 @@ export async function POST(
       );
     }
 
+    // Check if verification already exists for this activity
+    const existingVerification = await prisma.verification.findUnique({
+      where: { activityId: id },
+    });
+
+    if (existingVerification) {
+      return NextResponse.json(
+        { error: "Verification request already exists for this activity" },
+        { status: 400 }
+      );
+    }
+
     // Create verification request
     const verification = await prisma.verification.create({
       data: {

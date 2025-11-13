@@ -10,12 +10,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============================================================================
+// EXISTING MODELS (Activity Verification System)
+// ============================================================================
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String
   role      String   @default("student") // "student" or "admin"
   image     String? // Profile picture from OAuth
+  schoolId  String? // NEW: link to school for social proof
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -37,15 +42,14 @@ model User {
 
 model Verification {
   id            String   @id @default(cuid())
-  activityId    String   @unique // Links to the activity being verified (one-to-one)
-  verifierId    String // Teacher/club leader who verifies
-  studentId     String // Student who owns the activity
-  status        String   @default("pending") // "pending", "verified", "denied"
-  verifierNotes String? // Notes from verifier
+  activityId    String   @unique
+  verifierId    String
+  studentId     String
+  status        String   @default("pending")
+  verifierNotes String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  // Relations
   verifier User     @relation("VerifierVerifications", fields: [verifierId], references: [id])
   student  User     @relation("StudentVerifications", fields: [studentId], references: [id])
   activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
@@ -55,21 +59,21 @@ model Verification {
 
 model Activity {
   id              String   @id @default(cuid())
-  studentId       String // Student who added this activity
-  name            String // Activity name/title
-  category        String // Common App categories
+  studentId       String
+  name            String
+  category        String
   description     String
-  role            String? // Student's role/position
-  supervisor      String? // Teacher/club advisor name
-  supervisorEmail String? // Supervisor's email
-  organization    String? // Club/organization name
+  role            String?
+  supervisor      String?
+  supervisorEmail String?
+  organization    String?
   startDate       String
   endDate         String?
   hoursPerWeek    Float?
   totalHours      Float?
-  status          String   @default("pending") // "pending", "verified", "denied"
-  studentNotes    String? // Notes from student
-  attachments     String? // JSON string of attachments: {photos: [], certificates: [], portfolioLinks: []}
+  status          String   @default("pending")
+  studentNotes    String?
+  attachments     String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

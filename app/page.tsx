@@ -11,17 +11,19 @@ import { BookOpen, BarChart3, CheckCircle, Lock, Zap } from "lucide-react";
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   useEffect(() => {
-    if (status === "authenticated" && session) {
+    if (status === "authenticated" && session && !hasRedirected) {
+      setHasRedirected(true);
       // Redirect admins to admin dashboard, others to regular dashboard
       if (session.user.role === "admin") {
-        router.push("/admin");
+        router.replace("/admin");
       } else {
-        router.push("/dashboard");
+        router.replace("/dashboard");
       }
     }
-  }, [status, session, router]);
+  }, [status, session, router, hasRedirected]);
 
   if (status === "loading") {
     return (
