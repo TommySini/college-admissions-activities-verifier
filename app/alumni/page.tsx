@@ -199,38 +199,6 @@ export default function AlumniDatabasePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link href="/" className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center shadow-sm">
-                  <span className="text-white font-bold text-xl">A</span>
-                </div>
-                <span className="text-xl font-bold text-gray-900">Actify</span>
-              </Link>
-              <div className="h-6 w-px bg-gray-300 mx-2"></div>
-              <span className="text-sm text-gray-500">Alumni Database</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Link
-                href="/dashboard"
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/alumni/upload"
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-              >
-                Upload Application
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -241,6 +209,16 @@ export default function AlumniDatabasePage() {
             Browse college admissions profiles from past students. Filter by
             major, career interests, and admission results.
           </p>
+        </div>
+
+        {/* Upload Button */}
+        <div className="flex justify-end mb-4">
+          <Link
+            href="/alumni/upload"
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+          >
+            Upload Application
+          </Link>
         </div>
 
         {/* Filters */}

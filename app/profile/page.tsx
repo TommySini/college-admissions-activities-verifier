@@ -89,82 +89,6 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation Bar */}
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link href="/" className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-sm">
-                  <span className="text-white font-bold text-xl">A</span>
-                </div>
-                <span className="text-xl font-bold text-gray-900">Actify</span>
-              </Link>
-              <div className="h-6 w-px bg-gray-300 mx-2" />
-              <span className="text-sm text-gray-500">
-                {isAdmin ? "Admin Portal" : isVerifier ? "Verifier Portal" : "Student Portal"}
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-3 pr-4 border-r border-gray-200">
-                <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900">{profile.name}</p>
-                  <p className="text-xs text-gray-500">{profile.email}</p>
-                </div>
-                {profile.image ? (
-                  <img
-                    src={profile.image}
-                    alt={profile.name}
-                    className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center text-lg font-semibold">
-                    {profile.name?.[0] || "U"}
-                  </div>
-                )}
-              </div>
-              {isStudent && (
-                <>
-                  <Link
-                    href="/clubs"
-                    className="px-4 py-2 text-sm font-medium text-blue-700 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
-                  >
-                    Clubs
-                  </Link>
-                  <Link
-                    href="/organizations"
-                    className="px-4 py-2 text-sm font-medium text-green-700 hover:text-green-900 hover:bg-green-50 rounded-lg transition-colors"
-                  >
-                    Organizations
-                  </Link>
-                </>
-              )}
-              {isAdmin ? (
-                <Link
-                  href="/admin"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
-                >
-                  Admin Dashboard
-                </Link>
-              ) : (
-                <Link
-                  href="/dashboard"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
-                >
-                  Dashboard
-                </Link>
-              )}
-              <button
-                onClick={() => signOut({ callbackUrl: "/auth/signin" })}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         <div className="flex flex-col gap-4">
           <div>
@@ -298,6 +222,12 @@ export default function ProfilePage() {
                     Browse Organizations
                   </Link>
                 )}
+                <button
+                  onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+                  className="block w-full text-center px-5 py-3 border border-red-200 text-red-700 rounded-lg font-medium hover:bg-red-50 transition-colors"
+                >
+                  Sign Out
+                </button>
               </div>
             </div>
 

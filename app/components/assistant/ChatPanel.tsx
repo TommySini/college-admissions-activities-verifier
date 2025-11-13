@@ -39,6 +39,9 @@ const STARTER_PROMPTS = [
   "How many volunteering hours do I have?",
   "What should I aim for to get into a good college?",
   "Summarize my extracurricular profile",
+  "Find alumni who mention robotics or engineering",
+  "Show me clubs related to community service",
+  "Search for alumni essays about leadership",
 ];
 
 interface Message {
@@ -66,7 +69,7 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
     scrollToBottom();
   }, [messages]);
 
-  const handleSubmit = async (text: string, action: string) => {
+  const handleSubmit = async (text: string, action?: string) => {
     if (!text.trim() || isLoading) return;
 
     const userMessage: Message = {

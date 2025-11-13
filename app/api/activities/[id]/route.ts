@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { upsertEmbedding, deleteEmbedding } from "@/lib/retrieval/indexer";
 
 // PATCH - Update activity
 export async function PATCH(
@@ -55,6 +56,11 @@ export async function PATCH(
       data: updateData,
     });
 
+    // Re-index activity for semantic search (async, don't await)
+    upsertEmbedding("Activity", updated.id).catch((error) => {
+      console.error(`[PATCH /api/activities/${id}] Failed to re-index activity:`, error);
+    });
+
     return NextResponse.json({ activity: updated });
   } catch (error) {
     console.error("Error updating activity:", error);
@@ -99,6 +105,11 @@ export async function DELETE(
 
     await prisma.activity.delete({
       where: { id },
+    });
+
+    // Delete embedding for semantic search (async, don't await)
+    deleteEmbedding("Activity", id).catch((error) => {
+      console.error(`[DELETE /api/activities/${id}] Failed to delete embedding:`, error);
     });
 
     return NextResponse.json({ message: "Activity deleted" });

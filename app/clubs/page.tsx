@@ -126,44 +126,6 @@ export default function ClubsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-50">
-      {/* Top Navigation */}
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-40 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link href="/" className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-sm">
-                  <span className="text-white font-bold text-xl">A</span>
-                </div>
-                <span className="text-xl font-bold text-slate-900">Actify</span>
-              </Link>
-              <div className="h-6 w-px bg-slate-200 mx-2" />
-              <span className="text-sm text-slate-500">Student Clubs Directory</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Link
-                href="/dashboard"
-                className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/profile"
-                className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                Profile
-              </Link>
-              <button
-                onClick={() => signOut({ callbackUrl: "/auth/signin" })}
-                className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
       <main className="max-w-7xl mx-auto px-6 py-12">
         {/* Header */}
         <header className="mb-12">

@@ -3,6 +3,7 @@ import { readFile } from "fs/promises";
 import OpenAI from "openai";
 import { getRankBucket } from "./top-colleges";
 import { prisma } from "@/lib/prisma";
+import { upsertEmbedding } from "@/lib/retrieval/indexer";
 
 interface ParsedActivity {
   title: string;
@@ -169,6 +170,49 @@ ${rawText.slice(0, 15000)}`;
 }
 
 /**
+ * Index all alumni data for semantic search after successful parse
+ */
+async function indexAlumniData(applicationId: string): Promise<void> {
+  console.log(`[indexAlumniData] Starting indexing for application ${applicationId}`);
+
+  // Index the application itself (rawText)
+  await upsertEmbedding("AlumniApplication", applicationId);
+
+  // Get all related records
+  const [activities, essays, awards, results] = await Promise.all([
+    prisma.extractedActivity.findMany({ where: { applicationId } }),
+    prisma.extractedEssay.findMany({ where: { applicationId } }),
+    prisma.extractedAward.findMany({ where: { applicationId } }),
+    prisma.admissionResult.findMany({ where: { applicationId } }),
+  ]);
+
+  // Index all extracted activities
+  for (const activity of activities) {
+    await upsertEmbedding("ExtractedActivity", activity.id);
+  }
+
+  // Index all extracted essays
+  for (const essay of essays) {
+    await upsertEmbedding("ExtractedEssay", essay.id);
+  }
+
+  // Index all extracted awards
+  for (const award of awards) {
+    await upsertEmbedding("ExtractedAward", award.id);
+  }
+
+  // Index all admission results
+  for (const result of results) {
+    await upsertEmbedding("AdmissionResult", result.id);
+  }
+
+  console.log(
+    `[indexAlumniData] Indexed ${activities.length} activities, ${essays.length} essays, ` +
+    `${awards.length} awards, ${results.length} results for application ${applicationId}`
+  );
+}
+
+/**
  * Main parsing function: extract text, parse with AI, and persist to database
  */
 export async function parseApplicationFile(
@@ -274,6 +318,11 @@ export async function parseApplicationFile(
     });
 
     console.log(`[parseApplicationFile] Successfully parsed application ${applicationId}`);
+
+    // Index all created records for semantic search (async, don't block)
+    indexAlumniData(applicationId).catch((error) => {
+      console.error(`[parseApplicationFile] Failed to index alumni data for ${applicationId}:`, error);
+    });
   } catch (error) {
     console.error(`[parseApplicationFile] Error parsing application ${applicationId}:`, error);
 

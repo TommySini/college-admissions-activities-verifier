@@ -4,6 +4,8 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { WebGLShader } from "@/components/ui/web-gl-shader";
+import { LiquidButton } from "@/components/ui/liquid-glass-button";
 import { BookOpen, BarChart3, CheckCircle, Lock, Zap } from "lucide-react";
 
 export default function Home() {
@@ -41,7 +43,10 @@ export default function Home() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30">
+    <div className="relative min-h-screen overflow-hidden">
+      {/* WebGL Background */}
+      <WebGLShader />
+
       {/* Content Layer */}
       <div className="relative z-10 min-h-screen">
         {/* Navigation */}

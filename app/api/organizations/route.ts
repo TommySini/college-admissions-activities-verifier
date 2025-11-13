@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { upsertEmbedding } from "@/lib/retrieval/indexer";
 
 export async function GET() {
   try {
@@ -67,6 +68,11 @@ export async function POST(request: NextRequest) {
         contactEmail: contactEmail ? String(contactEmail).trim() : user.email,
         createdById: user.id,
       } as any,
+    });
+
+    // Index organization for semantic search (async, don't await)
+    upsertEmbedding("Organization", organization.id).catch((error) => {
+      console.error(`[POST /api/organizations] Failed to index organization ${organization.id}:`, error);
     });
 
     return NextResponse.json({ organization });

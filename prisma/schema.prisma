@@ -328,3 +328,18 @@ model ExtractedAward {
 
   @@map("extracted_awards")
 }
+
+model Embedding {
+  id         String   @id @default(cuid())
+  modelName  String   // e.g., "ExtractedEssay", "Organization"
+  recordId   String   // ID of the record in the source model
+  ownerId    String?  // for user-scoped models (student id)
+  content    String   // sanitized, concatenated text
+  vector     String   // JSON-encoded normalized float[] (SQLite doesn't have array type)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([modelName, recordId])
+  @@index([modelName])
+  @@map("embeddings")
+}

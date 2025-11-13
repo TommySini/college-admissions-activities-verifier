@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { upsertEmbedding } from "@/lib/retrieval/indexer";
 
 // GET - List participations with filtering
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser(request);
+    const user = await getCurrentUser();
     if (!user) {
       console.log("Unauthorized: No user found in GET /api/volunteering-participations");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -302,6 +303,11 @@ export async function POST(request: NextRequest) {
           },
         },
       },
+    });
+
+    // Index participation for semantic search (async, don't await)
+    upsertEmbedding("VolunteeringParticipation", participation.id).catch((error) => {
+      console.error(`[POST /api/volunteering-participations] Failed to index participation ${participation.id}:`, error);
     });
 
     return NextResponse.json({ participation }, { status: 201 });

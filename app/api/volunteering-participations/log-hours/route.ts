@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { upsertEmbedding } from "@/lib/retrieval/indexer";
 
 // POST - Create manual log entry (past hours)
 export async function POST(request: NextRequest) {
@@ -185,6 +186,11 @@ export async function POST(request: NextRequest) {
       activity: null,
       verifier: null,
     };
+
+    // Index participation for semantic search (async, don't await)
+    upsertEmbedding("VolunteeringParticipation", participationId).catch((error) => {
+      console.error(`[POST /api/volunteering-participations/log-hours] Failed to index participation ${participationId}:`, error);
+    });
 
     return NextResponse.json({ participation }, { status: 201 });
   } catch (error: any) {

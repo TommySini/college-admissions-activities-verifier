@@ -633,92 +633,27 @@ export default function VolunteeringPage() {
 
   return (
       <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link href="/" className="flex items-center gap-2">
-                <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center shadow-sm"
-                  style={{ backgroundColor: colors.primary }}
-                >
-                  <span className="text-white font-bold text-xl">A</span>
-                </div>
-                <span className="text-xl font-bold text-gray-900">Actify</span>
-              </Link>
-              <div className="h-6 w-px bg-gray-300 mx-2"></div>
-              <span className="text-sm text-gray-500" style={{ fontFamily: "'Nunito', sans-serif" }}>Volunteering</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-3 pr-4 border-r border-gray-200">
-                <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900" style={{ fontFamily: "'Nunito', sans-serif" }}>{session.user.name}</p>
-                  <p className="text-xs text-gray-500" style={{ fontFamily: "'Nunito', sans-serif" }}>{session.user.email}</p>
-                </div>
-                {session.user.image && (
-                  <img
-                    src={session.user.image}
-                    alt={session.user.name || "User"}
-                    className="w-10 h-10 rounded-full border-2 border-gray-200"
-                  />
-                )}
-              </div>
-              <Link
-                href="/dashboard"
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
-                style={{ fontFamily: "'Nunito', sans-serif" }}
-              >
-                Dashboard
-              </Link>
-              {session.user.role === "student" && (
-                  <button
-                    onClick={() => setShowLogHoursModal(true)}
-                    className="px-4 py-2 text-sm font-medium rounded-lg transition-colors text-white shadow-md"
-                    style={{ backgroundColor: colors.primary, fontFamily: "'Nunito', sans-serif" }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.opacity = "0.9";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.opacity = "1";
-                    }}
-                  >
-                    Log Hours
-                  </button>
-              )}
-              {session.user.role === "admin" && (
-                  <Link
-                  href="/volunteering/review"
-                  className="px-4 py-2 text-sm font-medium rounded-lg transition-colors text-white shadow-md"
-                  style={{ backgroundColor: colors.primary, fontFamily: "'Nunito', sans-serif" }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.opacity = "0.9";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.opacity = "1";
-                  }}
-                >
-                  Review Requests
-                  </Link>
-              )}
-              <button
-                onClick={() => signOut({ callbackUrl: "/auth/signin" })}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
-                style={{ fontFamily: "'Nunito', sans-serif" }}
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <div className="mb-8 flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">
             Volunteering Opportunities
           </h1>
+          {session.user.role === "student" && (
+            <button
+              onClick={() => setShowLogHoursModal(true)}
+              className="px-4 py-2 text-sm font-medium rounded-lg transition-colors text-white shadow-md"
+              style={{ backgroundColor: colors.primary, fontFamily: "'Nunito', sans-serif" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = "0.9";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = "1";
+              }}
+            >
+              Log Hours
+            </button>
+          )}
         </div>
 
         {/* Success Message */}

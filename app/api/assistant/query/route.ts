@@ -6,6 +6,7 @@ import { getUserProfile } from "@/lib/assistant/tools";
 import { listModels, describeModel } from "@/lib/assistant/runtimeModels";
 import { executeGenericQuery, buildWhereClause } from "@/lib/assistant/genericQuery";
 import { formatResultsForPrompt, formatModelsList, formatModelDescription } from "@/lib/assistant/format";
+import { semanticSearch, formatSearchResults } from "@/lib/retrieval/search";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
@@ -81,6 +82,32 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "semantic_search",
+      description: "Semantic search over platform text (essays, activities, organizations, opportunities). Use this for fuzzy/conceptual queries like 'find alumni who mention robotics' or 'clubs related to community service'. Privacy-aware and respects user permissions.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "The search query (natural language)",
+          },
+          scope: {
+            type: "array",
+            items: { type: "string" },
+            description: "Optional: specific models to search (e.g., ['ExtractedEssay', 'Organization']). If omitted, searches all supported models.",
+          },
+          topK: {
+            type: "number",
+            description: "Number of results to return (default 10, max 20)",
+          },
+        },
+        required: ["query"],
+      },
+    },
+  },
 ];
 
 export async function POST(request: NextRequest) {
@@ -121,22 +148,25 @@ export async function POST(request: NextRequest) {
 You have access to tools that let you query the platform's database:
 - list_models: See all available data tables
 - describe_model: Get schema details for a specific table
-- query_model: Fetch actual data with filters
+- query_model: Fetch actual data with filters (exact/structured queries)
+- semantic_search: Search by meaning/concepts across essays, activities, organizations (fuzzy/semantic queries)
 
 **Access Rules:**
-- Students can access: their own activities/goals/participations, approved organizations, volunteering opportunities, and alumni data
-- Admins can access: all data including other students' records
+- You can access ALL platform data without restrictions
 - Always use tools to fetch current data rather than making assumptions
 
-**Instructions:**
-1. IMPORTANT: Use tools efficiently - try to answer in 1-2 tool calls maximum
-2. For clubs/organizations: query Organization model with {name: {contains: "search term"}}
-3. For alumni: query AlumniProfile first, then related models if needed
-4. For user's own data: query Activity, VolunteeringParticipation, or VolunteeringGoal
-5. Don't call list_models or describe_model unless you truly don't know which model to use
-6. Use filters to narrow results: {field: {contains: "text"}} or {field: value}
-7. After getting data, synthesize an answer immediately - don't make more tool calls unless necessary
-8. Keep responses concise (2-4 sentences)
+**CRITICAL Instructions:**
+1. **ANSWER IN 1 TOOL CALL**: For most questions, use semantic_search ONCE and answer immediately
+2. **NO EXPLORATION**: Don't call list_models or describe_model unless absolutely necessary
+3. **IMMEDIATE SYNTHESIS**: After getting search results, answer the question - don't make additional calls
+4. For questions about specific activities, organizations, or alumni: use semantic_search with the query text
+5. For questions about "my" data: use query_model with appropriate filters
+6. Keep responses concise (2-4 sentences)
+7. If semantic_search returns results, ANSWER IMMEDIATELY - don't query for more details
+
+**Example Flow:**
+User: "Tell me about weeklytheta"
+You: Call semantic_search("weeklytheta") → Get results → Answer immediately with what you found
 
 ${action ? `The user selected the "${action}" action - apply this if relevant.` : ""}`;
 
@@ -147,7 +177,7 @@ ${action ? `The user selected the "${action}" action - apply this if relevant.` 
     ];
 
     let iterationCount = 0;
-    const MAX_ITERATIONS = 10; // Increased from 5 to 10
+    const MAX_ITERATIONS = 15; // Increased to handle edge cases
 
     while (iterationCount < MAX_ITERATIONS) {
       iterationCount++;
@@ -159,7 +189,7 @@ ${action ? `The user selected the "${action}" action - apply this if relevant.` 
         tools,
         tool_choice: "auto",
         temperature: 0.7,
-        max_tokens: 800,
+        max_tokens: 1000, // Increased for fuller responses
       });
 
       const responseMessage = completion.choices[0].message;
@@ -178,6 +208,7 @@ ${action ? `The user selected the "${action}" action - apply this if relevant.` 
 
       // Execute tool calls
       for (const toolCall of responseMessage.tool_calls) {
+        if (toolCall.type !== 'function') continue;
         const functionName = toolCall.function.name;
         const functionArgs = JSON.parse(toolCall.function.arguments);
 
@@ -225,6 +256,21 @@ ${action ? `The user selected the "${action}" action - apply this if relevant.` 
                 );
               } else {
                 toolResult = queryResult.error || "Query failed";
+              }
+              break;
+
+            case "semantic_search":
+              const searchResult = await semanticSearch({
+                query: functionArgs.query,
+                models: functionArgs.scope,
+                user,
+                topK: Math.min(functionArgs.topK || 10, 20),
+              });
+
+              if (searchResult.matches.length > 0) {
+                toolResult = formatSearchResults(searchResult.matches);
+              } else {
+                toolResult = "No relevant results found for your search.";
               }
               break;
 

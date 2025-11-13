@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { upsertEmbedding } from "@/lib/retrieval/indexer";
 
 // GET - Get activities for current user
 export async function GET(request: NextRequest) {
@@ -80,6 +81,11 @@ export async function POST(request: NextRequest) {
         attachments: attachments || undefined,
         status: "pending",
       },
+    });
+
+    // Index activity for semantic search (async, don't await)
+    upsertEmbedding("Activity", activity.id).catch((error) => {
+      console.error(`[POST /api/activities] Failed to index activity ${activity.id}:`, error);
     });
 
     // Note: Email sending is now handled separately via the "Send Email" button

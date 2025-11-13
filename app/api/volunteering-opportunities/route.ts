@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { upsertEmbedding } from "@/lib/retrieval/indexer";
 
 // GET - List volunteering opportunities with filtering
 export async function GET(request: NextRequest) {
@@ -213,6 +214,11 @@ export async function POST(request: NextRequest) {
           },
         },
       },
+    });
+
+    // Index opportunity for semantic search (async, don't await)
+    upsertEmbedding("VolunteeringOpportunity", opportunity.id).catch((error) => {
+      console.error(`[POST /api/volunteering-opportunities] Failed to index opportunity ${opportunity.id}:`, error);
     });
 
     return NextResponse.json({ opportunity }, { status: 201 });
