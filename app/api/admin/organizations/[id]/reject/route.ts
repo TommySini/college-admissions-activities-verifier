@@ -22,6 +22,23 @@ export async function POST(
 
     const { id } = await params;
 
+    // Check if organization exists first
+    const existing = await prisma.organization.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      return NextResponse.json(
+        { error: "Organization not found" },
+        { status: 404 }
+      );
+    }
+
+    // If already rejected, return as-is
+    if (existing.status === OrganizationStatus.REJECTED) {
+      return NextResponse.json({ organization: existing });
+    }
+
     const organization = await prisma.organization.update({
       where: { id },
       data: { status: OrganizationStatus.REJECTED },
