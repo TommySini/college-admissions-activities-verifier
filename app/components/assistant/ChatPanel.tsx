@@ -91,11 +91,12 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to get response");
-      }
-
       const data = await response.json();
+
+      if (!response.ok) {
+        // Show the actual error from the server
+        throw new Error(data.error || "Failed to get response");
+      }
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -105,12 +106,12 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error querying assistant:", error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "I'm sorry, I encountered an error. Please try again.",
+        content: `I'm sorry, I encountered an error: ${error.message || "Please try again."}`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);

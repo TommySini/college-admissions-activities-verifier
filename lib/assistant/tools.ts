@@ -225,15 +225,13 @@ export async function getOrganizations(status?: string, limit = 50) {
 
 /**
  * Find organization by name (fuzzy search)
+ * Note: SQLite doesn't support case-insensitive mode, so we do case-insensitive matching in JS
  */
 export async function findOrganizationByName(searchTerm: string) {
-  const organizations = await prisma.organization.findMany({
+  // Get all approved organizations and filter in JavaScript for SQLite compatibility
+  const allOrganizations = await prisma.organization.findMany({
     where: {
-      OR: [
-        { name: { contains: searchTerm, mode: "insensitive" } },
-        { description: { contains: searchTerm, mode: "insensitive" } },
-      ],
-      status: "APPROVED", // Only search approved organizations
+      status: "APPROVED",
     },
     include: {
       createdBy: {
@@ -243,10 +241,18 @@ export async function findOrganizationByName(searchTerm: string) {
         },
       },
     },
-    take: 10,
   });
 
-  return organizations.map((org) => ({
+  // Case-insensitive search in JavaScript
+  const searchLower = searchTerm.toLowerCase();
+  const filtered = allOrganizations.filter(
+    (org) =>
+      org.name.toLowerCase().includes(searchLower) ||
+      (org.description && org.description.toLowerCase().includes(searchLower))
+  );
+
+  // Take top 10 matches
+  return filtered.slice(0, 10).map((org) => ({
     id: org.id,
     name: org.name,
     description: org.description,
