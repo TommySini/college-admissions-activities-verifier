@@ -129,13 +129,14 @@ You have access to tools that let you query the platform's database:
 - Always use tools to fetch current data rather than making assumptions
 
 **Instructions:**
-1. When asked about data, use the appropriate tool to fetch it
-2. For questions about clubs/organizations, query the Organization model
-3. For alumni questions, query AlumniProfile, AlumniApplication, ExtractedActivity models
-4. For user's own data, query Activity, VolunteeringParticipation, VolunteeringGoal models
-5. Be conversational and helpful
-6. If you need to search, use filters like {name: {contains: "search term"}}
-7. Keep responses concise (2-4 sentences typically)
+1. IMPORTANT: Use tools efficiently - try to answer in 1-2 tool calls maximum
+2. For clubs/organizations: query Organization model with {name: {contains: "search term"}}
+3. For alumni: query AlumniProfile first, then related models if needed
+4. For user's own data: query Activity, VolunteeringParticipation, or VolunteeringGoal
+5. Don't call list_models or describe_model unless you truly don't know which model to use
+6. Use filters to narrow results: {field: {contains: "text"}} or {field: value}
+7. After getting data, synthesize an answer immediately - don't make more tool calls unless necessary
+8. Keep responses concise (2-4 sentences)
 
 ${action ? `The user selected the "${action}" action - apply this if relevant.` : ""}`;
 
@@ -146,10 +147,11 @@ ${action ? `The user selected the "${action}" action - apply this if relevant.` 
     ];
 
     let iterationCount = 0;
-    const MAX_ITERATIONS = 5;
+    const MAX_ITERATIONS = 10; // Increased from 5 to 10
 
     while (iterationCount < MAX_ITERATIONS) {
       iterationCount++;
+      console.log(`\n=== Iteration ${iterationCount}/${MAX_ITERATIONS} ===`);
 
       const completion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
@@ -165,18 +167,21 @@ ${action ? `The user selected the "${action}" action - apply this if relevant.` 
 
       // If no tool calls, we have the final answer
       if (!responseMessage.tool_calls || responseMessage.tool_calls.length === 0) {
+        console.log(`✓ Final answer generated after ${iterationCount} iterations`);
         return NextResponse.json({
           answer: responseMessage.content || "I'm sorry, I couldn't generate a response.",
           citations: [],
         });
       }
 
+      console.log(`Tool calls requested: ${responseMessage.tool_calls.length}`);
+
       // Execute tool calls
       for (const toolCall of responseMessage.tool_calls) {
         const functionName = toolCall.function.name;
         const functionArgs = JSON.parse(toolCall.function.arguments);
 
-        console.log(`Tool call: ${functionName}`, functionArgs);
+        console.log(`→ Tool call: ${functionName}`, JSON.stringify(functionArgs, null, 2));
 
         let toolResult: string;
 
