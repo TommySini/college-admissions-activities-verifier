@@ -1,136 +1,203 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
 import { LucideIcon } from "lucide-react";
+import {
+    Text,
+    CheckCheck,
+    ArrowDownWideNarrow,
+    CornerRightDown,
+} from "lucide-react";
+import { useState } from "react";
+import { Textarea } from "@/app/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { useAutoResizeTextarea } from "@/app/components/hooks/use-auto-resize-textarea";
 
-interface ActionConfig {
-  text: string;
-  icon: LucideIcon;
-  colors: {
-    icon: string;
-    border: string;
-    bg: string;
-  };
+interface ActionItem {
+    text: string;
+    icon: LucideIcon;
+    colors: {
+        icon: string;
+        border: string;
+        bg: string;
+    };
 }
 
 interface AIInputWithSuggestionsProps {
-  actions: ActionConfig[];
-  defaultSelected?: string;
-  placeholder?: string;
-  onSubmit?: (text: string, action: string) => void;
-  disabled?: boolean;
+    id?: string;
+    placeholder?: string;
+    minHeight?: number;
+    maxHeight?: number;
+    actions?: ActionItem[];
+    defaultSelected?: string;
+    onSubmit?: (text: string, action?: string) => void;
+    className?: string;
+    disabled?: boolean;
 }
+
+const DEFAULT_ACTIONS: ActionItem[] = [
+    {
+        text: "Summary",
+        icon: Text,
+        colors: {
+            icon: "text-orange-600",
+            border: "border-orange-500",
+            bg: "bg-orange-100",
+        },
+    },
+    {
+        text: "Fix Spelling and Grammar",
+        icon: CheckCheck,
+        colors: {
+            icon: "text-emerald-600",
+            border: "border-emerald-500",
+            bg: "bg-emerald-100",
+        },
+    },
+    {
+        text: "Make shorter",
+        icon: ArrowDownWideNarrow,
+        colors: {
+            icon: "text-purple-600",
+            border: "border-purple-500",
+            bg: "bg-purple-100",
+        },
+    },
+];
 
 export function AIInputWithSuggestions({
-  actions,
-  defaultSelected,
-  placeholder = "Enter text...",
-  onSubmit,
-  disabled = false,
+    id = "ai-input-with-actions",
+    placeholder = "Enter your text here...",
+    minHeight = 64,
+    maxHeight = 200,
+    actions = DEFAULT_ACTIONS,
+    defaultSelected,
+    onSubmit,
+    className,
+    disabled = false,
 }: AIInputWithSuggestionsProps) {
-  const [selectedAction, setSelectedAction] = useState<string>(
-    defaultSelected || actions[0]?.text || ""
-  );
-  const [inputValue, setInputValue] = useState("");
-  const [showActions, setShowActions] = useState(false);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+    const [inputValue, setInputValue] = useState("");
+    const [selectedItem, setSelectedItem] = useState<string | null>(defaultSelected ?? null);
 
-  const currentAction = actions.find((a) => a.text === selectedAction) || actions[0];
+    const { textareaRef, adjustHeight } = useAutoResizeTextarea({
+        minHeight,
+        maxHeight,
+    });
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setShowActions(false);
-      }
+    const toggleItem = (itemText: string) => {
+        setSelectedItem((prev) => (prev === itemText ? null : itemText));
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    const currentItem = selectedItem
+        ? actions.find((item) => item.text === selectedItem)
+        : null;
 
-  const handleSubmit = () => {
-    if (inputValue.trim() && onSubmit) {
-      onSubmit(inputValue, selectedAction);
-      setInputValue("");
-    }
-  };
+    const handleSubmit = () => {
+        if (inputValue.trim() && !disabled) {
+            onSubmit?.(inputValue, selectedItem ?? undefined);
+            setInputValue("");
+            setSelectedItem(null);
+            adjustHeight(true);
+        }
+    };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
-    }
-  };
+    return (
+        <div className={cn("w-full py-4", className)}>
+            <div className="relative max-w-xl w-full mx-auto">
+                <div className="relative border border-black/10 dark:border-white/10 focus-within:border-black/20 dark:focus-within:border-white/20 rounded-2xl bg-black/[0.03] dark:bg-white/[0.03]">
+                    <div className="flex flex-col">
+                        <div
+                            className="overflow-y-auto"
+                            style={{ maxHeight: `${maxHeight - 48}px` }}
+                        >
+                            <Textarea
+                                ref={textareaRef}
+                                id={id}
+                                placeholder={placeholder}
+                                disabled={disabled}
+                                className={cn(
+                                    "max-w-xl w-full rounded-2xl pr-10 pt-3 pb-3 placeholder:text-black/70 dark:placeholder:text-white/70 border-none focus:ring text-black dark:text-white resize-none text-wrap bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 leading-[1.2]",
+                                    `min-h-[${minHeight}px]`
+                                )}
+                                value={inputValue}
+                                onChange={(e) => {
+                                    setInputValue(e.target.value);
+                                    adjustHeight();
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleSubmit();
+                                    }
+                                }}
+                            />
+                        </div>
 
-  return (
-    <div ref={containerRef} className="relative w-full">
-      {/* Action Selector Dropdown */}
-      {showActions && (
-        <div className="absolute bottom-full mb-2 left-0 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-10 min-w-[200px]">
-          {actions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <button
-                key={action.text}
-                onClick={() => {
-                  setSelectedAction(action.text);
-                  setShowActions(false);
-                }}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition-colors ${
-                  selectedAction === action.text ? "bg-gray-100" : ""
-                }`}
-              >
-                <div
-                  className={`p-1.5 rounded-md border ${action.colors.border} ${action.colors.bg}`}
-                >
-                  <Icon className={`w-4 h-4 ${action.colors.icon}`} />
+                        <div className="h-12 bg-transparent">
+                            {currentItem && (
+                                <div className="absolute left-3 bottom-3 z-10">
+                                    <button
+                                        type="button"
+                                        onClick={handleSubmit}
+                                        disabled={disabled}
+                                        className={cn(
+                                            "inline-flex items-center gap-1.5",
+                                            "border shadow-sm rounded-md px-2 py-0.5 text-xs font-medium",
+                                            "animate-fadeIn hover:bg-black/5 dark:hover:bg-white/5 transition-colors duration-200",
+                                            currentItem.colors.bg,
+                                            currentItem.colors.border,
+                                            disabled && "opacity-50 cursor-not-allowed"
+                                        )}
+                                    >
+                                        <currentItem.icon
+                                            className={`w-3.5 h-3.5 ${currentItem.colors.icon}`}
+                                        />
+                                        <span
+                                            className={currentItem.colors.icon}
+                                        >
+                                            {selectedItem}
+                                        </span>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <CornerRightDown
+                        className={cn(
+                            "absolute right-3 top-3 w-4 h-4 transition-all duration-200 dark:text-white",
+                            inputValue
+                                ? "opacity-100 scale-100"
+                                : "opacity-30 scale-95"
+                        )}
+                    />
                 </div>
-                <span className="text-sm font-medium text-gray-700">{action.text}</span>
-              </button>
-            );
-          })}
+            </div>
+            <div className="flex flex-wrap gap-1.5 mt-2 max-w-xl mx-auto justify-start px-4">
+                {actions.filter((item) => item.text !== selectedItem).map(
+                    ({ text, icon: Icon, colors }) => (
+                        <button
+                            type="button"
+                            key={text}
+                            disabled={disabled}
+                            className={cn(
+                                "px-3 py-1.5 text-xs font-medium rounded-full",
+                                "border transition-all duration-200",
+                                "border-black/10 dark:border-white/10 bg-white dark:bg-gray-900 hover:bg-black/5 dark:hover:bg-white/5",
+                                "flex-shrink-0",
+                                disabled && "opacity-50 cursor-not-allowed"
+                            )}
+                            onClick={() => toggleItem(text)}
+                        >
+                            <div className="flex items-center gap-1.5">
+                                <Icon className={cn("h-4 w-4", colors.icon)} />
+                                <span className="text-black/70 dark:text-white/70 whitespace-nowrap">
+                                    {text}
+                                </span>
+                            </div>
+                        </button>
+                    )
+                )}
+            </div>
         </div>
-      )}
-
-      {/* Input Container */}
-      <div className="relative flex items-start gap-2 p-3 bg-white rounded-lg border border-gray-200 shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-        {/* Selected Action Button */}
-        <button
-          onClick={() => setShowActions(!showActions)}
-          disabled={disabled}
-          className={`flex-shrink-0 p-2 rounded-md border ${currentAction.colors.border} ${currentAction.colors.bg} hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed`}
-          title={currentAction.text}
-        >
-          <currentAction.icon className={`w-5 h-5 ${currentAction.colors.icon}`} />
-        </button>
-
-        {/* Text Input */}
-        <textarea
-          ref={inputRef}
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          disabled={disabled}
-          className="flex-1 resize-none outline-none text-sm text-gray-700 placeholder-gray-400 bg-transparent min-h-[24px] max-h-[120px] disabled:cursor-not-allowed"
-          rows={1}
-          style={{
-            height: "auto",
-            overflowY: inputValue.split("\n").length > 3 ? "auto" : "hidden",
-          }}
-        />
-
-        {/* Submit Button */}
-        <button
-          onClick={handleSubmit}
-          disabled={disabled || !inputValue.trim()}
-          className="flex-shrink-0 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-        >
-          Send
-        </button>
-      </div>
-    </div>
-  );
+    );
 }
-
