@@ -43,7 +43,7 @@ export async function POST(
       );
     }
 
-    // Find verifier user by email
+    // Find verifier by email
     const verifier = await prisma.user.findUnique({
       where: { email: organizationEmail },
     });
@@ -70,9 +70,9 @@ export async function POST(
     // Create verification request
     const verification = await prisma.verification.create({
       data: {
-        activityId: id,
         verifierId: verifier.id,
         studentId: user.id,
+        activityId: activity.id,
         status: "pending",
       },
     });

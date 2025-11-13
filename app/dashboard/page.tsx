@@ -389,6 +389,18 @@ export default function DashboardPage() {
                   >
                     🎯 Opportunities
                   </Link>
+                  <Link
+                    href="/volunteering"
+                    className="px-4 py-2 text-sm font-medium text-purple-700 hover:text-purple-900 hover:bg-purple-50 rounded-lg transition-colors"
+                  >
+                    Volunteering
+                  </Link>
+                  <Link
+                    href="/alumni"
+                    className="px-4 py-2 text-sm font-medium text-indigo-700 hover:text-indigo-900 hover:bg-indigo-50 rounded-lg transition-colors"
+                  >
+                    Alumni Database
+                  </Link>
                 </>
               )}
               <Link
@@ -1740,91 +1752,100 @@ function ActivityForm({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
-        <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">
-          {activity ? "Edit Activity" : "Add New Activity"}
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl p-6 md:p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-blue-100">
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 mb-2">
+              {activity ? "Update your record" : "Create a new record"}
+            </p>
+            <h2 className="text-2xl font-semibold text-gray-900">
+              {activity ? "Edit Activity" : "Add New Activity"}
+            </h2>
+            <p className="text-sm text-gray-500 mt-2">
+              Share the key details, hours, and evidence so we can verify your involvement quickly.
+            </p>
+          </div>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="p-3 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-lg text-sm">
+            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
               {error}
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Activity Name *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                Category *
-              </label>
-              <select
-                required
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value as ActivityCategory })}
-                className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
-              >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
+            <h3 className="text-sm font-semibold text-gray-900 mb-4">Activity Snapshot</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Activity Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Category *
+                </label>
+                <select
+                  required
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value as ActivityCategory })}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  {CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Organization
+                </label>
+                <input
+                  type="text"
+                  value={formData.organization}
+                  onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Position/Role
+                </label>
+                <input
+                  type="text"
+                  value={formData.position}
+                  onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description *
+                </label>
+                <textarea
+                  required
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                Organization
-              </label>
-              <input
-                type="text"
-                value={formData.organization}
-                onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
-                className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Position/Role
-            </label>
-            <input
-              type="text"
-              value={formData.position}
-              onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-              className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Description *
-            </label>
-            <textarea
-              required
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
-              className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Start Date *
               </label>
               <input
@@ -1832,26 +1853,26 @@ function ActivityForm({
                 required
                 value={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 End Date (leave empty if ongoing)
               </label>
               <input
                 type="date"
                 value={formData.endDate}
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Hours per Week
               </label>
               <input
@@ -1859,12 +1880,12 @@ function ActivityForm({
                 step="0.1"
                 value={formData.hoursPerWeek}
                 onChange={(e) => setFormData({ ...formData, hoursPerWeek: e.target.value })}
-                className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Total Hours
               </label>
               <input
@@ -1872,22 +1893,22 @@ function ActivityForm({
                 step="0.1"
                 value={formData.totalHours}
                 onChange={(e) => setFormData({ ...formData, totalHours: e.target.value })}
-                className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Verifier Email
             </label>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <input
                 type="email"
                 value={formData.verifierEmail}
                 onChange={(e) => setFormData({ ...formData, verifierEmail: e.target.value })}
                 placeholder="e.g., main@weeklytheta.com"
-                className="flex-1 px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
               {formData.verifierEmail && (
                 <button
@@ -1959,27 +1980,32 @@ function ActivityForm({
                       alert("An error occurred while sending the email");
                     }
                   }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors whitespace-nowrap"
+                  className="px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors whitespace-nowrap shadow-sm"
                   title="Send verification email"
                 >
                   Send Email
                 </button>
               )}
             </div>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+            <p className="text-xs text-gray-500 mt-2">
               Enter the email of the person who can verify this activity. Click "Send Email" to send them a verification request.
             </p>
           </div>
 
           {/* Attachments Section */}
-          <div className="border-t border-zinc-200 dark:border-zinc-700 pt-4 mt-4">
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-4">
-              Attachments & Evidence
-            </h3>
+          <div className="border-t border-gray-200 pt-6 mt-2 space-y-5">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                Attachments & Evidence
+              </h3>
+              <p className="text-sm text-gray-500">
+                Upload supporting documents so organizations and colleges can review proof of your involvement.
+              </p>
+            </div>
 
             {/* Photos Upload */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Photos
               </label>
               <input
@@ -2013,16 +2039,16 @@ function ActivityForm({
                     photos: [...formData.photos, ...uploadedUrls],
                   });
                 }}
-                className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
+                className="w-full px-4 py-2.5 border border-dashed border-blue-200 rounded-lg bg-blue-50/50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
               {formData.photos.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap gap-2">
                   {formData.photos.map((url, idx) => (
                     <div key={idx} className="relative group">
                       <img
                         src={url}
                         alt={`Photo ${idx + 1}`}
-                        className="w-20 h-20 object-cover rounded border border-zinc-300 dark:border-zinc-700"
+                        className="w-20 h-20 object-cover rounded-lg border border-blue-100 shadow-sm"
                       />
                       <button
                         type="button"
@@ -2032,7 +2058,7 @@ function ActivityForm({
                             photos: formData.photos.filter((_, i) => i !== idx),
                           });
                         }}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow"
                       >
                         ×
                       </button>
@@ -2044,7 +2070,7 @@ function ActivityForm({
 
             {/* Certificates Upload */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Certificates/Documents (PDF, Images)
               </label>
               <input
@@ -2078,17 +2104,17 @@ function ActivityForm({
                     certificates: [...formData.certificates, ...uploadedUrls],
                   });
                 }}
-                className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
+                className="w-full px-4 py-2.5 border border-dashed border-blue-200 rounded-lg bg-blue-50/50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
               {formData.certificates.length > 0 && (
-                <div className="mt-2 space-y-1">
+                <div className="mt-3 space-y-2">
                   {formData.certificates.map((url, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-2 bg-zinc-100 dark:bg-zinc-700 rounded">
+                    <div key={idx} className="flex items-center justify-between p-3 bg-white border border-blue-100 rounded-lg shadow-sm">
                       <a
                         href={url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex-1"
+                        className="text-sm text-blue-600 hover:text-blue-700 hover:underline flex-1"
                       >
                         {url.split("/").pop()}
                       </a>
@@ -2100,7 +2126,7 @@ function ActivityForm({
                             certificates: formData.certificates.filter((_, i) => i !== idx),
                           });
                         }}
-                        className="text-red-600 dark:text-red-400 ml-2"
+                        className="text-red-500 hover:text-red-600 ml-3"
                       >
                         ×
                       </button>
@@ -2112,7 +2138,7 @@ function ActivityForm({
 
             {/* Portfolio Links */}
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 External Portfolio Links
               </label>
               <div className="space-y-2">
@@ -2127,7 +2153,7 @@ function ActivityForm({
                         setFormData({ ...formData, portfolioLinks: newLinks });
                       }}
                       placeholder="https://example.com/portfolio"
-                      className="flex-1 px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
+                      className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                     <button
                       type="button"
@@ -2137,7 +2163,7 @@ function ActivityForm({
                           portfolioLinks: formData.portfolioLinks.filter((_, i) => i !== idx),
                         });
                       }}
-                      className="px-3 py-2 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+                      className="px-3 py-2 bg-red-50 text-red-600 rounded-lg border border-red-200 hover:bg-red-100 transition-colors"
                     >
                       Remove
                     </button>
@@ -2151,7 +2177,7 @@ function ActivityForm({
                       portfolioLinks: [...formData.portfolioLinks, ""],
                     });
                   }}
-                  className="px-4 py-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors text-sm"
+                  className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
                 >
                   + Add Portfolio Link
                 </button>
@@ -2160,14 +2186,14 @@ function ActivityForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Notes
             </label>
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={2}
-              className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
@@ -2175,14 +2201,14 @@ function ActivityForm({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 px-6 py-2 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-black rounded-lg font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             >
               {isSubmitting ? "Saving..." : activity ? "Update Activity" : "Add Activity"}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-50 rounded-lg font-medium hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+              className="px-6 py-2.5 border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-colors"
             >
               Cancel
             </button>

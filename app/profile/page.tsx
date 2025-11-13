@@ -84,116 +84,240 @@ export default function ProfilePage() {
   const isAdmin = profile.role === "admin";
   const roleDisplay = isAdmin ? "Administrator" : "Student";
 
+  const isStudent = profile.role === "student";
+  const isVerifier = profile.role === "verifier";
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Header */}
-        <header className="mb-8">
+    <div className="min-h-screen bg-gray-50">
+      {/* Top Navigation Bar */}
+      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
-                My Profile
-              </h1>
-              <p className="text-zinc-600 dark:text-zinc-400">
-                {roleDisplay} Profile
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Link
-                href="/dashboard"
-                className="px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-              >
-                Dashboard
+            <div className="flex items-center gap-3">
+              <Link href="/" className="flex items-center gap-2">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-sm">
+                  <span className="text-white font-bold text-xl">A</span>
+                </div>
+                <span className="text-xl font-bold text-gray-900">Actify</span>
               </Link>
+              <div className="h-6 w-px bg-gray-300 mx-2" />
+              <span className="text-sm text-gray-500">
+                {isAdmin ? "Admin Portal" : isVerifier ? "Verifier Portal" : "Student Portal"}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 pr-4 border-r border-gray-200">
+                <div className="text-right">
+                  <p className="text-sm font-medium text-gray-900">{profile.name}</p>
+                  <p className="text-xs text-gray-500">{profile.email}</p>
+                </div>
+                {profile.image ? (
+                  <img
+                    src={profile.image}
+                    alt={profile.name}
+                    className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center text-lg font-semibold">
+                    {profile.name?.[0] || "U"}
+                  </div>
+                )}
+              </div>
+              {isStudent && (
+                <>
+                  <Link
+                    href="/clubs"
+                    className="px-4 py-2 text-sm font-medium text-blue-700 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    Clubs
+                  </Link>
+                  <Link
+                    href="/organizations"
+                    className="px-4 py-2 text-sm font-medium text-green-700 hover:text-green-900 hover:bg-green-50 rounded-lg transition-colors"
+                  >
+                    Organizations
+                  </Link>
+                </>
+              )}
+              {isAdmin ? (
+                <Link
+                  href="/admin"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  Admin Dashboard
+                </Link>
+              ) : (
+                <Link
+                  href="/dashboard"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  Dashboard
+                </Link>
+              )}
               <button
                 onClick={() => signOut({ callbackUrl: "/auth/signin" })}
-                className="px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
               >
                 Sign Out
               </button>
             </div>
           </div>
-        </header>
+        </div>
+      </nav>
 
-        {/* Profile Info */}
-        <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 shadow-sm mb-6">
-          <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">
-            Profile Information
-          </h2>
-          <div className="space-y-4">
-            {profile.image && (
-              <div className="flex items-center gap-4 mb-4">
-                <img
-                  src={profile.image}
-                  alt={profile.name}
-                  className="w-20 h-20 rounded-full"
-                />
-              </div>
-            )}
-            <div>
-              <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">
-                Name
-              </label>
-              <p className="text-lg text-zinc-900 dark:text-zinc-50">{profile.name}</p>
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+        <div className="flex flex-col gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">My Profile</h1>
+            <p className="text-gray-600">
+              Review your account details and see a snapshot of your activity progress.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+              <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1">
+                {isAdmin ? "Total Verifications" : "Total Activities"}
+              </p>
+              <p className="text-2xl font-bold text-gray-900">{totalActivitiesCount}</p>
+              <p className="text-xs text-gray-500 mt-2">
+                {isAdmin
+                  ? "Completed verifications issued across the platform."
+                  : "Combined total of activities you have created and verified."}
+              </p>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">
-                Email
-              </label>
-              <p className="text-lg text-zinc-900 dark:text-zinc-50">{profile.email}</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">
+            <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+              <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1">
                 Role
-              </label>
-              <p className="text-lg text-zinc-900 dark:text-zinc-50 capitalize">{profile.role}</p>
+              </p>
+              <p className="text-2xl font-bold text-gray-900">{roleDisplay}</p>
+              <p className="text-xs text-gray-500 mt-2">
+                Access tailored to your current role. Contact support to request changes.
+              </p>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1">
+            <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+              <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1">
                 Member Since
-              </label>
-              <p className="text-zinc-900 dark:text-zinc-50">
+              </p>
+              <p className="text-2xl font-bold text-gray-900">
                 {new Date(profile.createdAt).toLocaleDateString()}
+              </p>
+              <p className="text-xs text-gray-500 mt-2">
+                Thanks for being part of Actify. Keep your profile up-to-date for seamless verifications.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
-              {isAdmin ? "Total Verifications" : "Total Activities"}
-            </h3>
-            <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-              {totalActivitiesCount}
-            </p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Profile Details */}
+          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div className="p-6 border-b border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900">Profile Details</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Personal information connected to your Actify account.
+              </p>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="flex items-center gap-4">
+                {profile.image ? (
+                  <img
+                    src={profile.image}
+                    alt={profile.name}
+                    className="w-20 h-20 rounded-full border-2 border-gray-200 object-cover"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-blue-600 text-white flex items-center justify-center text-2xl font-semibold">
+                    {profile.name?.[0] || "U"}
+                  </div>
+                )}
+                <div>
+                  <p className="text-lg font-semibold text-gray-900">{profile.name}</p>
+                  <p className="text-sm text-gray-500">{roleDisplay}</p>
+                </div>
+              </div>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <dt className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                    Name
+                  </dt>
+                  <dd className="text-base text-gray-900">{profile.name}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                    Email
+                  </dt>
+                  <dd className="text-base text-gray-900">{profile.email}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                    Role
+                  </dt>
+                  <dd className="text-base text-gray-900 capitalize">{profile.role}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                    Account Created
+                  </dt>
+                  <dd className="text-base text-gray-900">
+                    {new Date(profile.createdAt).toLocaleDateString()}
+                  </dd>
+                </div>
+              </dl>
+            </div>
           </div>
-        </div>
 
-        {/* Quick Actions */}
-        <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 shadow-sm">
-          <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">
-            Quick Actions
-          </h2>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/dashboard"
-              className="px-6 py-3 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-black rounded-lg font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
-            >
-              Go to Dashboard
-            </Link>
-            {!isAdmin && (
-              <Link
-                href="/dashboard"
-                className="px-6 py-3 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-50 rounded-lg font-medium hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-              >
-                Add Activity
-              </Link>
-            )}
+          {/* Quick Actions */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Jump back into managing your activities and verifications.
+                </p>
+              </div>
+              <div className="p-6 space-y-3">
+                <Link
+                  href={isAdmin ? "/admin" : "/dashboard"}
+                  className="block w-full text-center px-5 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
+                >
+                  {isAdmin ? "Go to Admin Dashboard" : "Open Dashboard"}
+                </Link>
+                {!isAdmin && (
+                  <Link
+                    href="/dashboard?show=add-activity"
+                    className="block w-full text-center px-5 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                  >
+                    Add New Activity
+                  </Link>
+                )}
+                {isStudent && (
+                  <Link
+                    href="/organizations"
+                    className="block w-full text-center px-5 py-3 border border-green-200 text-green-700 rounded-lg font-medium hover:bg-green-50 transition-colors"
+                  >
+                    Browse Organizations
+                  </Link>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900">Verification Tips</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Keep your account ready for the next application season.
+                </p>
+              </div>
+              <div className="p-6 space-y-3 text-sm text-gray-600">
+                <p>• Ensure your name and contact information match your official documents.</p>
+                <p>
+                  • For faster approvals, add supporting evidence when submitting new activities.
+                </p>
+                <p>
+                  • Need help? Reach out to your counselor or organization verifier directly from the activity view.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

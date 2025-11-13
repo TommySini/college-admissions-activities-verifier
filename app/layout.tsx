@@ -4,6 +4,7 @@ import "./globals.css";
 import { ProfileProvider } from "./context/ProfileContext";
 import { VerificationProvider } from "./context/VerificationContext";
 import { Providers } from "./providers";
+import { FontLoader } from "./components/FontLoader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,6 +31,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <FontLoader />
         <Providers>
           <ProfileProvider>
             <VerificationProvider>{children}</VerificationProvider>
