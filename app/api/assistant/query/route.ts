@@ -2,93 +2,86 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
-import {
-  getUserActivities,
-  getVolunteeringStats,
-  getVolunteeringGoals,
-  getUserProfile,
-  getAdminAnalytics,
-  getOrganizations,
-  findOrganizationByName,
-} from "@/lib/assistant/tools";
+import { getUserProfile } from "@/lib/assistant/tools";
+import { listModels, describeModel } from "@/lib/assistant/runtimeModels";
+import { executeGenericQuery, buildWhereClause } from "@/lib/assistant/genericQuery";
+import { formatResultsForPrompt, formatModelsList, formatModelDescription } from "@/lib/assistant/format";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Intent classification keywords
-const INTENT_PATTERNS = {
-  clubs: [
-    "club",
-    "organization",
-    "president",
-    "leader",
-    "advisor",
-    "contact",
-    "finance club",
-    "robotics",
-    "tbs",
-  ],
-  activities: [
-    "activity",
-    "activities",
-    "extracurricular",
-    "best activity",
-    "what have i done",
-    "my activities",
-  ],
-  volunteering: [
-    "volunteer",
-    "volunteering",
-    "hours",
-    "service",
-    "community service",
-    "how many hours",
-  ],
-  goals: ["goal", "target", "progress", "remaining", "aim for", "should i"],
-  profile: ["profile", "my info", "about me", "my major", "who am i"],
-  admin: ["analytics", "platform", "total students", "statistics", "admin"],
-};
-
-function classifyIntent(message: string): string[] {
-  const lowerMessage = message.toLowerCase();
-  const intents: string[] = [];
-
-  for (const [intent, keywords] of Object.entries(INTENT_PATTERNS)) {
-    if (keywords.some((keyword) => lowerMessage.includes(keyword))) {
-      intents.push(intent);
-    }
-  }
-
-  // Default to all if no specific intent detected
-  if (intents.length === 0) {
-    return ["profile", "activities", "volunteering"];
-  }
-
-  return intents;
-}
-
-// Extract potential organization names from the query
-function extractOrganizationName(message: string): string | null {
-  const lowerMessage = message.toLowerCase();
-
-  // Common patterns for asking about clubs
-  const patterns = [
-    /(?:president|leader|advisor|contact|email).*?(?:of|for)\s+(?:the\s+)?([a-z\s]+?)(?:\?|$|club)/i,
-    /([a-z\s]+?)\s+(?:club|organization|team)/i,
-    /(?:the\s+)?([a-z\s]+?)\s+(?:president|leader|advisor)/i,
-  ];
-
-  for (const pattern of patterns) {
-    const match = message.match(pattern);
-    if (match && match[1]) {
-      return match[1].trim();
-    }
-  }
-
-  return null;
-}
+// Define tools for OpenAI function calling
+const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+  {
+    type: "function",
+    function: {
+      name: "list_models",
+      description: "List all available data models/tables in the platform that can be queried",
+      parameters: {
+        type: "object",
+        properties: {},
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "describe_model",
+      description: "Get detailed schema information about a specific model including its fields and types",
+      parameters: {
+        type: "object",
+        properties: {
+          model: {
+            type: "string",
+            description: "The name of the model to describe (e.g., 'Activity', 'Organization', 'AlumniProfile')",
+          },
+        },
+        required: ["model"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "query_model",
+      description: "Query a specific model with filters, field selection, and ordering. Returns actual data from the database.",
+      parameters: {
+        type: "object",
+        properties: {
+          model: {
+            type: "string",
+            description: "The model name to query",
+          },
+          filters: {
+            type: "object",
+            description: "Filter conditions as key-value pairs. Use 'contains' for text search, 'equals' for exact match, 'gt'/'lt' for numbers",
+            additionalProperties: true,
+          },
+          fields: {
+            type: "array",
+            items: { type: "string" },
+            description: "Specific fields to return (optional, returns all if not specified)",
+          },
+          limit: {
+            type: "number",
+            description: "Maximum number of records to return (max 50, default 20)",
+          },
+          orderBy: {
+            type: "object",
+            properties: {
+              field: { type: "string" },
+              direction: { type: "string", enum: ["asc", "desc"] },
+            },
+            description: "Sort order for results",
+          },
+        },
+        required: ["model"],
+      },
+    },
+  },
+];
 
 export async function POST(request: NextRequest) {
   try {
@@ -113,169 +106,146 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Message is required" }, { status: 400 });
     }
 
-    // Classify intent to determine what data to fetch
-    const intents = classifyIntent(message);
-    console.log("Detected intents:", intents);
+    // Get user profile for context
+    const profile = await getUserProfile(user.id);
 
-    // Conditionally fetch data based on intent
-    const contextData: any = {};
+    // Build initial system prompt
+    const systemPrompt = `You are Actify Assistant, a helpful AI assistant for the Actify college admissions platform.
 
-    // Always include basic profile
-    contextData.profile = await getUserProfile(user.id);
+**Current User:**
+- Name: ${profile?.name}
+- Role: ${profile?.role}
+- Email: ${profile?.email}
 
-    // Fetch data based on detected intents
-    if (intents.includes("activities")) {
-      contextData.activities = await getUserActivities(user.id, 15);
-    }
+**Your Capabilities:**
+You have access to tools that let you query the platform's database:
+- list_models: See all available data tables
+- describe_model: Get schema details for a specific table
+- query_model: Fetch actual data with filters
 
-    if (intents.includes("volunteering")) {
-      contextData.volunteering = await getVolunteeringStats(user.id);
-    }
+**Access Rules:**
+- Students can access: their own activities/goals/participations, approved organizations, volunteering opportunities, and alumni data
+- Admins can access: all data including other students' records
+- Always use tools to fetch current data rather than making assumptions
 
-    if (intents.includes("goals")) {
-      contextData.goals = await getVolunteeringGoals(user.id);
-    }
+**Instructions:**
+1. When asked about data, use the appropriate tool to fetch it
+2. For questions about clubs/organizations, query the Organization model
+3. For alumni questions, query AlumniProfile, AlumniApplication, ExtractedActivity models
+4. For user's own data, query Activity, VolunteeringParticipation, VolunteeringGoal models
+5. Be conversational and helpful
+6. If you need to search, use filters like {name: {contains: "search term"}}
+7. Keep responses concise (2-4 sentences typically)
 
-    if (intents.includes("clubs")) {
-      // Try to extract organization name from query
-      const orgName = extractOrganizationName(message);
-      if (orgName) {
-        console.log("Searching for organization:", orgName);
-        contextData.searchedOrganizations = await findOrganizationByName(orgName);
+${action ? `The user selected the "${action}" action - apply this if relevant.` : ""}`;
+
+    // Start conversation with tool calling
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: message },
+    ];
+
+    let iterationCount = 0;
+    const MAX_ITERATIONS = 5;
+
+    while (iterationCount < MAX_ITERATIONS) {
+      iterationCount++;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages,
+        tools,
+        tool_choice: "auto",
+        temperature: 0.7,
+        max_tokens: 800,
+      });
+
+      const responseMessage = completion.choices[0].message;
+      messages.push(responseMessage);
+
+      // If no tool calls, we have the final answer
+      if (!responseMessage.tool_calls || responseMessage.tool_calls.length === 0) {
+        return NextResponse.json({
+          answer: responseMessage.content || "I'm sorry, I couldn't generate a response.",
+          citations: [],
+        });
       }
-      // Also get general list of organizations (limited)
-      contextData.organizations = await getOrganizations("APPROVED", 20);
-    }
 
-    if (intents.includes("admin") && user.role === "admin") {
-      try {
-        contextData.admin = await getAdminAnalytics(user);
-      } catch (error) {
-        console.error("Error fetching admin analytics:", error);
+      // Execute tool calls
+      for (const toolCall of responseMessage.tool_calls) {
+        const functionName = toolCall.function.name;
+        const functionArgs = JSON.parse(toolCall.function.arguments);
+
+        console.log(`Tool call: ${functionName}`, functionArgs);
+
+        let toolResult: string;
+
+        try {
+          switch (functionName) {
+            case "list_models":
+              const models = listModels();
+              toolResult = formatModelsList(models);
+              break;
+
+            case "describe_model":
+              const modelDesc = describeModel(functionArgs.model);
+              if (modelDesc) {
+                const fieldNames = modelDesc.fields
+                  .filter((f) => !f.isRelation)
+                  .map((f) => f.name);
+                toolResult = formatModelDescription(functionArgs.model, fieldNames);
+              } else {
+                toolResult = `Model '${functionArgs.model}' not found.`;
+              }
+              break;
+
+            case "query_model":
+              const where = functionArgs.filters ? buildWhereClause(functionArgs.filters) : undefined;
+              const queryResult = await executeGenericQuery(
+                {
+                  model: functionArgs.model,
+                  where,
+                  select: functionArgs.fields,
+                  limit: functionArgs.limit,
+                  orderBy: functionArgs.orderBy,
+                },
+                user
+              );
+
+              if (queryResult.success && queryResult.data) {
+                toolResult = formatResultsForPrompt(
+                  queryResult.data,
+                  functionArgs.model,
+                  10
+                );
+              } else {
+                toolResult = queryResult.error || "Query failed";
+              }
+              break;
+
+            default:
+              toolResult = `Unknown tool: ${functionName}`;
+          }
+        } catch (error: any) {
+          console.error(`Error executing tool ${functionName}:`, error);
+          toolResult = `Error: ${error.message || "Tool execution failed"}`;
+        }
+
+        // Add tool result to messages
+        messages.push({
+          role: "tool",
+          tool_call_id: toolCall.id,
+          content: toolResult,
+        });
       }
     }
 
-    // Build compact system prompt
-    let systemPrompt = `You are Actify Assistant, a helpful AI assistant for the Actify college admissions activity verification platform.
-
-You have access to the following data about the current user and platform:
-
-**User Profile:**
-- Name: ${contextData.profile?.name}
-- Email: ${contextData.profile?.email}
-- Role: ${contextData.profile?.role}
-${contextData.profile?.alumniProfile ? `- Intended Major: ${contextData.profile.alumniProfile.intendedMajor || "Not specified"}` : ""}
-`;
-
-    // Add activities if requested
-    if (contextData.activities) {
-      const topActivities = contextData.activities.slice(0, 10);
-      systemPrompt += `\n**Activities (showing ${topActivities.length} of ${contextData.activities.length}):**\n`;
-      topActivities.forEach((act: any) => {
-        systemPrompt += `- ${act.name} (${act.category})${act.role ? ` - Role: ${act.role}` : ""}${
-          act.organization ? ` at ${act.organization}` : ""
-        }${act.totalHours ? ` - ${act.totalHours} hours` : ""}${
-          act.verified ? " ✓ Verified" : " (Pending)"
-        }\n`;
-      });
-    }
-
-    // Add volunteering if requested
-    if (contextData.volunteering) {
-      systemPrompt += `\n**Volunteering Statistics:**
-- Total Hours: ${contextData.volunteering.totalHours}
-- Verified Hours: ${contextData.volunteering.verifiedHours}
-- Unverified Hours: ${contextData.volunteering.unverifiedHours}
-- Recent Hours (last 6 months): ${contextData.volunteering.recentHours}
-- Total Participations: ${contextData.volunteering.participationCount}
-`;
-      if (contextData.volunteering.categories?.length > 0) {
-        systemPrompt += `- Categories: ${contextData.volunteering.categories
-          .map((c: any) => `${c.name} (${c.hours}h)`)
-          .join(", ")}\n`;
-      }
-    }
-
-    // Add goals if requested
-    if (contextData.goals && contextData.goals.length > 0) {
-      systemPrompt += `\n**Volunteering Goals:**\n`;
-      contextData.goals.forEach((goal: any) => {
-        systemPrompt += `- Target: ${goal.targetHours} hours${
-          goal.description ? ` (${goal.description})` : ""
-        } - Current: ${goal.currentHours}h (${Math.round(goal.percentComplete)}% complete)${
-          goal.remainingHours > 0 ? ` - ${goal.remainingHours}h remaining` : " ✓ Complete"
-        }\n`;
-      });
-    }
-
-    // Add searched organizations if found
-    if (contextData.searchedOrganizations && contextData.searchedOrganizations.length > 0) {
-      systemPrompt += `\n**Searched Organizations (matching query):**\n`;
-      contextData.searchedOrganizations.forEach((org: any) => {
-        systemPrompt += `- **${org.name}**${org.category ? ` (${org.category})` : ""}
-  ${org.description ? `Description: ${org.description}\n  ` : ""}${
-          org.presidentName ? `President: ${org.presidentName}\n  ` : ""
-        }${org.leadership ? `Leadership: ${org.leadership}\n  ` : ""}${
-          org.contactEmail ? `Contact: ${org.contactEmail}\n  ` : ""
-        }Status: ${org.status}\n`;
-      });
-    } else if (contextData.organizations && contextData.organizations.length > 0) {
-      // Show general list if no specific search
-      systemPrompt += `\n**Available Organizations (${contextData.organizations.length} shown):**\n`;
-      contextData.organizations.slice(0, 10).forEach((org: any) => {
-        systemPrompt += `- **${org.name}**${org.presidentName ? ` - President: ${org.presidentName}` : ""}${
-          org.leadership ? ` - Leadership: ${org.leadership}` : ""
-        }\n`;
-      });
-    }
-
-    // Add admin data if requested
-    if (contextData.admin) {
-      systemPrompt += `\n**Admin Analytics:**
-- Total Students: ${contextData.admin.totalStudents}
-- Total Activities: ${contextData.admin.totalActivities}
-- Verified Activities: ${contextData.admin.verifiedActivities}
-- Pending Verifications: ${contextData.admin.pendingVerifications}
-- Total Volunteering Hours: ${contextData.admin.totalVolunteeringHours}
-- Total Organizations: ${contextData.admin.totalOrganizations}
-- Verification Rate: ${Math.round(contextData.admin.verificationRate)}%
-`;
-    }
-
-    systemPrompt += `\n**Instructions:**
-1. Answer questions based ONLY on the data provided above.
-2. If asked about something not in the data, politely explain you don't have that information and suggest where the user can find it on the platform (e.g., "Check the Clubs Directory page" or "Visit your Activities page").
-3. Be conversational, helpful, and encouraging.
-4. When discussing activities, mention verification status if relevant.
-5. For volunteering questions, provide specific numbers and context.
-6. If asked for recommendations (e.g., "What should I aim for?"), provide general college admissions guidance based on the user's current data.
-7. Keep responses concise but informative (2-4 sentences typically).
-8. Use natural language, not JSON or technical formatting in your response.
-9. For club/organization questions, provide the specific information requested (president name, contact, etc.).
-
-${action ? `The user has selected the "${action}" action. Apply this to your response if relevant.` : ""}`;
-
-    console.log("System prompt length:", systemPrompt.length);
-
-    // Call OpenAI
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: message },
-      ],
-      temperature: 0.7,
-      max_tokens: 500,
-    });
-
-    const answer =
-      completion.choices[0]?.message?.content ||
-      "I'm sorry, I couldn't generate a response.";
-
+    // If we hit max iterations, return what we have
     return NextResponse.json({
-      answer,
+      answer: "I apologize, but I need more iterations to complete this request. Please try rephrasing your question.",
       citations: [],
     });
+
   } catch (error: any) {
     console.error("Error in assistant query:", error);
 
