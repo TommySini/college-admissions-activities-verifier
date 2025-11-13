@@ -5,6 +5,7 @@ import { ProfileProvider } from "./context/ProfileContext";
 import { VerificationProvider } from "./context/VerificationContext";
 import { Providers } from "./providers";
 import { FontLoader } from "./components/FontLoader";
+import { AssistantWidget } from "./components/assistant/AssistantWidget";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,7 +35,10 @@ export default function RootLayout({
         <FontLoader />
         <Providers>
           <ProfileProvider>
-            <VerificationProvider>{children}</VerificationProvider>
+            <VerificationProvider>
+              {children}
+              <AssistantWidget />
+            </VerificationProvider>
           </ProfileProvider>
         </Providers>
       </body>

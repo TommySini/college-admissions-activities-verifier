@@ -86,6 +86,7 @@ NEXTAUTH_SECRET=your-secret-key-here (generate with: openssl rand -base64 32)
 NEXTAUTH_URL=https://YOUR_DOMAIN.vercel.app
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
+OPENAI_API_KEY=your-openai-api-key (get from https://platform.openai.com/api-keys)
 ```
 
 **Optional (for email):**
@@ -245,6 +246,7 @@ Before deploying, ensure you have:
 - [ ] `NEXTAUTH_URL` - Your production URL
 - [ ] `GOOGLE_CLIENT_ID` - From Google Cloud Console
 - [ ] `GOOGLE_CLIENT_SECRET` - From Google Cloud Console
+- [ ] `OPENAI_API_KEY` - From OpenAI Platform (for AI Assistant feature)
 - [ ] `FROM_EMAIL` - Email for sending notifications (optional)
 - [ ] `GMAIL_APP_PASSWORD` or `RESEND_API_KEY` - For email (optional)
 - [ ] `VERIFIER_EMAILS` - Comma-separated list (optional)

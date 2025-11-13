@@ -2,6 +2,35 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+### Environment Variables
+
+Create a `.env.local` file in the root directory with the following variables:
+
+```env
+# Database
+DATABASE_URL="file:./dev.db"
+
+# NextAuth
+NEXTAUTH_SECRET="your-secret-key"
+NEXTAUTH_URL="http://localhost:3000"
+
+# Google OAuth
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+
+# OpenAI (for AI Assistant)
+OPENAI_API_KEY="your-openai-api-key"
+
+# Optional: Email configuration
+GMAIL_USER="your-email@gmail.com"
+GMAIL_APP_PASSWORD="your-app-password"
+FROM_EMAIL="your-email@gmail.com"
+```
+
+**Note:** The AI Assistant feature requires an OpenAI API key. Get one at [platform.openai.com](https://platform.openai.com/api-keys).
+
+### Run the Development Server
+
 First, run the development server:
 
 ```bash

@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useColors } from "@/app/hooks/useColors";
+import { useColors } from "@/app/context/ColorContext";
 
 interface PendingOpportunity {
   id: string;
