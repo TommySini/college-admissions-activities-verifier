@@ -3,22 +3,24 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   useEffect(() => {
-    if (status === "authenticated" && session) {
+    if (status === "authenticated" && session && !hasRedirected) {
+      setHasRedirected(true);
       // Redirect admins to admin dashboard, others to regular dashboard
       if (session.user.role === "admin") {
-        router.push("/admin");
+        router.replace("/admin");
       } else {
-        router.push("/dashboard");
+        router.replace("/dashboard");
       }
     }
-  }, [status, session, router]);
+  }, [status, session, router, hasRedirected]);
 
   if (status === "loading") {
     return (

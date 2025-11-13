@@ -21,6 +21,7 @@ export async function POST(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // Check if organization exists first
     const existing = await prisma.organization.findUnique({
       where: { id },
     });
@@ -29,6 +30,7 @@ export async function POST(
       return NextResponse.json({ error: "Organization not found" }, { status: 404 });
     }
 
+    // If already rejected, return as-is
     if (existing.status === OrganizationStatus.REJECTED) {
       return NextResponse.json({ organization: existing });
     }
