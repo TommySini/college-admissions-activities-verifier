@@ -96,12 +96,8 @@ export default function VolunteeringPage() {
   const [showCompletionPrompt, setShowCompletionPrompt] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [chartTimeRange, setChartTimeRange] = useState<"1W" | "1M" | "6M" | "1Y" | "2Y" | "all">("1M");
-  const [showLogHoursModal, setShowLogHoursModal] = useState(false);
   const [hoveredBarIndex, setHoveredBarIndex] = useState<number | null>(null);
-  const [showActivityDetailModal, setShowActivityDetailModal] = useState(false);
-  const [selectedActivity, setSelectedActivity] = useState<{ type: 'participation' | 'opportunity'; data: any } | null>(null);
-  const [isDeletingActivity, setIsDeletingActivity] = useState(false);
-  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [showLogHoursModal, setShowLogHoursModal] = useState(false);
   const [logHoursFormData, setLogHoursFormData] = useState({
     organizationName: "",
     activityDescription: "",
@@ -115,6 +111,19 @@ export default function VolunteeringPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmittingLogHours, setIsSubmittingLogHours] = useState(false);
   const [logHoursError, setLogHoursError] = useState("");
+  const [showAddOpportunityModal, setShowAddOpportunityModal] = useState(false);
+  const [opportunityFormData, setOpportunityFormData] = useState({
+    name: "",
+    description: "",
+    startTime: "",
+    endTime: "",
+    date: "",
+    isRecurring: false,
+    recurrenceFrequency: "weekly", // "weekly", "monthly", "daily"
+  });
+  const [isSubmittingOpportunity, setIsSubmittingOpportunity] = useState(false);
+  const [opportunityError, setOpportunityError] = useState("");
+  const [opportunitySuccess, setOpportunitySuccess] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -223,64 +232,6 @@ export default function VolunteeringPage() {
     } catch (error) {
       console.error("Error checking completions:", error);
     }
-  };
-
-  const handleDeleteActivity = () => {
-    if (!selectedActivity || selectedActivity.type !== 'participation') return;
-    setShowDeleteConfirmModal(true);
-  };
-
-  const confirmDeleteActivity = async () => {
-    if (!selectedActivity || selectedActivity.type !== 'participation') return;
-
-    setIsDeletingActivity(true);
-    try {
-      const response = await fetch(`/api/volunteering-participations/${selectedActivity.data.id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-
-      if (response.ok) {
-        // Refresh participations to update stats
-        await fetchParticipations();
-        // Close modals and clear selection
-        setShowDeleteConfirmModal(false);
-        setShowActivityDetailModal(false);
-        setSelectedActivity(null);
-      } else {
-        const data = await response.json();
-        alert(data.error || "Failed to delete activity");
-        setShowDeleteConfirmModal(false);
-      }
-    } catch (error) {
-      console.error("Error deleting activity:", error);
-      alert("Failed to delete activity");
-      setShowDeleteConfirmModal(false);
-    } finally {
-      setIsDeletingActivity(false);
-    }
-  };
-
-  const handleEditActivity = () => {
-    if (!selectedActivity || selectedActivity.type !== 'participation') return;
-    // For now, we'll just navigate to a log hours form pre-filled with the data
-    // Or we could create a separate edit modal
-    // For simplicity, let's close the detail modal and open log hours with pre-filled data
-    const participation = selectedActivity.data;
-    setLogHoursFormData({
-      organizationName: participation.organizationName || "",
-      activityDescription: participation.activityDescription || "",
-      startDate: participation.startDate ? new Date(participation.startDate).toISOString().split('T')[0] : "",
-      endDate: participation.endDate ? new Date(participation.endDate).toISOString().split('T')[0] : "",
-      isOneDay: !participation.endDate || new Date(participation.startDate).getTime() === new Date(participation.endDate).getTime(),
-      totalHours: participation.totalHours?.toString() || "",
-      serviceSheetUrl: participation.serviceSheetUrl || "",
-    });
-    setShowActivityDetailModal(false);
-    setSelectedActivity(null);
-    setShowLogHoursModal(true);
-    // Note: We'd need to track the participation ID to update instead of create
-    // For now, this is a basic implementation
   };
 
   const handleCompleteParticipation = async (participationId: string, completed: boolean) => {
@@ -490,8 +441,7 @@ export default function VolunteeringPage() {
           serviceSheetUrl: "",
         });
         setUploadedFile(null);
-        await fetchParticipations();
-        await fetchGoals(); // Refresh goals to check for auto-completion
+        fetchParticipations();
         setShowSuccessMessage(true);
         setTimeout(() => setShowSuccessMessage(false), 5000);
       } else {
@@ -504,10 +454,97 @@ export default function VolunteeringPage() {
     }
   };
 
+  const handleAddOpportunitySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setOpportunityError("");
+    setOpportunitySuccess(false);
+
+    if (
+      !opportunityFormData.name ||
+      !opportunityFormData.description ||
+      !opportunityFormData.startTime ||
+      !opportunityFormData.endTime ||
+      !opportunityFormData.date
+    ) {
+      setOpportunityError("Please fill in all required fields");
+      return;
+    }
+
+    setIsSubmittingOpportunity(true);
+
+    try {
+      const response = await fetch("/api/volunteering-opportunities/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          title: opportunityFormData.name,
+          description: opportunityFormData.description,
+          startTime: opportunityFormData.startTime,
+          endTime: opportunityFormData.endTime,
+          date: opportunityFormData.date,
+          isRecurring: opportunityFormData.isRecurring,
+          recurrenceFrequency: opportunityFormData.isRecurring ? opportunityFormData.recurrenceFrequency : null,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setOpportunitySuccess(true);
+        setOpportunityFormData({
+          name: "",
+          description: "",
+          startTime: "",
+          endTime: "",
+          date: "",
+          isRecurring: false,
+          recurrenceFrequency: "weekly",
+        });
+        setTimeout(() => {
+          setShowAddOpportunityModal(false);
+          setOpportunitySuccess(false);
+        }, 2000);
+      } else {
+        setOpportunityError(data.error || "Failed to submit opportunity request");
+      }
+    } catch (error) {
+      console.error("Error submitting opportunity:", error);
+      setOpportunityError("Failed to submit opportunity request. Please try again.");
+    } finally {
+      setIsSubmittingOpportunity(false);
+    }
+  };
+
   // Calculate stats
   const totalHours = participations.reduce((sum, p) => sum + p.totalHours, 0);
   const totalActivities = participations.length;
   
+  // Calculate average hours per month
+  let averageHoursPerMonth = 0;
+  if (participations.length > 0) {
+    const now = new Date();
+    const earliestDate = participations.reduce((earliest, p) => {
+      const pDate = new Date(p.startDate);
+      return pDate < earliest ? pDate : earliest;
+    }, new Date(participations[0].startDate));
+    
+    const monthsDiff = Math.max(
+      1,
+      (now.getTime() - earliestDate.getTime()) / (1000 * 60 * 60 * 24 * 30)
+    );
+    averageHoursPerMonth = totalHours / monthsDiff;
+  }
+  
+  // Find next goal (closest unreached goal)
+  const sortedGoals = [...goals]
+    .filter((g) => g.status === "active")
+    .sort((a, b) => a.targetHours - b.targetHours);
+  const nextGoal = sortedGoals.find((g) => g.targetHours > totalHours);
+  const percentTowardsGoal = nextGoal
+    ? Math.min((totalHours / nextGoal.targetHours) * 100, 100)
+    : 0;
+
   // Calculate hours per month for bar chart
   const monthlyHours: { [key: string]: number } = {};
   participations.forEach((p) => {
@@ -551,31 +588,6 @@ export default function VolunteeringPage() {
     month,
     hours: monthlyHours[month]
   }));
-  
-  // Calculate average hours per month (for backward compatibility if needed)
-  let averageHoursPerMonth = 0;
-  if (participations.length > 0) {
-    const now = new Date();
-    const earliestDate = participations.reduce((earliest, p) => {
-      const pDate = new Date(p.startDate);
-      return pDate < earliest ? pDate : earliest;
-    }, new Date(participations[0].startDate));
-    
-    const monthsDiff = Math.max(
-      1,
-      (now.getTime() - earliestDate.getTime()) / (1000 * 60 * 60 * 24 * 30)
-    );
-    averageHoursPerMonth = totalHours / monthsDiff;
-  }
-  
-  // Find next goal (closest unreached goal)
-  const sortedGoals = [...goals]
-    .filter((g) => g.status === "active")
-    .sort((a, b) => a.targetHours - b.targetHours);
-  const nextGoal = sortedGoals.find((g) => g.targetHours > totalHours);
-  const percentTowardsGoal = nextGoal
-    ? Math.min((totalHours / nextGoal.targetHours) * 100, 100)
-    : 0;
 
   const stats = {
     totalHours,
@@ -622,14 +634,14 @@ export default function VolunteeringPage() {
   return (
       <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="bg-white/95 backdrop-blur-sm border-b border-gray-200/50 sticky top-0 z-50 rounded-b-2xl mx-4 mt-2" style={{ boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)" }}>
+      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Link href="/" className="flex items-center gap-2">
                 <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center"
-                  style={{ backgroundColor: colors.primary, boxShadow: "0 0 8px rgba(0, 0, 0, 0.15)" }}
+                  className="w-10 h-10 rounded-lg flex items-center justify-center shadow-sm"
+                  style={{ backgroundColor: colors.primary }}
                 >
                   <span className="text-white font-bold text-xl">A</span>
                 </div>
@@ -654,7 +666,7 @@ export default function VolunteeringPage() {
               </div>
               <Link
                 href="/dashboard"
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
                 style={{ fontFamily: "'Nunito', sans-serif" }}
               >
                 Dashboard
@@ -662,23 +674,36 @@ export default function VolunteeringPage() {
               {session.user.role === "student" && (
                   <button
                     onClick={() => setShowLogHoursModal(true)}
-                    className="px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 text-white"
-                    style={{ backgroundColor: colors.primary, fontFamily: "'Nunito', sans-serif", boxShadow: "0 0 10px rgba(0, 0, 0, 0.2)" }}
+                    className="px-4 py-2 text-sm font-medium rounded-lg transition-colors text-white shadow-md"
+                    style={{ backgroundColor: colors.primary, fontFamily: "'Nunito', sans-serif" }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.opacity = "0.9";
-                      e.currentTarget.style.transform = "translateY(-1px)";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.opacity = "1";
-                      e.currentTarget.style.transform = "translateY(0)";
                     }}
                   >
                     Log Hours
                   </button>
               )}
+              {session.user.role === "admin" && (
+                  <Link
+                  href="/volunteering/review"
+                  className="px-4 py-2 text-sm font-medium rounded-lg transition-colors text-white shadow-md"
+                  style={{ backgroundColor: colors.primary, fontFamily: "'Nunito', sans-serif" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.opacity = "0.9";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.opacity = "1";
+                  }}
+                >
+                  Review Requests
+                  </Link>
+              )}
               <button
                 onClick={() => signOut({ callbackUrl: "/auth/signin" })}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-all duration-200"
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
                 style={{ fontFamily: "'Nunito', sans-serif" }}
               >
                 Sign Out
@@ -722,7 +747,7 @@ export default function VolunteeringPage() {
         {session.user.role === "student" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             {/* Stats Box */}
-            <div className="bg-white rounded-xl p-6 border border-gray-200" style={{ boxShadow: "0 0 12px rgba(0, 0, 0, 0.15)" }}>
+            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-gray-900">Statistics</h2>
               </div>
@@ -746,12 +771,12 @@ export default function VolunteeringPage() {
                         {Math.round(stats.totalHours) === 1 ? "hour" : "hours"}
                       </span>
                     </div>
-              </div>
+                  </div>
 
                   {/* Monthly Hours Bar Chart */}
                   <div
                     className="flex items-end justify-center rounded-lg min-w-0 p-2 relative aspect-square"
-                        style={{
+                    style={{
                       backgroundColor: colors.accent,
                       boxShadow: "0 0 12px rgba(0, 0, 0, 0.2)"
                     }}
@@ -793,7 +818,7 @@ export default function VolunteeringPage() {
                             </div>
                           );
                         })}
-                    </div>
+                      </div>
                     ) : (
                       <div className="w-full h-full" />
                 )}
@@ -821,7 +846,7 @@ export default function VolunteeringPage() {
                     <div className="relative z-10 flex flex-col items-center justify-center">
                       {stats.nextGoal ? (
                         <>
-                          <span className="text-4xl font-bold leading-none" style={{ color: colors.primary, fontFamily: "Arial, sans-serif" }}>
+                          <span className="text-5xl font-bold leading-none" style={{ color: colors.primary, fontFamily: "Arial, sans-serif" }}>
                             {Math.round(stats.percentTowardsGoal)}%
                           </span>
                           <span className="text-sm font-medium mt-1" style={{ color: colors.primary, fontFamily: "'Nunito', sans-serif" }}>
@@ -830,7 +855,7 @@ export default function VolunteeringPage() {
                         </>
                       ) : (
                         <>
-                          <span className="text-4xl font-bold leading-none" style={{ color: colors.primary, fontFamily: "Arial, sans-serif" }}>
+                          <span className="text-5xl font-bold leading-none" style={{ color: colors.primary, fontFamily: "Arial, sans-serif" }}>
                             {goals.filter((g) => g.status === "active").length}
                           </span>
                           <span className="text-sm font-medium mt-1" style={{ color: colors.primary, fontFamily: "'Nunito', sans-serif" }}>
@@ -865,8 +890,8 @@ export default function VolunteeringPage() {
                       setShowGoalManager(true);
                       setShowGoalForm(false);
                     }}
-                    className="px-3 py-1 text-xs font-medium rounded transition-colors text-white"
-                    style={{ backgroundColor: colors.primary, fontFamily: "'Nunito', sans-serif", boxShadow: "0 0 10px rgba(0, 0, 0, 0.2)" }}
+                    className="px-3 py-1 text-xs font-medium rounded transition-colors text-white shadow-md"
+                    style={{ backgroundColor: colors.primary, fontFamily: "'Nunito', sans-serif" }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.opacity = "0.9";
                     }}
@@ -883,12 +908,12 @@ export default function VolunteeringPage() {
                       onClick={() => setChartTimeRange("1W")}
                       className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
                         chartTimeRange === "1W"
-                          ? "text-white"
+                          ? "text-white shadow-md"
                           : "text-gray-600 hover:bg-gray-100"
                       }`}
                       style={
                         chartTimeRange === "1W"
-                          ? { backgroundColor: colors.primary, fontFamily: "'Nunito', sans-serif", boxShadow: "0 0 10px rgba(0, 0, 0, 0.2)" }
+                          ? { backgroundColor: colors.primary, fontFamily: "'Nunito', sans-serif" }
                           : { backgroundColor: "transparent", fontFamily: "'Nunito', sans-serif" }
                       }
                     >
@@ -898,12 +923,12 @@ export default function VolunteeringPage() {
                       onClick={() => setChartTimeRange("1M")}
                       className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
                         chartTimeRange === "1M"
-                          ? "text-white"
+                          ? "text-white shadow-md"
                           : "text-gray-600 hover:bg-gray-100"
                       }`}
                       style={
                         chartTimeRange === "1M"
-                          ? { backgroundColor: colors.primary, fontFamily: "'Nunito', sans-serif", boxShadow: "0 0 10px rgba(0, 0, 0, 0.2)" }
+                          ? { backgroundColor: colors.primary, fontFamily: "'Nunito', sans-serif" }
                           : { backgroundColor: "transparent", fontFamily: "'Nunito', sans-serif" }
                       }
                     >
@@ -913,12 +938,12 @@ export default function VolunteeringPage() {
                       onClick={() => setChartTimeRange("6M")}
                       className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
                         chartTimeRange === "6M"
-                          ? "text-white"
+                          ? "text-white shadow-md"
                           : "text-gray-600 hover:bg-gray-100"
                       }`}
                       style={
                         chartTimeRange === "6M"
-                          ? { backgroundColor: colors.primary, fontFamily: "'Nunito', sans-serif", boxShadow: "0 0 10px rgba(0, 0, 0, 0.2)" }
+                          ? { backgroundColor: colors.primary, fontFamily: "'Nunito', sans-serif" }
                           : { backgroundColor: "transparent", fontFamily: "'Nunito', sans-serif" }
                       }
                     >
@@ -928,12 +953,12 @@ export default function VolunteeringPage() {
                       onClick={() => setChartTimeRange("1Y")}
                       className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
                         chartTimeRange === "1Y"
-                          ? "text-white"
+                          ? "text-white shadow-md"
                           : "text-gray-600 hover:bg-gray-100"
                       }`}
                       style={
                         chartTimeRange === "1Y"
-                          ? { backgroundColor: colors.primary, fontFamily: "'Nunito', sans-serif", boxShadow: "0 0 10px rgba(0, 0, 0, 0.2)" }
+                          ? { backgroundColor: colors.primary, fontFamily: "'Nunito', sans-serif" }
                           : { backgroundColor: "transparent", fontFamily: "'Nunito', sans-serif" }
                       }
                     >
@@ -943,12 +968,12 @@ export default function VolunteeringPage() {
                       onClick={() => setChartTimeRange("2Y")}
                       className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
                         chartTimeRange === "2Y"
-                          ? "text-white"
+                          ? "text-white shadow-md"
                           : "text-gray-600 hover:bg-gray-100"
                       }`}
                       style={
                         chartTimeRange === "2Y"
-                          ? { backgroundColor: colors.primary, fontFamily: "'Nunito', sans-serif", boxShadow: "0 0 10px rgba(0, 0, 0, 0.2)" }
+                          ? { backgroundColor: colors.primary, fontFamily: "'Nunito', sans-serif" }
                           : { backgroundColor: "transparent", fontFamily: "'Nunito', sans-serif" }
                       }
                     >
@@ -958,12 +983,12 @@ export default function VolunteeringPage() {
                       onClick={() => setChartTimeRange("all")}
                       className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
                         chartTimeRange === "all"
-                          ? "text-white"
+                          ? "text-white shadow-md"
                           : "text-gray-600 hover:bg-gray-100"
                       }`}
                       style={
                         chartTimeRange === "all"
-                          ? { backgroundColor: colors.primary, fontFamily: "'Nunito', sans-serif", boxShadow: "0 0 10px rgba(0, 0, 0, 0.2)" }
+                          ? { backgroundColor: colors.primary, fontFamily: "'Nunito', sans-serif" }
                           : { backgroundColor: "transparent", fontFamily: "'Nunito', sans-serif" }
                       }
                     >
@@ -994,11 +1019,11 @@ export default function VolunteeringPage() {
                   }}
                 >
                   <div
-                    className="bg-white rounded-xl p-8 max-w-xl w-full max-h-[80vh] mx-4 flex flex-col overflow-hidden"
-                    style={{ boxShadow: "0 0 20px rgba(0, 0, 0, 0.25)", animation: "slideUp 0.2s ease-out" }}
+                    className="bg-white rounded-xl p-8 max-w-xl w-full max-h-[80vh] mx-4 shadow-2xl flex flex-col"
+                    style={{ animation: "slideUp 0.2s ease-out" }}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-start justify-between mb-6 flex-shrink-0">
                       <h3 className="text-lg font-semibold text-gray-900">Manage Goals</h3>
                       <button
                         onClick={() => {
@@ -1014,237 +1039,233 @@ export default function VolunteeringPage() {
                       </button>
               </div>
 
-                    <div className="space-y-6 overflow-hidden flex-1 flex flex-col">
-                      <div className="flex items-center justify-between mb-4">
+                    <div className="flex-1 flex flex-col min-h-0">
+                      <div className="flex items-center justify-between mb-4 flex-shrink-0">
                         <div />
                         <button
                           onClick={() => setShowGoalForm((prev) => !prev)}
-                          className="text-base font-medium text-white px-6 py-3 rounded font-semibold"
-                          style={{ backgroundColor: colors.primary, fontFamily: "'Inter', sans-serif", boxShadow: "0 0 10px rgba(0, 0, 0, 0.2)" }}
+                          className="text-base font-medium text-white px-6 py-3 rounded shadow-md font-semibold"
+                          style={{ backgroundColor: colors.primary, fontFamily: "'Inter', sans-serif" }}
                         >
                           {showGoalForm ? "Hide Form" : "Add Goal"}
                         </button>
                       </div>
-                      <div className="overflow-y-auto flex-1 space-y-6">
-                          {/* Active Goals Section */}
-                          <div>
-                            <h4 className="text-sm font-semibold text-gray-700 mb-3" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                              Active Goals
-                            </h4>
-                            <div className="max-h-60 overflow-y-auto rounded-lg border border-gray-200">
-                              {goals.filter((g: any) => g.status === "active").length === 0 ? (
-                                <div className="px-4 py-6 text-center text-sm text-gray-500" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                                  No active goals. Add a new goal to get started.
-                                </div>
-                              ) : (
-                                <ul className="divide-y divide-gray-200">
-                                  {goals.filter((g: any) => g.status === "active").map((goal: any) => {
-                                const dueDateText = goal.targetDate
-                                  ? new Date(goal.targetDate).toLocaleDateString("en-US", {
-                                      month: "long",
-                                      day: "numeric",
-                                      year: "numeric",
-                                    })
-                                  : "No due date";
-                                const percentComplete = goal.targetHours
-                                  ? Math.min(
-                                      100,
-                                      Math.round(
-                                        (participations.reduce((sum, p) => sum + p.totalHours, 0) /
-                                          goal.targetHours) *
-                                          100
-                                      )
-                                    )
-                                  : 0;
-
-                                return (
-                                  <li
-                                    key={goal.id}
-                                    className="px-4 py-4 text-sm bg-white"
-                                  >
-                                    <div className="flex items-start justify-between gap-3">
-                                      <div>
-                                        <div className="font-semibold text-gray-900">
-                                          {goal.description || "Goal"}
-                                        </div>
-                                        <div className="mt-1 text-gray-600">
-                                          {goal.targetHours} hrs by {dueDateText}
-                                        </div>
-                                        <div className="mt-2 flex items-center gap-2">
-                                          <div className="h-2 w-28 overflow-hidden rounded-full bg-gray-200 shadow-inner">
-                                            <div
-                                              className="h-full rounded-full transition-all"
-                                              style={{
-                                                width: `${percentComplete}%`,
-                                                backgroundColor:
-                                                  percentComplete >= 100 ? colors.primary : colors.accent,
-                                              }}
-                                            ></div>
-                                          </div>
-                                          <span className="text-xs font-medium text-gray-700">
-                                            {percentComplete}% Completed
-                                          </span>
-                                        </div>
-                                      </div>
-                                      <button
-                                        onClick={async () => {
-                                          try {
-                                            const response = await fetch(`/api/volunteering-goals/${goal.id}`, {
-                                              method: "DELETE",
-                                              credentials: "include",
-                                            });
-                                            const text = await response.text();
-                                            if (!response.ok) {
-                                              console.error("Failed to delete goal:", text);
-                                              alert("Failed to delete goal");
-                                              return;
-                                            }
-                                            fetchGoals();
-                                          } catch (error) {
-                                            console.error("Error deleting goal:", error);
-                                            alert("Failed to delete goal");
-                                          }
-                                        }}
-                                        className="rounded-full p-2 text-red-500 transition hover:bg-red-50"
-                                        style={{ boxShadow: "0 0 10px rgba(0, 0, 0, 0.2)" }}
-                                        aria-label="Delete goal"
-                                        title="Delete goal"
-                                      >
-                                        <svg
-                                          xmlns="http://www.w3.org/2000/svg"
-                                          className="h-4 w-4"
-                                          fill="none"
-                                          viewBox="0 0 24 24"
-                                          stroke="currentColor"
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v2M4 7h16"
-                                          />
-                                        </svg>
-                                      </button>
-                                    </div>
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          )}
-                            </div>
-                          </div>
-
-                          {/* Completed Goals Section */}
-                          <div>
-                            <h4 className="text-sm font-semibold text-gray-700 mb-3" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                              Completed Goals
-                            </h4>
-                            <div className="max-h-60 overflow-y-auto rounded-lg border border-gray-200">
-                              {goals.filter((g: any) => g.status === "completed").length === 0 ? (
-                                <div className="px-4 py-6 text-center text-sm text-gray-500" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                                  No completed goals yet.
-                                </div>
-                              ) : (
-                                <ul className="divide-y divide-gray-200">
-                                  {goals.filter((g: any) => g.status === "completed").map((goal: any) => {
-                                    const dueDateText = goal.targetDate
-                                      ? new Date(goal.targetDate).toLocaleDateString("en-US", {
-                                          month: "long",
-                                          day: "numeric",
-                                          year: "numeric",
-                                        })
-                                      : "No due date";
-                                    const percentComplete = goal.targetHours
-                                      ? Math.min(
-                                          100,
-                                          Math.round(
-                                            (participations.reduce((sum, p) => sum + p.totalHours, 0) /
-                                              goal.targetHours) *
-                                              100
-                                          )
+                      
+                      <div className="flex-1 overflow-y-auto space-y-6 pr-2">
+                        {/* Active Goals Section */}
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-900 mb-3">Active Goals</h4>
+                          <div className="rounded-lg border border-gray-200">
+                            {goals.filter((g: any) => g.status === "active").length === 0 ? (
+                              <div className="px-4 py-6 text-center text-sm text-gray-500">
+                                No active goals. Add a new goal to get started.
+                              </div>
+                            ) : (
+                              <ul className="divide-y divide-gray-200">
+                                {goals.filter((g: any) => g.status === "active").map((goal: any) => {
+                                  const dueDateText = goal.targetDate
+                                    ? new Date(goal.targetDate).toLocaleDateString("en-US", {
+                                        month: "long",
+                                        day: "numeric",
+                                        year: "numeric",
+                                      })
+                                    : "No due date";
+                                  const percentComplete = goal.targetHours
+                                    ? Math.min(
+                                        100,
+                                        Math.round(
+                                          (participations.reduce((sum, p) => sum + p.totalHours, 0) /
+                                            goal.targetHours) *
+                                            100
                                         )
-                                      : 0;
+                                      )
+                                    : 0;
 
-                                    return (
-                                      <li
-                                        key={goal.id}
-                                        className="px-4 py-4 text-sm bg-white"
-                                      >
-                                        <div className="flex items-start justify-between gap-3">
-                                          <div>
-                                            <div className="font-semibold text-gray-900" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                                              {goal.description || "Goal"}
-                                            </div>
-                                            <div className="mt-1 text-gray-600" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                                              {goal.targetHours} hrs by {dueDateText}
-                                            </div>
-                                            <div className="mt-2 flex items-center gap-2">
-                                              <div className="h-2 w-28 overflow-hidden rounded-full bg-gray-200 shadow-inner">
-                                                <div
-                                                  className="h-full rounded-full transition-all"
-                                                  style={{
-                                                    width: `${percentComplete}%`,
-                                                    backgroundColor:
-                                                      percentComplete >= 100 ? colors.primary : colors.accent,
-                                                  }}
-                                                ></div>
-                                              </div>
-                                              <span className="text-xs font-medium text-gray-700" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                                                {percentComplete}% Completed
-                                              </span>
-                                            </div>
+                                  return (
+                                    <li
+                                      key={goal.id}
+                                      className="px-4 py-4 text-sm bg-white"
+                                    >
+                                      <div className="flex items-start justify-between gap-3">
+                                        <div>
+                                          <div className="font-semibold text-gray-900">
+                                            {goal.description || "Goal"}
                                           </div>
-                                          <button
-                                            onClick={async () => {
-                                              try {
-                                                const response = await fetch(`/api/volunteering-goals/${goal.id}`, {
-                                                  method: "DELETE",
-                                                  credentials: "include",
-                                                });
-                                                const text = await response.text();
-                                                if (!response.ok) {
-                                                  console.error("Failed to delete goal:", text);
-                                                  alert("Failed to delete goal");
-                                                  return;
-                                                }
-                                                fetchGoals();
-                                              } catch (error) {
-                                                console.error("Error deleting goal:", error);
-                                                alert("Failed to delete goal");
-                                              }
-                                            }}
-                                            className="rounded-full p-2 text-red-500 transition hover:bg-red-50"
-                                            style={{ boxShadow: "0 0 10px rgba(0, 0, 0, 0.2)" }}
-                                            aria-label="Delete goal"
-                                            title="Delete goal"
-                                          >
-                                            <svg
-                                              xmlns="http://www.w3.org/2000/svg"
-                                              className="h-4 w-4"
-                                              fill="none"
-                                              viewBox="0 0 24 24"
-                                              stroke="currentColor"
-                                            >
-                                              <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v2M4 7h16"
-                                              />
-                                            </svg>
-                                          </button>
+                                          <div className="mt-1 text-gray-600">
+                                            {goal.targetHours} hrs by {dueDateText}
+                                          </div>
+                                          <div className="mt-2 flex items-center gap-2">
+                                            <div className="h-2 w-28 overflow-hidden rounded-full bg-gray-200 shadow-inner">
+                                              <div
+                                                className="h-full rounded-full transition-all"
+                                                style={{
+                                                  width: `${percentComplete}%`,
+                                                  backgroundColor:
+                                                    percentComplete >= 100 ? colors.primary : colors.accent,
+                                                }}
+                                              ></div>
+                                            </div>
+                                            <span className="text-xs font-medium text-gray-700">
+                                              {percentComplete}% Completed
+                                            </span>
+                                          </div>
                                         </div>
-                                      </li>
-                                    );
-                                  })}
-                                </ul>
-                              )}
-                            </div>
+                                        <button
+                                          onClick={async () => {
+                                            try {
+                                              const response = await fetch(`/api/volunteering-goals/${goal.id}`, {
+                                                method: "DELETE",
+                                                credentials: "include",
+                                              });
+                                              const text = await response.text();
+                                              if (!response.ok) {
+                                                console.error("Failed to delete goal:", text);
+                                                alert("Failed to delete goal");
+                                                return;
+                                              }
+                                              fetchGoals();
+                                            } catch (error) {
+                                              console.error("Error deleting goal:", error);
+                                              alert("Failed to delete goal");
+                                            }
+                                          }}
+                                          className="rounded-full p-2 text-red-500 transition hover:bg-red-50 shadow-md"
+                                          aria-label="Delete goal"
+                                          title="Delete goal"
+                                        >
+                                          <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-4 w-4"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v2M4 7h16"
+                                            />
+                                          </svg>
+                                        </button>
+                                      </div>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            )}
                           </div>
                         </div>
 
-                      {showGoalForm && (
-                        <div className="border-t border-gray-200 pt-4 space-y-4 overflow-y-auto max-h-64">
+                        {/* Completed Goals Section */}
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-900 mb-3">Completed Goals</h4>
+                          <div className="rounded-lg border border-gray-200">
+                            {goals.filter((g: any) => g.status === "completed").length === 0 ? (
+                              <div className="px-4 py-6 text-center text-sm text-gray-500">
+                                No completed goals yet.
+                              </div>
+                            ) : (
+                              <ul className="divide-y divide-gray-200">
+                                {goals.filter((g: any) => g.status === "completed").map((goal: any) => {
+                                  const dueDateText = goal.targetDate
+                                    ? new Date(goal.targetDate).toLocaleDateString("en-US", {
+                                        month: "long",
+                                        day: "numeric",
+                                        year: "numeric",
+                                      })
+                                    : "No due date";
+                                  const completedDateText = goal.completedAt
+                                    ? new Date(goal.completedAt).toLocaleDateString("en-US", {
+                                        month: "long",
+                                        day: "numeric",
+                                        year: "numeric",
+                                      })
+                                    : "";
+
+                                  return (
+                                    <li
+                                      key={goal.id}
+                                      className="px-4 py-4 text-sm bg-white"
+                                    >
+                                      <div className="flex items-start justify-between gap-3">
+                                        <div>
+                                          <div className="font-semibold text-gray-900">
+                                            {goal.description || "Goal"}
+                                          </div>
+                                          <div className="mt-1 text-gray-600">
+                                            {goal.targetHours} hrs by {dueDateText}
+                                          </div>
+                                          {completedDateText && (
+                                            <div className="mt-1 text-xs text-gray-500">
+                                              Completed on {completedDateText}
+                                            </div>
+                                          )}
+                                          <div className="mt-2 flex items-center gap-2">
+                                            <div className="h-2 w-28 overflow-hidden rounded-full bg-gray-200 shadow-inner">
+                                              <div
+                                                className="h-full rounded-full transition-all"
+                                                style={{
+                                                  width: "100%",
+                                                  backgroundColor: colors.primary,
+                                                }}
+                                              ></div>
+                                            </div>
+                                            <span className="text-xs font-medium text-gray-700">
+                                              100% Completed
+                                            </span>
+                                          </div>
+                                        </div>
+                                        <button
+                                          onClick={async () => {
+                                            try {
+                                              const response = await fetch(`/api/volunteering-goals/${goal.id}`, {
+                                                method: "DELETE",
+                                                credentials: "include",
+                                              });
+                                              const text = await response.text();
+                                              if (!response.ok) {
+                                                console.error("Failed to delete goal:", text);
+                                                alert("Failed to delete goal");
+                                                return;
+                                              }
+                                              fetchGoals();
+                                            } catch (error) {
+                                              console.error("Error deleting goal:", error);
+                                              alert("Failed to delete goal");
+                                            }
+                                          }}
+                                          className="rounded-full p-2 text-red-500 transition hover:bg-red-50 shadow-md"
+                                          aria-label="Delete goal"
+                                          title="Delete goal"
+                                        >
+                                          <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-4 w-4"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v2M4 7h16"
+                                            />
+                                          </svg>
+                                        </button>
+                                      </div>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Add Goal Form */}
+                        {showGoalForm && (
+                          <div className="border-t border-gray-200 pt-4 space-y-4">
                           <h4 className="text-sm font-medium text-gray-700">Create New Goal</h4>
                     <div className="space-y-4">
                       <div>
@@ -1311,8 +1332,8 @@ export default function VolunteeringPage() {
                       <div className="flex gap-3">
                         <button
                           onClick={handleCreateGoal}
-                                className="flex-1 px-4 py-2 text-white rounded-lg transition-colors"
-                                style={{ backgroundColor: colors.primary, boxShadow: "0 0 10px rgba(0, 0, 0, 0.2)" }}
+                                className="flex-1 px-4 py-2 text-white rounded-lg transition-colors shadow-md"
+                                style={{ backgroundColor: colors.primary }}
                                 onMouseEnter={(e) => {
                                   e.currentTarget.style.opacity = "0.9";
                                 }}
@@ -1329,15 +1350,15 @@ export default function VolunteeringPage() {
                             setGoalHours("");
                             setGoalDate("");
                           }}
-                                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
-                                style={{ boxShadow: "0 0 8px rgba(0, 0, 0, 0.15)" }}
+                                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 shadow-sm"
                         >
                           Cancel
                         </button>
                       </div>
+                    </div>
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1371,8 +1392,8 @@ export default function VolunteeringPage() {
                   }}
                 >
                   <div
-                    className="bg-white rounded-xl p-8 max-w-2xl w-full max-h-[90vh] mx-4 overflow-y-auto"
-                    style={{ boxShadow: "0 0 20px rgba(0, 0, 0, 0.25)", animation: "slideUp 0.2s ease-out" }}
+                    className="bg-white rounded-xl p-8 max-w-2xl w-full max-h-[90vh] mx-4 shadow-2xl overflow-y-auto"
+                    style={{ animation: "slideUp 0.2s ease-out" }}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="mb-6">
@@ -1444,17 +1465,9 @@ export default function VolunteeringPage() {
                               <input
                                 type="date"
                                 required
-                                max="9999-12-31"
                                 value={logHoursFormData.startDate}
                                 onChange={(e) => {
                                   const newStartDate = e.target.value;
-                                  // Limit year to 4 digits
-                                  if (newStartDate && newStartDate.length > 0) {
-                                    const year = newStartDate.split('-')[0];
-                                    if (year && year.length > 4) {
-                                      return; // Don't update if year exceeds 4 digits
-                                    }
-                                  }
                                   setLogHoursFormData({
                                     ...logHoursFormData,
                                     startDate: newStartDate,
@@ -1469,19 +1482,8 @@ export default function VolunteeringPage() {
                                 <label className="block text-xs text-gray-600 mb-1">End Date</label>
                                 <input
                                   type="date"
-                                  max="9999-12-31"
                                   value={logHoursFormData.endDate}
-                                  onChange={(e) => {
-                                    const newEndDate = e.target.value;
-                                    // Limit year to 4 digits
-                                    if (newEndDate && newEndDate.length > 0) {
-                                      const year = newEndDate.split('-')[0];
-                                      if (year && year.length > 4) {
-                                        return; // Don't update if year exceeds 4 digits
-                                      }
-                                    }
-                                    setLogHoursFormData({ ...logHoursFormData, endDate: newEndDate });
-                                  }}
+                                  onChange={(e) => setLogHoursFormData({ ...logHoursFormData, endDate: e.target.value })}
                                   min={logHoursFormData.startDate}
                                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-datetime-edit-text]:text-gray-400 [&::-webkit-datetime-edit-month-field]:text-gray-400 [&::-webkit-datetime-edit-day-field]:text-gray-400 [&::-webkit-datetime-edit-year-field]:text-gray-400"
                                 />
@@ -1496,48 +1498,16 @@ export default function VolunteeringPage() {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Time Spent
                         </label>
-                        <div className="relative flex items-center">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const currentValue = parseFloat(logHoursFormData.totalHours) || 0;
-                              const newValue = Math.max(0, currentValue - 0.5);
-                              setLogHoursFormData({ ...logHoursFormData, totalHours: newValue.toString() });
-                            }}
-                            className="absolute left-1 px-2 py-1.5 border border-gray-300 rounded bg-gray-50 hover:bg-gray-100 transition-colors text-gray-700 font-medium text-sm z-10"
-                            style={{ fontFamily: "'Nunito', sans-serif" }}
-                          >
-                            −
-                          </button>
-                          <input
-                            type="number"
-                            required
-                            step="0.5"
-                            min="0"
-                            value={logHoursFormData.totalHours}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              const numValue = parseFloat(value);
-                              if (value === "" || (!isNaN(numValue) && numValue >= 0)) {
-                                setLogHoursFormData({ ...logHoursFormData, totalHours: value });
-                              }
-                            }}
-                            placeholder="e.g., 5.5"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 text-gray-900 pl-10 pr-10 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const currentValue = parseFloat(logHoursFormData.totalHours) || 0;
-                              const newValue = currentValue + 0.5;
-                              setLogHoursFormData({ ...logHoursFormData, totalHours: newValue.toString() });
-                            }}
-                            className="absolute right-1 px-2 py-1.5 border border-gray-300 rounded bg-gray-50 hover:bg-gray-100 transition-colors text-gray-700 font-medium text-sm z-10"
-                            style={{ fontFamily: "'Nunito', sans-serif" }}
-                          >
-                            +
-                          </button>
-                        </div>
+                        <input
+                          type="number"
+                          required
+                          step="0.1"
+                          min="0.1"
+                          value={logHoursFormData.totalHours}
+                          onChange={(e) => setLogHoursFormData({ ...logHoursFormData, totalHours: e.target.value })}
+                          placeholder="e.g., 5.5"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 text-gray-900"
+                        />
                       </div>
 
                       {/* Service Sheet Upload */}
@@ -1611,8 +1581,8 @@ export default function VolunteeringPage() {
                         <button
                           type="submit"
                           disabled={isSubmittingLogHours}
-                          className="flex-1 px-6 py-3 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ backgroundColor: colors.primary, boxShadow: "0 0 10px rgba(0, 0, 0, 0.2)" }}
+                          className="flex-1 px-6 py-3 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                          style={{ backgroundColor: colors.primary }}
                           onMouseEnter={(e) => {
                             if (!isSubmittingLogHours) e.currentTarget.style.opacity = "0.9";
                           }}
@@ -1638,8 +1608,7 @@ export default function VolunteeringPage() {
                             setUploadedFile(null);
                             setLogHoursError("");
                           }}
-                          className="px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
-                          style={{ boxShadow: "0 0 8px rgba(0, 0, 0, 0.15)" }}
+                          className="px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
                         >
                           Cancel
                         </button>
@@ -1648,398 +1617,330 @@ export default function VolunteeringPage() {
                   </div>
                 </div>
               )}
+
+              {/* Add Opportunity Modal */}
+              {showAddOpportunityModal && (
+                <div 
+                  className="fixed inset-0 flex items-center justify-center z-[9999] transition-opacity duration-200"
+                  style={{ 
+                    animation: "fadeIn 0.2s ease-out",
+                    backgroundColor: "rgba(0, 0, 0, 0.3)",
+                    backdropFilter: "blur(8px)",
+                    WebkitBackdropFilter: "blur(8px)"
+                  }}
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) {
+                      setShowAddOpportunityModal(false);
+                      setOpportunityFormData({
+                        name: "",
+                        description: "",
+                        startTime: "",
+                        endTime: "",
+                        date: "",
+                        isRecurring: false,
+                        recurrenceFrequency: "weekly",
+                      });
+                      setOpportunityError("");
+                      setOpportunitySuccess(false);
+                    }
+                  }}
+                >
+                  <div
+                    className="bg-white rounded-xl p-8 max-w-2xl w-full max-h-[90vh] mx-4 shadow-2xl overflow-y-auto"
+                    style={{ animation: "slideUp 0.2s ease-out" }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-start justify-between mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900">Add Opportunity</h3>
+                      <button
+                        onClick={() => {
+                          setShowAddOpportunityModal(false);
+                          setOpportunityFormData({
+                            name: "",
+                            description: "",
+                            startTime: "",
+                            endTime: "",
+                            date: "",
+                            isRecurring: false,
+                            recurrenceFrequency: "weekly",
+                          });
+                          setOpportunityError("");
+                          setOpportunitySuccess(false);
+                        }}
+                        className="text-base text-gray-500 hover:text-gray-700"
+                      >
+                        Close
+                      </button>
+                    </div>
+
+                    {opportunitySuccess ? (
+                      <div className="text-center py-8">
+                        <div className="mb-4">
+                          <svg className="w-16 h-16 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <h4 className="text-lg font-semibold text-gray-900 mb-2">Request Submitted!</h4>
+                        <p className="text-sm text-gray-600">Your opportunity request has been submitted for admin review.</p>
+                      </div>
+                    ) : (
+                      <form onSubmit={handleAddOpportunitySubmit}>
+                        {opportunityError && (
+                          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+                            {opportunityError}
+                          </div>
+                        )}
+
+                        {/* Opportunity Name */}
+                        <div className="mb-6">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Opportunity Name
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={opportunityFormData.name}
+                            onChange={(e) => setOpportunityFormData({ ...opportunityFormData, name: e.target.value })}
+                            placeholder="e.g. Beach Clean Up"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 text-gray-900"
+                          />
+                        </div>
+
+                        {/* Description */}
+                        <div className="mb-6">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Description
+                          </label>
+                          <textarea
+                            required
+                            value={opportunityFormData.description}
+                            onChange={(e) => setOpportunityFormData({ ...opportunityFormData, description: e.target.value })}
+                            placeholder="What should volunteers expect to do? Should they bring anything or prepare beforehand? How difficult will this activity be to complete? etc..."
+                            rows={4}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 text-gray-900"
+                          />
+                        </div>
+
+                        {/* Date */}
+                        <div className="mb-6">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Date
+                          </label>
+                          <input
+                            type="date"
+                            required
+                            value={opportunityFormData.date}
+                            onChange={(e) => setOpportunityFormData({ ...opportunityFormData, date: e.target.value })}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-datetime-edit-text]:text-gray-400 [&::-webkit-datetime-edit-month-field]:text-gray-400 [&::-webkit-datetime-edit-day-field]:text-gray-400 [&::-webkit-datetime-edit-year-field]:text-gray-400"
+                          />
+                        </div>
+
+                        {/* Time Range */}
+                        <div className="mb-6">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Time Range
+                          </label>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs text-gray-600 mb-1">Start Time</label>
+                              <input
+                                type="time"
+                                required
+                                value={opportunityFormData.startTime}
+                                onChange={(e) => setOpportunityFormData({ ...opportunityFormData, startTime: e.target.value })}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-600 mb-1">End Time</label>
+                              <input
+                                type="time"
+                                required
+                                value={opportunityFormData.endTime}
+                                onChange={(e) => setOpportunityFormData({ ...opportunityFormData, endTime: e.target.value })}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Recurring */}
+                        <div className="mb-6">
+                          <label className="flex items-center gap-2 cursor-pointer mb-3">
+                            <input
+                              type="checkbox"
+                              checked={opportunityFormData.isRecurring}
+                              onChange={(e) => setOpportunityFormData({ ...opportunityFormData, isRecurring: e.target.checked })}
+                              className="w-4 h-4 rounded border-gray-300"
+                            />
+                            <span className="text-sm text-gray-700">This is a recurring opportunity</span>
+                          </label>
+                          {opportunityFormData.isRecurring && (
+                            <div className="ml-6 mt-3">
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Repeats
+                              </label>
+                              <select
+                                value={opportunityFormData.recurrenceFrequency}
+                                onChange={(e) => setOpportunityFormData({ ...opportunityFormData, recurrenceFrequency: e.target.value })}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                              >
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                              </select>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Submit Button */}
+                        <div className="flex gap-3 pt-4 border-t border-gray-200">
+                          <button
+                            type="submit"
+                            disabled={isSubmittingOpportunity}
+                            className="flex-1 px-6 py-3 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                            style={{ backgroundColor: colors.primary }}
+                            onMouseEnter={(e) => {
+                              if (!isSubmittingOpportunity) e.currentTarget.style.opacity = "0.9";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.opacity = "1";
+                            }}
+                          >
+                            {isSubmittingOpportunity ? "Submitting..." : "Submit for Review"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowAddOpportunityModal(false);
+                              setOpportunityFormData({
+                                name: "",
+                                description: "",
+                                startTime: "",
+                                endTime: "",
+                                date: "",
+                                isRecurring: false,
+                                recurrenceFrequency: "weekly",
+                              });
+                              setOpportunityError("");
+                              setOpportunitySuccess(false);
+                            }}
+                            className="px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Activity Detail Modal */}
-            {showActivityDetailModal && selectedActivity && (
-              <div
-                className="fixed inset-0 flex items-center justify-center z-[9999] transition-opacity duration-200"
-                style={{
-                  animation: "fadeIn 0.2s ease-out",
-                  backgroundColor: "rgba(0, 0, 0, 0.3)",
-                  backdropFilter: "blur(8px)",
-                  WebkitBackdropFilter: "blur(8px)"
-                }}
-                onClick={(e) => {
-                  if (e.target === e.currentTarget) {
-                    setShowActivityDetailModal(false);
-                    setSelectedActivity(null);
-                  }
-                }}
-              >
-                <div
-                  className="bg-white rounded-xl p-8 max-w-2xl w-full max-h-[90vh] mx-4 overflow-y-auto"
-                  style={{ boxShadow: "0 0 20px rgba(0, 0, 0, 0.25)", animation: "slideUp 0.2s ease-out" }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex items-start justify-between mb-6">
-                    <h3 className="text-2xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-caslon), serif' }}>
-                      {selectedActivity.type === 'participation' 
-                        ? (selectedActivity.data.activityName || selectedActivity.data.opportunity?.title || "Activity Details")
-                        : selectedActivity.data.title}
-                    </h3>
-                    <button
-                      onClick={() => {
-                        setShowActivityDetailModal(false);
-                        setSelectedActivity(null);
-                      }}
-                      className="text-gray-400 hover:text-gray-600 text-2xl font-bold transition-colors"
-                      style={{ fontFamily: "'Nunito', sans-serif" }}
-                    >
-                      ×
-                    </button>
-                  </div>
-
-                  <div className="space-y-6">
-                    {/* Organization/Activity Name */}
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                        Organization
-                      </h4>
-                      <p className="text-base text-gray-900" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                        {selectedActivity.type === 'participation'
-                          ? (selectedActivity.data.organizationName || selectedActivity.data.opportunity?.organization || "N/A")
-                          : selectedActivity.data.organization}
-                      </p>
-                    </div>
-
-                    {/* Description */}
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                        Description
-                      </h4>
-                      <p className="text-base text-gray-900 whitespace-pre-wrap" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                        {selectedActivity.type === 'participation'
-                          ? (selectedActivity.data.activityDescription || selectedActivity.data.opportunity?.description || "No description available")
-                          : (selectedActivity.data.description || "No description available")}
-                      </p>
-                    </div>
-
-                    {/* Date Range */}
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                        Date
-                      </h4>
-                      <p className="text-base text-gray-900" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                        {selectedActivity.type === 'participation' ? (() => {
-                          const startDate = new Date(selectedActivity.data.startDate);
-                          const endDate = selectedActivity.data.endDate ? new Date(selectedActivity.data.endDate) : null;
-                          const formatDateFull = (date: Date) => {
-                            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-                            const day = date.getDate();
-                            const suffix = day === 1 || day === 21 || day === 31 ? "st" : day === 2 || day === 22 ? "nd" : day === 3 || day === 23 ? "rd" : "th";
-                            const month = months[date.getMonth()];
-                            const year = date.getFullYear();
-                            return `${month} ${day}${suffix}, ${year}`;
-                          };
-                          const isSameYear = endDate ? startDate.getFullYear() === endDate.getFullYear() : true;
-                          return endDate && endDate.getTime() !== startDate.getTime()
-                            ? `${formatDateFull(startDate)} - ${isSameYear ? formatDateFull(endDate).replace(`, ${endDate.getFullYear()}`, "") : formatDateFull(endDate)}`
-                            : formatDateFull(startDate);
-                        })() : (() => {
-                          const startDate = new Date(selectedActivity.data.startDate);
-                          const formatDateFull = (date: Date) => {
-                            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-                            const day = date.getDate();
-                            const suffix = day === 1 || day === 21 || day === 31 ? "st" : day === 2 || day === 22 ? "nd" : day === 3 || day === 23 ? "rd" : "th";
-                            const month = months[date.getMonth()];
-                            const year = date.getFullYear();
-                            return `${month} ${day}${suffix}, ${year}`;
-                          };
-                          return formatDateFull(startDate) + (selectedActivity.data.isOngoing ? " (Ongoing)" : "");
-                        })()}
-                      </p>
-                    </div>
-
-                    {/* Hours */}
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                        {selectedActivity.type === 'participation' ? 'Hours Logged' : 'Expected Hours'}
-                      </h4>
-                      <p className="text-base text-gray-900" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                        {selectedActivity.type === 'participation'
-                          ? `${Math.round(selectedActivity.data.totalHours)} ${selectedActivity.data.totalHours === 1 ? "hour" : "hours"}`
-                          : selectedActivity.data.totalHours 
-                            ? `${selectedActivity.data.totalHours} ${selectedActivity.data.totalHours === 1 ? "hour" : "hours"}`
-                            : "Not specified"}
-                      </p>
-                    </div>
-
-                    {/* Additional Info for Participations */}
-                    {selectedActivity.type === 'participation' && (
-                      <>
-                        {selectedActivity.data.verified && (
-                          <div>
-                            <h4 className="text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                              Verification Status
-                            </h4>
-                            <span className="inline-block px-3 py-1 rounded bg-green-100 text-green-700 text-sm" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                              Verified
-                            </span>
-                          </div>
-                        )}
-                        {selectedActivity.data.serviceSheetUrl && (
-                          <div>
-                            <h4 className="text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                              Service Sheet
-                            </h4>
-                            <a
-                              href={selectedActivity.data.serviceSheetUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-800 underline text-sm"
-                              style={{ fontFamily: "'Nunito', sans-serif" }}
-                            >
-                              View Service Sheet
-                            </a>
-                          </div>
-                        )}
-                      </>
-                    )}
-
-                    {/* Additional Info for Opportunities */}
-                    {selectedActivity.type === 'opportunity' && (
-                      <>
-                        {selectedActivity.data.location && (
-                          <div>
-                            <h4 className="text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                              Location
-                            </h4>
-                            <p className="text-base text-gray-900" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                              {selectedActivity.data.location} {selectedActivity.data.isOnline && "(Online)"}
-                            </p>
-                          </div>
-                        )}
-                        {selectedActivity.data.category && (
-                          <div>
-                            <h4 className="text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                              Category
-                            </h4>
-                            <p className="text-base text-gray-900" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                              {selectedActivity.data.category}
-                            </p>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="mt-8 pt-6 border-t border-gray-200">
-                    {selectedActivity.type === 'participation' ? (
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={handleEditActivity}
-                          className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors text-base"
-                          style={{ fontFamily: "'Nunito', sans-serif", boxShadow: "0 0 8px rgba(0, 0, 0, 0.15)" }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={handleDeleteActivity}
-                          disabled={isDeletingActivity}
-                          className="px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors text-base disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ fontFamily: "'Nunito', sans-serif", boxShadow: "0 0 8px rgba(0, 0, 0, 0.15)" }}
-                          title="Delete Activity"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Delete Confirmation Modal */}
-            {showDeleteConfirmModal && (
-              <div
-                className="fixed inset-0 flex items-center justify-center z-[10000] transition-opacity duration-200"
-                style={{
-                  animation: "fadeIn 0.2s ease-out",
-                  backgroundColor: "rgba(0, 0, 0, 0.3)",
-                  backdropFilter: "blur(8px)",
-                  WebkitBackdropFilter: "blur(8px)"
-                }}
-                onClick={(e) => {
-                  if (e.target === e.currentTarget) {
-                    setShowDeleteConfirmModal(false);
-                  }
-                }}
-              >
-                <div
-                  className="bg-white rounded-xl p-8 max-w-md w-full mx-4"
-                  style={{ boxShadow: "0 0 20px rgba(0, 0, 0, 0.25)", animation: "slideUp 0.2s ease-out" }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'var(--font-caslon), serif' }}>
-                    Confirm Delete
-                  </h3>
-                  <p className="text-base text-gray-700 mb-6" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                    Are you sure you want to delete this activity? This action cannot be undone.
-                  </p>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={confirmDeleteActivity}
-                      disabled={isDeletingActivity}
-                      className="flex-1 px-6 py-3 border border-red-300 text-red-700 font-medium rounded-lg hover:bg-red-50 transition-colors text-base disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ fontFamily: "'Nunito', sans-serif", boxShadow: "0 0 8px rgba(0, 0, 0, 0.15)" }}
-                    >
-                      {isDeletingActivity ? "Deleting..." : "Delete"}
-                    </button>
-                    <button
-                      onClick={() => setShowDeleteConfirmModal(false)}
-                      disabled={isDeletingActivity}
-                      className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors text-base disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ fontFamily: "'Nunito', sans-serif", boxShadow: "0 0 8px rgba(0, 0, 0, 0.15)" }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* My Service Box */}
-            <div className="bg-white rounded-xl p-6 border border-gray-200" style={{ boxShadow: "0 0 12px rgba(0, 0, 0, 0.15)" }}>
+            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">My Service</h2>
-              
-              {/* Scrollable Container */}
-              <div className="max-h-[600px] overflow-y-auto pr-2 space-y-4 px-2">
-                {/* Upcoming Activities Section - Top */}
-                {upcomingOpportunities.length > 0 ? (
-                  <div className="space-y-2">
+              <div className="max-h-[600px] overflow-y-auto px-2">
+                {/* Upcoming Activities */}
+                {upcomingOpportunities.length > 0 && (
+                  <div className="space-y-3 mb-6">
                     {upcomingOpportunities.map((opp) => {
                       const startDate = new Date(opp.startDate);
+                      const endDate = opp.endDate ? new Date(opp.endDate) : null;
                       const now = new Date();
                       const daysFromNow = Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
                       
-                      const formatDateFull = (date: Date) => {
-                        const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-                        const day = date.getDate();
-                        const suffix = day === 1 || day === 21 || day === 31 ? "st" : day === 2 || day === 22 ? "nd" : day === 3 || day === 23 ? "rd" : "th";
-                        const month = months[date.getMonth()];
-                        const year = date.getFullYear();
-                        return `${month} ${day}${suffix}, ${year}`;
+                      const formatDateRange = (start: Date, end: Date | null) => {
+                        const startStr = start.toLocaleDateString("en-US", {
+                          month: "long",
+                          day: "numeric",
+                          year: start.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
+                        });
+                        if (!end) return startStr;
+                        const endStr = end.toLocaleDateString("en-US", {
+                          month: "long",
+                          day: "numeric",
+                          year: end.getFullYear() !== start.getFullYear() ? "numeric" : undefined,
+                        });
+                        if (start.getTime() === end.getTime()) return startStr;
+                        return `${startStr} to ${endStr}`;
                       };
-                      
-                      const activityName = opp.title;
-                      const description = opp.description || "Community service opportunity";
-                      
+
                       return (
                     <div
                       key={opp.id}
-                          className="p-3 rounded-lg transition-all cursor-pointer overflow-x-auto"
-                          style={{ backgroundColor: colors.tertiary, boxShadow: "0 0 12px rgba(0, 0, 0, 0.2)" }}
-                      onClick={() => {
-                        setSelectedActivity({ type: 'opportunity', data: opp });
-                        setShowActivityDetailModal(true);
-                      }}
+                          className="p-3 rounded-lg cursor-pointer transition-all shadow-md whitespace-nowrap overflow-x-auto"
+                          style={{ 
+                            backgroundColor: colors.tertiary,
+                            boxShadow: "0 0 12px rgba(0, 0, 0, 0.2)"
+                          }}
+                      onClick={() => router.push(`/volunteering/${opp.id}`)}
                     >
-                          {/* Line 1: Activity Name - Description */}
-                          <div className="flex items-center gap-2 mb-2 whitespace-nowrap overflow-x-auto">
-                            <span className="font-bold text-base" style={{ color: colors.primary, fontFamily: 'var(--font-caslon), serif' }}>
-                              {activityName}
-                            </span>
-                            <span className="text-base" style={{ color: colors.primary, fontFamily: "'Nunito', sans-serif" }}>
-                              -
-                            </span>
-                            <span className="text-base" style={{ color: colors.primary, fontFamily: "'Nunito', sans-serif" }}>
-                              {description}
-                            </span>
-                          </div>
-                          {/* Line 2: Date, Hours, Days from now */}
-                          <div className="flex items-center gap-3 flex-wrap">
-                            <p className="text-sm" style={{ color: colors.primary, fontFamily: "'Nunito', sans-serif" }}>
-                              {formatDateFull(startDate)}
-                        {opp.isOngoing && " (Ongoing)"}
-                      </p>
-                            {opp.totalHours && (
-                              <span className="text-sm font-medium" style={{ color: colors.primary, fontFamily: 'var(--font-caslon), serif' }}>
-                                {opp.totalHours} {opp.totalHours === 1 ? "hr" : "hrs"}
-                              </span>
-                            )}
-                            <span className="text-sm" style={{ color: colors.primary, fontFamily: "'Nunito', sans-serif" }}>
-                              ({daysFromNow >= 0 ? daysFromNow : 0} {daysFromNow === 1 ? "day" : "days"} from now)
-                            </span>
+                          <div className="text-base font-bold leading-tight mb-1" style={{ fontFamily: "var(--font-caslon), serif", color: colors.primary }}>
+                            {opp.title} - <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: "normal" }}>{opp.description || opp.organization}</span>
                     </div>
+                          <div className="text-sm leading-tight" style={{ fontFamily: "'Nunito', sans-serif", color: colors.primary }}>
+                            {formatDateRange(startDate, endDate)} {opp.isOngoing && "(Ongoing)"} {daysFromNow >= 0 && `(${daysFromNow} ${daysFromNow === 1 ? 'day' : 'days'} from now)`}
+                </div>
                         </div>
                       );
                     })}
-                </div>
-              ) : (
-                  <p className="text-sm text-gray-500" style={{ fontFamily: "'Nunito', sans-serif" }}>No upcoming opportunities</p>
+                  </div>
                 )}
 
-                {/* Past Activities Section - Bottom */}
-                {participations.length > 0 ? (
-                  <div className="space-y-2">
+                {/* Past Activities (Participations) */}
+                {participations.length > 0 && (
+                  <div className="space-y-3">
                     {participations
-                      .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
+                      .sort((a, b) => {
+                        const aDate = new Date(a.endDate || a.startDate).getTime();
+                        const bDate = new Date(b.endDate || b.startDate).getTime();
+                        return bDate - aDate; // Most recent first
+                      })
                       .map((participation) => {
-                        const activityName = participation.activityName || participation.opportunity?.title || "Community Service";
-                        const activityDesc = participation.activityDescription || participation.opportunity?.description || "Volunteer activity";
                         const startDate = new Date(participation.startDate);
                         const endDate = participation.endDate ? new Date(participation.endDate) : null;
-                        const isSameYear = endDate ? startDate.getFullYear() === endDate.getFullYear() : true;
+                        const activityName = participation.opportunity?.title || participation.organizationName || "Activity";
+                        const description = participation.opportunity?.description || participation.activityDescription || "";
                         
-                        const formatDateFull = (date: Date) => {
-                          const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-                          const day = date.getDate();
-                          const suffix = day === 1 || day === 21 || day === 31 ? "st" : day === 2 || day === 22 ? "nd" : day === 3 || day === 23 ? "rd" : "th";
-                          const month = months[date.getMonth()];
-                          const year = date.getFullYear();
-                          return `${month} ${day}${suffix}, ${year}`;
+                        const formatDateRange = (start: Date, end: Date | null) => {
+                          const startStr = start.toLocaleDateString("en-US", {
+                            month: "long",
+                            day: "numeric",
+                            year: start.getFullYear() !== new Date().getFullYear() ? "numeric" : undefined,
+                          });
+                          if (!end || start.getTime() === end.getTime()) return startStr;
+                          const endStr = end.toLocaleDateString("en-US", {
+                            month: "long",
+                            day: "numeric",
+                            year: end.getFullYear() !== start.getFullYear() ? "numeric" : undefined,
+                          });
+                          return `${startStr} to ${endStr}`;
                         };
-                        
-                        const dateRange = endDate && endDate.getTime() !== startDate.getTime()
-                          ? `${formatDateFull(startDate)} - ${isSameYear ? formatDateFull(endDate).replace(`, ${endDate.getFullYear()}`, "") : formatDateFull(endDate)}`
-                          : formatDateFull(startDate);
-                        
+
                         return (
                           <div
                             key={participation.id}
-                            className="p-3 rounded-lg transition-all cursor-pointer overflow-x-auto"
-                            style={{ backgroundColor: colors.accent, boxShadow: "0 0 12px rgba(0, 0, 0, 0.2)" }}
-                            onClick={() => {
-                              setSelectedActivity({ type: 'participation', data: participation });
-                              setShowActivityDetailModal(true);
+                            className="p-3 rounded-lg transition-all shadow-md whitespace-nowrap overflow-x-auto"
+                            style={{ 
+                              backgroundColor: colors.accent,
+                              boxShadow: "0 0 12px rgba(0, 0, 0, 0.2)"
                             }}
                           >
-                            {/* Line 1: Activity Name - Description */}
-                            <div className="flex items-center gap-2 mb-2 whitespace-nowrap overflow-x-auto">
-                              <span className="font-bold text-base" style={{ color: colors.primary, fontFamily: 'var(--font-caslon), serif' }}>
-                                {activityName}
-                              </span>
-                              <span className="text-base" style={{ color: colors.primary, fontFamily: "'Nunito', sans-serif" }}>
-                                -
-                              </span>
-                              <span className="text-base" style={{ color: colors.primary, fontFamily: "'Nunito', sans-serif" }}>
-                                {activityDesc}
-                              </span>
-            </div>
-                            {/* Line 2: Date and Hours */}
-                            <div className="flex items-center gap-3 flex-wrap">
-                              <p className="text-sm" style={{ color: colors.primary, fontFamily: "'Nunito', sans-serif" }}>
-                                {dateRange}
-                              </p>
-                              <span className="text-sm font-medium" style={{ color: colors.primary, fontFamily: 'var(--font-caslon), serif' }}>
-                                {Math.round(participation.totalHours)} {participation.totalHours === 1 ? "hr" : "hrs"}
-                              </span>
-                              {participation.verified && (
-                                <span className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-700" style={{ fontFamily: "'Nunito', sans-serif" }}>
-                                  Verified
-                                </span>
-                              )}
+                            <div className="text-base font-bold leading-tight mb-1" style={{ fontFamily: "var(--font-caslon), serif", color: colors.primary }}>
+                              {activityName} - <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: "normal" }}>{description}</span>
+                            </div>
+                            <div className="text-sm leading-tight" style={{ fontFamily: "'Nunito', sans-serif", color: colors.primary }}>
+                              {formatDateRange(startDate, endDate)} <span style={{ fontFamily: "var(--font-caslon), serif", fontWeight: "bold" }}>{Math.round(participation.totalHours)} hrs</span>
                             </div>
                           </div>
                         );
                       })}
                   </div>
-                ) : (
-                  <p className="text-sm text-gray-500" style={{ fontFamily: "'Nunito', sans-serif" }}>No past activities yet</p>
+                )}
+
+                {upcomingOpportunities.length === 0 && participations.length === 0 && (
+                  <p className="text-sm text-gray-500 text-center py-4" style={{ fontFamily: "'Nunito', sans-serif" }}>No activities yet</p>
                 )}
               </div>
             </div>
@@ -2047,7 +1948,7 @@ export default function VolunteeringPage() {
         )}
 
         {/* Search and Filters Section */}
-        <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6" style={{ boxShadow: "0 0 12px rgba(0, 0, 0, 0.15)" }}>
+        <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200 mb-6">
           <div className="flex items-center gap-4 mb-4">
             {/* Search Bar */}
             <div className="flex-1">
@@ -2088,9 +1989,9 @@ export default function VolunteeringPage() {
 
             {/* Post Opportunity Button - Plus Sign */}
             {session.user.role === "student" && (
-              <Link
-                href="/volunteering/post"
-                className="w-10 h-10 rounded-lg flex items-center justify-center transition-opacity"
+              <button
+                onClick={() => setShowAddOpportunityModal(true)}
+                className="w-10 h-10 rounded-lg flex items-center justify-center transition-opacity shadow-md"
                 style={{ backgroundColor: colors.primary }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.opacity = "0.9";
@@ -2112,7 +2013,7 @@ export default function VolunteeringPage() {
                     d="M12 4v16m8-8H4"
                   />
                 </svg>
-              </Link>
+              </button>
             )}
           </div>
 
@@ -2312,7 +2213,7 @@ function OpportunityCard({
   };
 
   return (
-    <div className="bg-white rounded-xl p-6 border border-gray-200 transition-all" style={{ boxShadow: "0 0 12px rgba(0, 0, 0, 0.15)" }}>
+    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-all">
       <div className="mb-4">
         <div className="flex items-start justify-between mb-2">
           <h3 className="text-lg font-semibold text-gray-900 flex-1">

@@ -51,12 +51,6 @@ export function HoursChart({
   const [tooltip, setTooltip] = useState<{ visible: boolean; x: number; y: number; content: { title: string; subtitle: string } } | null>(null);
   const [participationTooltip, setParticipationTooltip] = useState<{ visible: boolean; x: number; y: number; content: { title: string; description: string; hours: string; date: string } } | null>(null);
   
-  // Zoom and pan state
-  const [zoom, setZoom] = useState(1);
-  const [panOffset, setPanOffset] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState(0);
-  
   // Normalize goals: use goals array if provided, otherwise fall back to single goal props
   const normalizedGoals: Goal[] = goals || (goalHours && goalDate ? [{
     targetHours: goalHours,
@@ -517,36 +511,42 @@ export function HoursChart({
       }
       
       // Check goal dots
-      if (!foundParticipation && hoverTargetRef.current.length > 0) {
-        let foundGoal = false;
-        for (const goalTarget of hoverTargetRef.current) {
-          const distance = Math.sqrt((x - goalTarget.x) ** 2 + (y - goalTarget.y) ** 2);
-          if (distance <= 8) {
-            const formattedDate = goalTarget.goal.targetDate 
-              ? new Date(goalTarget.goal.targetDate).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })
-              : "No date";
-            const content = {
-              title: goalTarget.goal.description || "Goal",
-              subtitle: `${goalTarget.goal.targetHours.toFixed(0)} hrs by ${formattedDate}`,
-            };
-            setTooltip({
-              visible: true,
-              x: goalTarget.x,
-              y: goalTarget.y,
-              content,
-            });
-            foundGoal = true;
-            break;
+      const goalTargets = hoverTargetRef.current;
+      if (goalTargets && goalTargets.length > 0) {
+        let closestGoal: { x: number; y: number; goal: Goal } | null = null;
+        let closestDistance = Infinity;
+        
+        goalTargets.forEach((target) => {
+          const distance = Math.sqrt((x - target.x) ** 2 + (y - target.y) ** 2);
+          if (distance <= 8 && distance < closestDistance) {
+            closestDistance = distance;
+            closestGoal = target;
           }
-        }
-        if (!foundGoal && tooltip) {
+        });
+        
+        if (closestGoal && !foundParticipation) {
+          const goal = closestGoal.goal;
+          const formattedDate = goal.targetDate 
+            ? new Date(goal.targetDate).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })
+            : "No date";
+          const content = {
+            title: goal.description || "Goal",
+            subtitle: `${goal.targetHours.toFixed(0)} hrs by ${formattedDate}`,
+          };
+          setTooltip({
+            visible: true,
+            x: closestGoal.x,
+            y: closestGoal.y,
+            content,
+          });
+        } else if (!closestGoal && tooltip && tooltip.visible && !foundParticipation) {
           setTooltip(null);
         }
-      } else if (!foundParticipation) {
+      } else if (tooltip && tooltip.visible && !foundParticipation) {
         setTooltip(null);
       }
     };
@@ -567,7 +567,7 @@ export function HoursChart({
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseleave", handleMouseLeave);
     };
-  }, [activeGoals, participations, currentHours, colors, timeRange, zoom, panOffset]);
+  }, [activeGoals, currentHours, participations, colors, timeRange]);
 
   return (
     <div className="relative w-full">

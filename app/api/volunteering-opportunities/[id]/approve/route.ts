@@ -1,69 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getCurrentUser, requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
 
-// POST - Approve volunteering opportunity (admin only)
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Only admins can approve opportunities
     if (user.role !== "admin") {
-      return NextResponse.json(
-        { error: "Forbidden: Only admins can approve opportunities" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id } = await params;
+    const { id } = params;
 
-    const opportunity = await prisma.volunteeringOpportunity.findUnique({
-      where: { id },
-    });
-
-    if (!opportunity) {
-      return NextResponse.json(
-        { error: "Volunteering opportunity not found" },
-        { status: 404 }
-      );
-    }
-
-    const updated = await prisma.volunteeringOpportunity.update({
+    const opportunity = await prisma.volunteeringOpportunity.update({
       where: { id },
       data: {
         status: "approved",
         approvedById: user.id,
       },
-      include: {
-        postedBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        approvedBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
     });
 
-    return NextResponse.json({ opportunity: updated });
-  } catch (error) {
-    console.error("Error approving volunteering opportunity:", error);
+    return NextResponse.json({ 
+      success: true, 
+      opportunity 
+    });
+  } catch (error: any) {
+    console.error("Error approving opportunity:", error);
     return NextResponse.json(
-      { error: "Failed to approve volunteering opportunity" },
+      { error: error.message || "Failed to approve opportunity" },
       { status: 500 }
     );
   }
 }
-
