@@ -103,7 +103,7 @@ export function AIInputWithSuggestions({
     return (
         <div className={cn("w-full py-2", className)}>
             <div className="relative w-full">
-                <div className="relative border border-gray-200 dark:border-gray-700 focus-within:border-blue-400 dark:focus-within:border-blue-500 rounded-xl bg-white dark:bg-gray-800 shadow-sm">
+                <div className="relative border border-gray-700 focus-within:border-blue-500 rounded-xl bg-gray-900 shadow-sm">
                     <div className="flex flex-col">
                         <div
                             className="overflow-y-auto"
@@ -115,7 +115,7 @@ export function AIInputWithSuggestions({
                                 placeholder={placeholder}
                                 disabled={disabled}
                                 className={cn(
-                                    "w-full rounded-xl pr-10 pt-2 pb-2 px-3 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-none text-gray-900 dark:text-gray-100 resize-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 leading-relaxed text-sm",
+                                    "w-full rounded-xl pr-10 pt-2 pb-2 px-3 placeholder:text-gray-500 border-none text-gray-100 resize-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 leading-relaxed text-sm",
                                     `min-h-[${minHeight}px]`
                                 )}
                                 value={inputValue}
@@ -187,7 +187,7 @@ export function AIInputWithSuggestions({
                             className={cn(
                                 "px-3 py-1.5 text-xs font-medium rounded-lg",
                                 "border transition-all duration-200",
-                                "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700",
+                                "border-gray-700 bg-gray-800 hover:bg-gray-700",
                                 "flex-shrink-0 shadow-sm",
                                 disabled && "opacity-50 cursor-not-allowed"
                             )}
@@ -195,7 +195,7 @@ export function AIInputWithSuggestions({
                         >
                             <div className="flex items-center gap-1.5">
                                 <Icon className={cn("h-3.5 w-3.5", colors.icon)} />
-                                <span className="text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                                <span className="text-gray-300 whitespace-nowrap">
                                     {text}
                                 </span>
                             </div>

@@ -125,22 +125,22 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-gray-900">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-gray-800">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
             A
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900 text-sm">Actify Assistant</h3>
-            <p className="text-xs text-gray-500">Your personal college admissions guide</p>
+            <h3 className="font-semibold text-white text-sm">Actify Assistant</h3>
+            <p className="text-xs text-gray-400">Your personal college admissions guide</p>
           </div>
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-200 transition-colors"
             aria-label="Close"
           >
             <svg
@@ -170,10 +170,10 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-2xl mb-4">
               A
             </div>
-            <h4 className="font-semibold text-gray-900 mb-2">
+            <h4 className="font-semibold text-white mb-2">
               Welcome to Actify Assistant!
             </h4>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-gray-400 mb-4">
               Ask me anything about your activities, volunteering hours, or college
               admissions guidance.
             </p>
@@ -183,7 +183,7 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
                 <button
                   key={index}
                   onClick={() => handleStarterPrompt(prompt)}
-                  className="w-full text-left px-3 py-2 text-sm bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-gray-700"
+                  className="w-full text-left px-3 py-2 text-sm bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors text-gray-300"
                 >
                   {prompt}
                 </button>
@@ -203,7 +203,7 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
                   className={`max-w-[85%] rounded-lg px-4 py-2 ${
                     message.role === "user"
                       ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-900"
+                      : "bg-gray-800 text-gray-100"
                   }`}
                 >
                   <div className="text-sm whitespace-pre-wrap break-words">
@@ -211,7 +211,7 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
                   </div>
                   <div
                     className={`text-xs mt-1 ${
-                      message.role === "user" ? "text-blue-100" : "text-gray-500"
+                      message.role === "user" ? "text-blue-200" : "text-gray-500"
                     }`}
                   >
                     {message.timestamp.toLocaleTimeString([], {
@@ -224,8 +224,8 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 rounded-lg px-4 py-3">
-                  <Loader2 className="w-5 h-5 text-gray-600 animate-spin" />
+                <div className="bg-gray-800 rounded-lg px-4 py-3">
+                  <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
                 </div>
               </div>
             )}
@@ -235,7 +235,7 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
       </div>
 
       {/* Input */}
-      <div className="border-t border-gray-200 bg-gray-50">
+      <div className="border-t border-gray-700 bg-gray-800">
         <AIInputWithSuggestions
           actions={CUSTOM_ACTIONS}
           placeholder="Ask me anything about your activities..."
