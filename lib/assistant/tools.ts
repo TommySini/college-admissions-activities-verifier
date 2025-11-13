@@ -194,11 +194,19 @@ export async function getAdminAnalytics(user: User) {
 /**
  * Get organizations (filtered by status)
  */
-export async function getOrganizations(status?: string) {
+export async function getOrganizations(status?: string, limit = 50) {
   const organizations = await prisma.organization.findMany({
     where: status ? { status: status as any } : undefined,
+    include: {
+      createdBy: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+    },
     orderBy: { createdAt: "desc" },
-    take: 50,
+    take: limit,
   });
 
   return organizations.map((org) => ({
@@ -206,8 +214,49 @@ export async function getOrganizations(status?: string) {
     name: org.name,
     description: org.description,
     category: org.category,
+    leadership: org.leadership,
+    presidentName: org.presidentName,
+    contactEmail: org.contactEmail,
     isSchoolClub: org.isSchoolClub,
     status: org.status,
+    createdBy: org.createdBy,
+  }));
+}
+
+/**
+ * Find organization by name (fuzzy search)
+ */
+export async function findOrganizationByName(searchTerm: string) {
+  const organizations = await prisma.organization.findMany({
+    where: {
+      OR: [
+        { name: { contains: searchTerm, mode: "insensitive" } },
+        { description: { contains: searchTerm, mode: "insensitive" } },
+      ],
+      status: "APPROVED", // Only search approved organizations
+    },
+    include: {
+      createdBy: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+    },
+    take: 10,
+  });
+
+  return organizations.map((org) => ({
+    id: org.id,
+    name: org.name,
+    description: org.description,
+    category: org.category,
+    leadership: org.leadership,
+    presidentName: org.presidentName,
+    contactEmail: org.contactEmail,
+    isSchoolClub: org.isSchoolClub,
+    status: org.status,
+    createdBy: org.createdBy,
   }));
 }
 
