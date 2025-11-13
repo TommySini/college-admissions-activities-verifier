@@ -47,56 +47,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Calculate total hours for each student and auto-complete goals
-    const studentIds = [...new Set(goals.map(g => g.studentId))];
-    const updatedGoals = [];
-    
-    for (const goal of goals) {
-      // Calculate total hours for this student
-      const participations = await prisma.volunteeringParticipation.findMany({
-        where: {
-          studentId: goal.studentId,
-        },
-        select: {
-          totalHours: true,
-        },
-      });
-      
-      const totalHours = participations.reduce((sum, p) => sum + (p.totalHours || 0), 0);
-      
-      // Auto-complete goal if target hours are reached and status is still active
-      if (goal.status === "active" && totalHours >= goal.targetHours) {
-        const updatedGoal = await prisma.volunteeringGoal.update({
-          where: { id: goal.id },
-          data: {
-            status: "completed",
-            completedAt: new Date(),
-          },
-          include: {
-            student: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-            createdBy: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                role: true,
-              },
-            },
-          },
-        });
-        updatedGoals.push(updatedGoal);
-      } else {
-        updatedGoals.push(goal);
-      }
-    }
-
-    return NextResponse.json({ goals: updatedGoals });
+    return NextResponse.json({ goals });
   } catch (error) {
     console.error("Error fetching goals:", error);
     return NextResponse.json(
