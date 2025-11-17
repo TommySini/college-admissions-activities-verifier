@@ -61,7 +61,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 },
                 {
                     label: "Settings",
-                    href: "/admin#settings",
+                    href: "/admin/settings",
                     icon: Settings01,
                 },
             ];

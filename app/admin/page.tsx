@@ -197,7 +197,10 @@ export default function AdminDashboardPage() {
             >
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-slate-900">Settings</h2>
-                <button className="rounded-full border border-slate-200 px-4 py-1 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-600">
+                <button
+                  onClick={() => router.push("/admin/settings")}
+                  className="rounded-full border border-slate-200 px-4 py-1 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-600"
+                >
                   Open
                 </button>
               </div>
