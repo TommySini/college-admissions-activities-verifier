@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useProfile } from "../context/ProfileContext";
 import { ProfileType, OrganizationProfile, ApplicantProfile } from "../types";
+import { WebGLShader } from "@/components/ui/web-gl-shader";
 
 export default function ProfileSelector() {
   const { currentProfile, allProfiles, createProfile, setCurrentProfile, switchProfile } =
@@ -190,45 +191,51 @@ export default function ProfileSelector() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-zinc-800 rounded-lg p-8 max-w-md w-full shadow-xl">
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
-          Actify
-        </h1>
-        <p className="text-zinc-600 dark:text-zinc-400 mb-6">
-          Get started by creating or selecting a profile
-        </p>
+    <div className="relative min-h-screen overflow-hidden">
+      {/* WebGL Background */}
+      <WebGLShader />
+      
+      {/* Content Layer */}
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
+        <div className="bg-black/5 backdrop-blur-xl rounded-2xl p-8 max-w-md w-full shadow-2xl border border-black/10">
+          <h1 className="text-3xl font-bold text-black mb-2">
+            Actify
+          </h1>
+          <p className="text-black/60 mb-6">
+            Get started by creating or selecting a profile
+          </p>
 
-        {allProfiles.length > 0 && (
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-3">
-              Existing Profiles
-            </h2>
-            <div className="space-y-2">
-              {allProfiles.map((profile) => (
-                <button
-                  key={profile.id}
-                  onClick={() => switchProfile(profile.id)}
-                  className="w-full text-left px-4 py-3 bg-zinc-100 dark:bg-zinc-700 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors"
-                >
-                  <div className="font-medium text-zinc-900 dark:text-zinc-50">
-                    {profile.name}
-                  </div>
-                  <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                    {profile.profileType} • {profile.email}
-                  </div>
-                </button>
-              ))}
+          {allProfiles.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-black mb-3">
+                Existing Profiles
+              </h2>
+              <div className="space-y-2">
+                {allProfiles.map((profile) => (
+                  <button
+                    key={profile.id}
+                    onClick={() => switchProfile(profile.id)}
+                    className="w-full text-left px-4 py-3 bg-white/50 backdrop-blur-sm rounded-lg hover:bg-white/70 transition-colors border border-black/10"
+                  >
+                    <div className="font-medium text-black">
+                      {profile.name}
+                    </div>
+                    <div className="text-sm text-black/60">
+                      {profile.profileType} • {profile.email}
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <button
-          onClick={() => setShowCreateForm(true)}
-          className="w-full px-6 py-3 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-black rounded-lg font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
-        >
-          + Create New Profile
-        </button>
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-md"
+          >
+            + Create New Profile
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -157,7 +157,7 @@ export default function OrganizationsPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-blue-600">Loading organization portal…</div>
       </div>
     );
@@ -168,7 +168,7 @@ export default function OrganizationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-50">
+    <div className="min-h-screen">
       <main className="max-w-5xl mx-auto px-6 py-12">
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Submit an Organization</h1>

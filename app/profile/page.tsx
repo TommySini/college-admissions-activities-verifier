@@ -71,7 +71,7 @@ export default function ProfilePage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-black dark:to-zinc-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-zinc-600 dark:text-zinc-400">Loading...</div>
       </div>
     );
@@ -208,7 +208,7 @@ export default function ProfilePage() {
                 </Link>
                 {!isAdmin && (
                   <Link
-                    href="/dashboard?show=add-activity"
+                    href="/activities?show=add-activity"
                     className="block w-full text-center px-5 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
                   >
                     Add New Activity

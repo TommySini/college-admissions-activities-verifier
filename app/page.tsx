@@ -27,8 +27,11 @@ export default function Home() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-black">Loading...</div>
+      <div className="relative min-h-screen overflow-hidden">
+        <WebGLShader />
+        <div className="relative z-10 flex items-center justify-center min-h-screen">
+          <div className="text-black">Loading...</div>
+        </div>
       </div>
     );
   }
@@ -36,8 +39,11 @@ export default function Home() {
   if (session) {
     // Show loading while redirecting
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-black">Redirecting...</div>
+      <div className="relative min-h-screen overflow-hidden">
+        <WebGLShader />
+        <div className="relative z-10 flex items-center justify-center min-h-screen">
+          <div className="text-black">Redirecting...</div>
+        </div>
       </div>
     );
   }

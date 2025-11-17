@@ -6,7 +6,6 @@ import { SidebarNavigationSlim } from "@/components/application/app-navigation/s
 import type { NavItemType } from "@/components/application/app-navigation/config";
 import type { FC } from "react";
 import {
-    HomeLine,
     Users01,
     Building07,
     HeartHand,
@@ -14,7 +13,9 @@ import {
     User01,
     Settings01,
     BarChartSquare02,
+    BookOpen01,
 } from "@untitledui/icons";
+import { WebGLShader } from "@/components/ui/web-gl-shader";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -30,14 +31,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     // Main navigation items
     const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = [
         {
-            label: "Home",
-            href: "/",
-            icon: HomeLine,
-        },
-        {
             label: "Dashboard",
             href: "/dashboard",
             icon: BarChartSquare02,
+        },
+        {
+            label: "Activities",
+            href: "/activities",
+            icon: BookOpen01,
         },
     ];
 
@@ -86,12 +87,18 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     ];
 
     return (
-        <div className="min-h-screen flex bg-gray-50">
-            <SidebarNavigationSlim
-                items={navItems}
-                footerItems={footerItems}
-            />
-            <main className="flex-1 min-w-0 overflow-auto">{children}</main>
+        <div className="relative min-h-screen flex overflow-hidden">
+            {/* WebGL Background */}
+            <WebGLShader />
+            
+            {/* Content Layer */}
+            <div className="relative z-10 flex w-full">
+                <SidebarNavigationSlim
+                    items={navItems}
+                    footerItems={footerItems}
+                />
+                <main className="flex-1 min-w-0 overflow-auto">{children}</main>
+            </div>
         </div>
     );
 }

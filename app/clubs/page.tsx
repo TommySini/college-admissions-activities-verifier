@@ -125,7 +125,7 @@ export default function ClubsPage() {
   const isStudent = session.user.role === "student";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-50">
+    <div className="min-h-screen">
       <main className="max-w-7xl mx-auto px-6 py-12">
         {/* Header */}
         <header className="mb-12">

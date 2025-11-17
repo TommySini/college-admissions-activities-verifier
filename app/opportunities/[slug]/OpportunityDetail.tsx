@@ -127,7 +127,7 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
 
   if (!opportunity) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <Card className="max-w-md p-12 text-center">
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Opportunity Not Found</h2>
           <p className="text-slate-600 mb-6">The opportunity you're looking for doesn't exist.</p>
@@ -145,7 +145,7 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
     currentEdition?.participations && currentEdition.participations.length > 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-50">
+    <div className="min-h-screen">
       {/* Navigation */}
       <nav className="bg-white border-b border-slate-200 sticky top-0 z-40 backdrop-blur">
         <div className="max-w-5xl mx-auto px-6 py-4">
@@ -464,7 +464,7 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
 
 function LoadingSkeleton() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-50">
+    <div className="min-h-screen">
       <div className="max-w-5xl mx-auto px-6 py-12">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-slate-200 rounded w-2/3"></div>

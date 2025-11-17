@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
           activityOrganization: activity.organization,
           verifierName: verifier.name,
           status: status,
-          dashboardUrl: `${baseUrl}/dashboard`,
+          dashboardUrl: `${baseUrl}/activities`,
         }),
       });
     } catch (emailError) {
@@ -258,7 +258,7 @@ export async function POST(request: NextRequest) {
           activityOrganization: activity.organization,
           verifierName: user.name,
           status: status,
-          dashboardUrl: `${baseUrl}/dashboard`,
+          dashboardUrl: `${baseUrl}/activities`,
         }),
       });
     } catch (emailError) {

@@ -621,7 +621,7 @@ export default function VolunteeringPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-gray-600">Loading...</div>
       </div>
     );
@@ -632,7 +632,7 @@ export default function VolunteeringPage() {
   }
 
   return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">

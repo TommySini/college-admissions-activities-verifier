@@ -298,7 +298,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen">
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Tabs */}

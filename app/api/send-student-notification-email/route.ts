@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     const fromEmail = process.env.FROM_EMAIL || process.env.GMAIL_USER || "noreply@actify.app";
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-    const viewUrl = dashboardUrl || `${baseUrl}/dashboard`;
+    const viewUrl = dashboardUrl || `${baseUrl}/activities`;
     
     const mailOptions = {
       from: `Actify <${fromEmail}>`,

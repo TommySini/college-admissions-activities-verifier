@@ -55,7 +55,7 @@ export default function NewPetitionPage() {
   
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-50 flex items-center justify-center p-6">
+      <div className="min-h-screen flex items-center justify-center p-6">
         <Card className="max-w-md w-full p-8 text-center">
           <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-slate-900 mb-2">
@@ -81,7 +81,7 @@ export default function NewPetitionPage() {
   }
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-50">
+    <div className="min-h-screen">
       <nav className="bg-white border-b border-slate-200">
         <div className="max-w-3xl mx-auto px-6 py-4">
           <Link href="/opportunities" className="flex items-center gap-2 text-slate-600 hover:text-slate-900">

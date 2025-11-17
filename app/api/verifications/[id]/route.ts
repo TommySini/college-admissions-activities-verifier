@@ -170,7 +170,7 @@ export async function PATCH(
               activityOrganization: fullVerification.activity.organization,
               verifierName: fullVerification.verifier.name,
               status: updateData.status,
-              dashboardUrl: `${baseUrl}/dashboard`,
+              dashboardUrl: `${baseUrl}/activities`,
             }),
           });
         } catch (emailError) {
