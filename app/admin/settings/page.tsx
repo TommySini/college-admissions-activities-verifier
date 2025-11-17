@@ -236,6 +236,30 @@ export default function AdminSettingsPage() {
                 onToggle={() => handlePreferenceToggle("darkMode")}
               />
             </div>
+            <div className="space-y-3 rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
+              <header className="mb-2">
+                <p className="text-sm font-semibold text-slate-900">Notification preferences</p>
+                <p className="text-xs text-slate-500">Pick how often we contact you</p>
+              </header>
+              <PreferenceToggle
+                label="Weekly digest email"
+                description="Summary of student activity progress each Monday"
+                value={preferences.weeklyDigest}
+                onToggle={() => handlePreferenceToggle("weeklyDigest")}
+              />
+              <PreferenceToggle
+                label="Organization submission alerts"
+                description="Email when a new organization is waiting for approval"
+                value={preferences.notifyOrganizationSubmissions}
+                onToggle={() => handlePreferenceToggle("notifyOrganizationSubmissions")}
+              />
+              <PreferenceToggle
+                label="Event reminders"
+                description="Reminders for events you manage or signed up for"
+                value={preferences.eventReminders}
+                onToggle={() => handlePreferenceToggle("eventReminders")}
+              />
+            </div>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <Button onClick={handleSaveBasics} className="w-full sm:flex-1" disabled={savingProfile}>
                 {savingProfile ? "Saving…" : "Save basics"}
