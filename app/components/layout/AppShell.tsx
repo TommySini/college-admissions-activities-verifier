@@ -1,6 +1,5 @@
 "use client";
-
-import { usePathname } from "next/navigation";
+import { useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
 import type { NavItemType } from "@/components/application/app-navigation/config";
@@ -15,67 +14,99 @@ import {
     BarChartSquare02,
     BookOpen01,
 } from "@untitledui/icons";
+import { Bell, Eye } from "lucide-react";
 import { WebGLShader } from "@/components/ui/web-gl-shader";
 
-export default function AppShell({ children }: { children: React.ReactNode }) {
-    const pathname = usePathname();
-    const { data: session } = useSession();
+const BellIcon: FC<{ className?: string }> = ({ className }) => (
+    <Bell className={className} strokeWidth={1.8} size={18} />
+);
 
-    // Hide shell on auth, API routes, and homepage when not authenticated
-    const hideShell = pathname.startsWith("/auth") || pathname.startsWith("/api") || (pathname === "/" && !session);
-    if (hideShell) return <>{children}</>;
+const EyeIcon: FC<{ className?: string }> = ({ className }) => (
+    <Eye className={className} strokeWidth={1.8} size={18} />
+);
+
+export default function AppShell({ children }: { children: React.ReactNode }) {
+    const { data: session } = useSession();
 
     const isStudent = session?.user?.role === "student";
     const isAdmin = session?.user?.role === "admin";
 
-    // Main navigation items
-    const navItems: (NavItemType & { icon: FC<{ className?: string }> })[] = [
-        {
-            label: "Dashboard",
-            href: "/dashboard",
-            icon: BarChartSquare02,
-        },
-        {
-            label: "Activities",
-            href: "/activities",
-            icon: BookOpen01,
-        },
-    ];
+    const navItems = useMemo<(NavItemType & { icon: FC<{ className?: string }> })[]>(() => {
+        if (isAdmin) {
+            return [
+                {
+                    label: "Dashboard",
+                    href: "/admin",
+                    icon: BarChartSquare02,
+                },
+                {
+                    label: "Insights",
+                    href: "/admin#insights",
+                    icon: BookOpen01,
+                },
+                {
+                    label: "My Organizations",
+                    href: "/admin#organizations",
+                    icon: Building07,
+                },
+                {
+                    label: "Notifications",
+                    href: "/admin#notifications",
+                    icon: BellIcon,
+                },
+                {
+                    label: "View",
+                    href: "/admin#view",
+                    icon: EyeIcon,
+                },
+                {
+                    label: "Settings",
+                    href: "/admin#settings",
+                    icon: Settings01,
+                },
+            ];
+        }
 
-    // Add student-specific items
-    if (isStudent) {
-        navItems.push(
+        const items: (NavItemType & { icon: FC<{ className?: string }> })[] = [
             {
-                label: "Clubs",
-                href: "/clubs",
-                icon: Users01,
+                label: "Dashboard",
+                href: "/dashboard",
+                icon: BarChartSquare02,
             },
             {
-                label: "Organizations",
-                href: "/organizations",
-                icon: Building07,
+                label: "Activities",
+                href: "/activities",
+                icon: BookOpen01,
             },
-            {
-                label: "Volunteering",
-                href: "/volunteering",
-                icon: HeartHand,
-            },
-            {
-                label: "Alumni Database",
-                href: "/alumni",
-                icon: GraduationHat01,
-            }
-        );
-    }
+        ];
 
-    // Add admin-specific items
-    if (isAdmin) {
-        navItems.push({
-            label: "Admin",
-            href: "/admin",
-            icon: Settings01,
-        });
-    }
+        if (isStudent) {
+            items.push(
+                {
+                    label: "Clubs",
+                    href: "/clubs",
+                    icon: Users01,
+                },
+                {
+                    label: "Organizations",
+                    href: "/organizations",
+                    icon: Building07,
+                },
+                {
+                    label: "Volunteering",
+                    href: "/volunteering",
+                    icon: HeartHand,
+                },
+                {
+                    label: "Alumni Database",
+                    href: "/alumni",
+                    icon: GraduationHat01,
+                }
+            );
+        }
+
+        return items;
+    }, [isAdmin, isStudent]);
 
     // Footer items
     const footerItems: (NavItemType & { icon: FC<{ className?: string }> })[] = [

@@ -1,6 +1,7 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
+import { cookies } from "next/headers";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -27,6 +28,19 @@ export const authOptions: NextAuthOptions = {
 
         console.log("SignIn: Processing user", { email: user.email, name: user.name });
 
+        // Read the selected role from cookie (set by sign-in page)
+        let selectedRole: string | null = null;
+        try {
+          const cookieStore = await cookies();
+          const signupRoleCookie = cookieStore.get("signupRole");
+          if (signupRoleCookie?.value && (signupRoleCookie.value === "student" || signupRoleCookie.value === "admin")) {
+            selectedRole = signupRoleCookie.value;
+            console.log("SignIn: Found selected role in cookie", { role: selectedRole });
+          }
+        } catch (cookieError) {
+          console.log("SignIn: Could not read signupRole cookie", cookieError);
+        }
+
         // Check existing user first
         const existingUser = await prisma.user.findUnique({
           where: { email: user.email },
@@ -34,10 +48,14 @@ export const authOptions: NextAuthOptions = {
         
         let role = "student"; // Default role for new users
         
-        if (existingUser) {
-          // Coerce legacy verifier accounts back to student
+        // If user selected a role (from cookie), use that and override existing role
+        if (selectedRole) {
+          role = selectedRole;
+          console.log("SignIn: Using selected role from cookie", { email: user.email, role });
+        } else if (existingUser) {
+          // Only use existing role if no new role was selected
           role = existingUser.role === "verifier" ? "student" : existingUser.role;
-          console.log("SignIn: Existing user, using role", { email: user.email, role });
+          console.log("SignIn: Existing user, using existing role", { email: user.email, role });
         } else {
           console.log("SignIn: New user, assigning default role", { email: user.email, role });
         }
@@ -50,7 +68,7 @@ export const authOptions: NextAuthOptions = {
           update: {
             name: user.name || "",
             image: user.image || null,
-            role: role, // Update role if changed
+            role: role, // Update role to selected role
           },
           create: {
             email: user.email,
@@ -60,7 +78,15 @@ export const authOptions: NextAuthOptions = {
           },
         });
 
-        console.log("SignIn: User created/updated successfully", { email: user.email });
+        // Clear the signupRole cookie after use
+        try {
+          const cookieStore = await cookies();
+          cookieStore.delete("signupRole");
+        } catch (cookieError) {
+          // Ignore cookie deletion errors
+        }
+
+        console.log("SignIn: User created/updated successfully", { email: user.email, role });
         return true;
       } catch (error: any) {
         console.error("Error in signIn callback:", error);
