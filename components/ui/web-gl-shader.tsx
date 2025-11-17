@@ -69,9 +69,9 @@ export function WebGLShader() {
       refs.uniforms = {
         resolution: { value: [window.innerWidth, window.innerHeight] },
         time: { value: 0.0 },
-        xScale: { value: 1.0 },
-        yScale: { value: 0.5 },
-        distortion: { value: 0.05 },
+        xScale: { value: 0.7 },
+        yScale: { value: 0.25 },
+        distortion: { value: 0.02 },
       }
 
       const position = [
@@ -101,7 +101,7 @@ export function WebGLShader() {
     }
 
     const animate = () => {
-      if (refs.uniforms) refs.uniforms.time.value += 0.01
+      if (refs.uniforms) refs.uniforms.time.value += 0.004
       if (refs.renderer && refs.scene && refs.camera) {
         refs.renderer.render(refs.scene, refs.camera)
       }
@@ -140,7 +140,7 @@ export function WebGLShader() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed top-0 left-0 w-full h-full block"
+      className="fixed top-0 left-0 w-full h-full block opacity-20"
     />
   )
 }
