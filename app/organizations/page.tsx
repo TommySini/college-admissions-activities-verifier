@@ -21,6 +21,16 @@ interface Organization {
   updatedAt: string;
 }
 
+interface OrganizationEvent {
+  id: string;
+  title: string;
+  description?: string | null;
+  date: string;
+  time?: string | null;
+  location?: string | null;
+  type?: "upcoming" | "past";
+}
+
 const statusStyles: Record<OrganizationStatus, string> = {
   PENDING: "bg-amber-100 text-amber-700 border border-amber-200",
   APPROVED: "bg-green-100 text-green-700 border border-green-200",
@@ -36,6 +46,7 @@ export default function OrganizationsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [orgEvents, setOrgEvents] = useState<Record<string, OrganizationEvent[]>>({});
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -76,7 +87,27 @@ export default function OrganizationsPage() {
         return;
       }
 
-      setOrganizations(data.organizations || []);
+      const loadedOrgs = data.organizations || [];
+      setOrganizations(loadedOrgs);
+
+      // Fetch events for each approved organization
+      const eventsMap: Record<string, OrganizationEvent[]> = {};
+      await Promise.all(
+        loadedOrgs
+          .filter((org: Organization) => org.status === "APPROVED")
+          .map(async (org: Organization) => {
+            try {
+              const eventsResponse = await fetch(`/api/organizations/${org.id}/events`);
+              if (eventsResponse.ok) {
+                const eventsData = await eventsResponse.json();
+                eventsMap[org.id] = eventsData.upcoming || [];
+              }
+            } catch (err) {
+              console.error(`Error loading events for organization ${org.id}:`, err);
+            }
+          })
+      );
+      setOrgEvents(eventsMap);
     } catch (err) {
       console.error("Error loading organizations:", err);
       setError("Failed to load organizations");
@@ -393,7 +424,32 @@ export default function OrganizationsPage() {
                           <dd>{organization.contactEmail || "—"}</dd>
                         </div>
                       </dl>
-                      <p className="text-xs text-slate-400">
+                      {orgEvents[organization.id] && orgEvents[organization.id].length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-slate-200">
+                          <p className="font-medium text-slate-500 mb-2">Upcoming Events</p>
+                          <div className="space-y-2">
+                            {orgEvents[organization.id].slice(0, 3).map((event) => (
+                              <div key={event.id} className="text-sm">
+                                <span className="font-medium text-slate-900">{event.title}</span>
+                                {event.date && (
+                                  <span className="text-slate-500 ml-2">
+                                    {new Date(event.date).toLocaleDateString()}
+                                  </span>
+                                )}
+                                {event.location && (
+                                  <span className="text-slate-500 ml-2">• {event.location}</span>
+                                )}
+                              </div>
+                            ))}
+                            {orgEvents[organization.id].length > 3 && (
+                              <p className="text-xs text-slate-500">
+                                +{orgEvents[organization.id].length - 3} more event{orgEvents[organization.id].length - 3 !== 1 ? "s" : ""}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      <p className="text-xs text-slate-400 mt-4">
                         Submitted on {new Date(organization.createdAt).toLocaleDateString()}
                       </p>
                     </div>

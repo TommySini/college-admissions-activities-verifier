@@ -21,6 +21,16 @@ interface Club {
   updatedAt: string;
 }
 
+interface ClubEvent {
+  id: string;
+  title: string;
+  description?: string | null;
+  date: string;
+  time?: string | null;
+  location?: string | null;
+  type?: "upcoming" | "past";
+}
+
 const statusStyles: Record<OrganizationStatus, string> = {
   PENDING: "bg-amber-100 text-amber-700 border border-amber-200",
   APPROVED: "bg-green-100 text-green-700 border border-green-200",
@@ -35,6 +45,7 @@ export default function ClubsPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("All");
+  const [clubEvents, setClubEvents] = useState<Record<string, ClubEvent[]>>({});
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -69,7 +80,27 @@ export default function ClubsPage() {
         return;
       }
 
-      setClubs(data.clubs || []);
+      const loadedClubs = data.clubs || [];
+      setClubs(loadedClubs);
+
+      // Fetch events for each approved club
+      const eventsMap: Record<string, ClubEvent[]> = {};
+      await Promise.all(
+        loadedClubs
+          .filter((club: Club) => club.status === "APPROVED")
+          .map(async (club: Club) => {
+            try {
+              const eventsResponse = await fetch(`/api/organizations/${club.id}/events`);
+              if (eventsResponse.ok) {
+                const eventsData = await eventsResponse.json();
+                eventsMap[club.id] = eventsData.upcoming || [];
+              }
+            } catch (err) {
+              console.error(`Error loading events for club ${club.id}:`, err);
+            }
+          })
+      );
+      setClubEvents(eventsMap);
     } catch (err) {
       console.error("Error loading clubs:", err);
       setError("Failed to load clubs");
@@ -338,6 +369,46 @@ export default function ClubsPage() {
                           <div>
                             <p className="font-medium text-slate-900">President / Lead</p>
                             <p>{club.presidentName}</p>
+                          </div>
+                        </div>
+                      )}
+                      {clubEvents[club.id] && clubEvents[club.id].length > 0 && (
+                        <div className="flex items-start gap-3 pt-2 border-t border-slate-200">
+                          <span className="text-slate-400 mt-0.5">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth={1.5}
+                              stroke="currentColor"
+                              className="w-5 h-5"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
+                              />
+                            </svg>
+                          </span>
+                          <div className="flex-1">
+                            <p className="font-medium text-slate-900 mb-1">Upcoming Events</p>
+                            <div className="space-y-1">
+                              {clubEvents[club.id].slice(0, 2).map((event) => (
+                                <div key={event.id} className="text-xs">
+                                  <span className="font-medium">{event.title}</span>
+                                  {event.date && (
+                                    <span className="text-slate-500 ml-2">
+                                      {new Date(event.date).toLocaleDateString()}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                              {clubEvents[club.id].length > 2 && (
+                                <p className="text-xs text-slate-500">
+                                  +{clubEvents[club.id].length - 2} more event{clubEvents[club.id].length - 2 !== 1 ? "s" : ""}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )}

@@ -17,15 +17,20 @@ const DEFAULT_PREFERENCES = {
 };
 
 export async function GET() {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const entries = await prisma.settings.findMany({
     where: {
       key: {
-        in: Object.values(PREFERENCE_KEYS),
+        in: Object.values(PREFERENCE_KEYS).map((key) => `${key}_${user.id}`),
       },
     },
   });
 
-  const valueMap = new Map(entries.map((entry) => [entry.key, entry.value === "true"]));
+  const valueMap = new Map(entries.map((entry) => [entry.key.replace(`_${user.id}`, ""), entry.value === "true"]));
 
   return NextResponse.json({
     preferences: {
@@ -41,7 +46,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
-  if (!user || user.role !== "admin") {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -58,7 +63,7 @@ export async function POST(request: NextRequest) {
   for (const key of booleanKeys) {
     if (typeof body[key] === "boolean") {
       updated[key] = body[key];
-      const settingKey = PREFERENCE_KEYS[key];
+      const settingKey = `${PREFERENCE_KEYS[key]}_${user.id}`;
       await prisma.settings.upsert({
         where: { key: settingKey },
         update: { value: String(body[key]) },

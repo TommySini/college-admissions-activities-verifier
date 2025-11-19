@@ -12,11 +12,28 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (user.role !== "admin") {
+    if (user.role !== "admin" && user.role !== "teacher") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // If teacher, filter by their organizations
+    let organizationIds: string[] | undefined;
+    if (user.role === "teacher") {
+      const teacherOrgsSetting = await prisma.settings.findUnique({
+        where: { key: `teacher_organizations_${user.id}` },
+      });
+      organizationIds = teacherOrgsSetting?.value 
+        ? JSON.parse(teacherOrgsSetting.value) 
+        : [];
+      
+      // If no organizations linked, return empty array
+      if (organizationIds.length === 0) {
+        return NextResponse.json({ organizations: [] });
+      }
+    }
+
     const organizations = await prisma.organization.findMany({
+      where: organizationIds ? { id: { in: organizationIds } } : undefined,
       orderBy: [{ status: "asc" }, { createdAt: "desc" }],
     });
 

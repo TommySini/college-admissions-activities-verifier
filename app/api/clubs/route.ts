@@ -10,13 +10,16 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch organizations that are on-campus TBS clubs and either pending or approved
+    // Students can only see APPROVED clubs, admins can see all
+    const statusFilter = user.role === "admin" 
+      ? { in: ["PENDING", "APPROVED"] }
+      : "APPROVED";
+    
+    // Fetch organizations that are on-campus TBS clubs
     const clubs = await prisma.organization.findMany({
       where: {
         isSchoolClub: true,
-        status: {
-          in: ["PENDING", "APPROVED"],
-        },
+        status: statusFilter,
       },
       orderBy: [
         { status: "asc" }, // APPROVED comes before PENDING alphabetically

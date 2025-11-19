@@ -2,9 +2,11 @@
 
 import { useEffect, useRef } from "react"
 import * as THREE from "three"
+import { useDarkMode } from "@/app/context/DarkModeContext"
 
 export function WebGLShader() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const { darkMode } = useDarkMode()
   const sceneRef = useRef<{
     scene: THREE.Scene | null
     camera: THREE.OrthographicCamera | null
@@ -41,6 +43,7 @@ export function WebGLShader() {
       uniform float xScale;
       uniform float yScale;
       uniform float distortion;
+      uniform bool darkMode;
 
       void main() {
         vec2 p = (gl_FragCoord.xy * 2.0 - resolution) / min(resolution.x, resolution.y);
@@ -54,7 +57,12 @@ export function WebGLShader() {
         float g = 0.05 / abs(p.y + sin((gx + time) * xScale) * yScale);
         float b = 0.05 / abs(p.y + sin((bx + time) * xScale) * yScale);
         
-        gl_FragColor = vec4(1.0 - r, 1.0 - g, 1.0 - b, 1.0);
+        if (darkMode) {
+          // Invert colors for dark mode
+          gl_FragColor = vec4(r, g, b, 1.0);
+        } else {
+          gl_FragColor = vec4(1.0 - r, 1.0 - g, 1.0 - b, 1.0);
+        }
       }
     `
 
@@ -62,7 +70,7 @@ export function WebGLShader() {
       refs.scene = new THREE.Scene()
       refs.renderer = new THREE.WebGLRenderer({ canvas })
       refs.renderer.setPixelRatio(window.devicePixelRatio)
-      refs.renderer.setClearColor(new THREE.Color(0xFFFFFF))
+      refs.renderer.setClearColor(new THREE.Color(darkMode ? 0x1a1a1a : 0xFFFFFF))
 
       refs.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, -1)
 
@@ -72,6 +80,7 @@ export function WebGLShader() {
         xScale: { value: 0.7 },
         yScale: { value: 0.25 },
         distortion: { value: 0.02 },
+        darkMode: { value: darkMode },
       }
 
       const position = [
@@ -101,7 +110,10 @@ export function WebGLShader() {
     }
 
     const animate = () => {
-      if (refs.uniforms) refs.uniforms.time.value += 0.004
+      if (refs.uniforms) {
+        refs.uniforms.time.value += 0.004
+        refs.uniforms.darkMode.value = darkMode
+      }
       if (refs.renderer && refs.scene && refs.camera) {
         refs.renderer.render(refs.scene, refs.camera)
       }
@@ -119,6 +131,15 @@ export function WebGLShader() {
     }
 
     initScene()
+    
+    // Update after initialization
+    if (refs.renderer) {
+      refs.renderer.setClearColor(new THREE.Color(darkMode ? 0x1a1a1a : 0xFFFFFF))
+    }
+    if (refs.uniforms) {
+      refs.uniforms.darkMode.value = darkMode
+    }
+    
     animate()
 
     window.addEventListener("resize", handleResize)
@@ -135,7 +156,7 @@ export function WebGLShader() {
       }
       refs.renderer?.dispose()
     }
-  }, [])
+  }, [darkMode])
 
   return (
     <canvas

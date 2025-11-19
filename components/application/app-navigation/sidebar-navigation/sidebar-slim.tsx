@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import type { NavItemType } from "../config";
 import { cx } from "@/utils/cx";
+import { useDarkMode } from "@/app/context/DarkModeContext";
 
 interface SidebarNavigationSlimProps {
     items: (NavItemType & { icon?: FC<{ className?: string }> })[];
@@ -18,6 +19,7 @@ export const SidebarNavigationSlim = ({
     className,
 }: SidebarNavigationSlimProps) => {
     const pathname = usePathname();
+    const { darkMode } = useDarkMode();
 
     const renderNavItem = (item: NavItemType & { icon?: FC<{ className?: string }> }) => {
         const Icon = item.icon;
@@ -33,10 +35,14 @@ export const SidebarNavigationSlim = ({
                 title={item.label}
                 aria-label={item.label}
                 className={cx(
-                    "relative flex h-10 w-full items-center rounded-lg px-3 gap-3 justify-start transition-colors",
-                    isActive 
-                        ? "bg-gray-200 text-black" 
-                        : "text-black hover:bg-gray-100"
+                    "relative flex h-10 w-full items-center rounded-lg px-3 gap-3 justify-start transition-colors font-medium",
+                    darkMode
+                        ? isActive
+                            ? "bg-slate-800 text-white"
+                            : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                        : isActive
+                            ? "bg-gray-200 text-slate-900"
+                            : "text-slate-700 hover:bg-gray-100 hover:text-slate-900"
                 )}
             >
                 <Icon className="h-5 w-5 shrink-0" />
@@ -47,7 +53,10 @@ export const SidebarNavigationSlim = ({
                     {item.label}
                 </span>
                 {item.badge && (
-                    <span className="ml-auto flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-semibold text-white">
+                    <span className={cx(
+                        "ml-auto flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-semibold",
+                        darkMode ? "bg-blue-500 text-white" : "bg-blue-600 text-white"
+                    )}>
                         {item.badge}
                     </span>
                 )}
@@ -58,7 +67,10 @@ export const SidebarNavigationSlim = ({
     return (
         <aside
             className={cx(
-                "group flex h-screen w-16 hover:w-48 transition-[width] duration-300 ease-out flex-col items-start border-r border-gray-200 bg-white py-4 overflow-hidden",
+                "group flex h-screen w-16 hover:w-48 transition-[width] duration-300 ease-out flex-col items-start border-r py-4 overflow-hidden",
+                darkMode
+                    ? "border-slate-700 bg-slate-900"
+                    : "border-gray-200 bg-white",
                 className
             )}
         >
@@ -77,7 +89,10 @@ export const SidebarNavigationSlim = ({
                         A
                     </video>
                 </div>
-                <span className="text-base font-semibold opacity-0 -translate-x-2 whitespace-nowrap group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200">
+                <span className={cx(
+                    "text-base font-bold opacity-0 -translate-x-2 whitespace-nowrap group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200",
+                    darkMode ? "text-white" : "text-slate-900"
+                )}>
                     Actify
                 </span>
             </div>
@@ -89,7 +104,10 @@ export const SidebarNavigationSlim = ({
 
             {/* Footer Navigation */}
             {footerItems && footerItems.length > 0 && (
-                <div className="mt-auto flex flex-col gap-2 border-t border-gray-200 pt-4 w-full px-2">
+                <div className={cx(
+                    "mt-auto flex flex-col gap-2 border-t pt-4 w-full px-2",
+                    darkMode ? "border-slate-700" : "border-gray-200"
+                )}>
                     {footerItems.map(item => renderNavItem(item))}
                 </div>
             )}
