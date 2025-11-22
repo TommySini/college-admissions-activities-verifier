@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Building2, Users, Calendar, Award, TrendingUp, UserPlus, UserMinus, Crown, Mail, UserCheck, Clock, X, Plus, Trash2, Settings } from "lucide-react";
+import { Building2, Users, Calendar, Award, TrendingUp, UserPlus, UserMinus, Crown, Mail, UserCheck, Clock, X, Plus, Trash2, Settings, Loader2 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useDarkMode } from "@/app/context/DarkModeContext";
+import { useAdminRole } from "@/app/context/AdminRoleContext";
 
 interface Organization {
   id: string;
@@ -34,20 +35,69 @@ interface PendingRequest {
   createdAt: string;
 }
 
+interface AdvisoryGroup {
+  id: string;
+  name: string;
+  students: AdvisoryStudent[];
+  pendingRequests: PendingRequest[];
+}
+
 export default function MyOrganizationsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { darkMode } = useDarkMode();
+  const { adminSubRole, loading: adminRoleLoading } = useAdminRole();
 
   const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [advisoryStudents, setAdvisoryStudents] = useState<AdvisoryStudent[]>([]);
-  const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([]);
+  const [advisoryGroups, setAdvisoryGroups] = useState<AdvisoryGroup[]>([]);
+  const [activeAdvisoryId, setActiveAdvisoryId] = useState<string | null>(null);
+  const [groupEmailInputs, setGroupEmailInputs] = useState<Record<string, string>>({});
+  const [sendingGroupId, setSendingGroupId] = useState<string | null>(null);
+  const [cancellingRequestEmail, setCancellingRequestEmail] = useState<string | null>(null);
+  const [creatingGroup, setCreatingGroup] = useState(false);
+  const [renamingGroupId, setRenamingGroupId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [advisoryEmail, setAdvisoryEmail] = useState("");
-  const [sendingRequest, setSendingRequest] = useState(false);
+  const [showCreateConfirm, setShowCreateConfirm] = useState(false);
 
   const isAdmin = session?.user?.role === "admin" || session?.user?.role === "teacher";
+  const isCounselor = adminSubRole === "college_counselor";
+
+  useEffect(() => {
+    if (isCounselor) {
+      setLoading(false);
+    }
+  }, [isCounselor]);
+
+  const refreshAdvisoryGroups = useCallback(async () => {
+    try {
+      const advisoryRes = await fetch("/api/advisory");
+      if (!advisoryRes.ok) {
+        throw new Error("Failed to load advisory data");
+      }
+      const advisoryData = await advisoryRes.json();
+      const groupsFromApi: AdvisoryGroup[] =
+        Array.isArray(advisoryData.groups) && advisoryData.groups.length > 0
+          ? advisoryData.groups
+          : [
+              {
+                id: "default",
+                name: "My Advisory",
+                students: advisoryData.students || [],
+                pendingRequests: advisoryData.pendingRequests || [],
+              },
+            ];
+      setAdvisoryGroups(groupsFromApi);
+      setActiveAdvisoryId((current) => {
+        if (current && groupsFromApi.some((group) => group.id === current)) {
+          return current;
+        }
+        return groupsFromApi[0]?.id ?? null;
+      });
+    } catch (err) {
+      console.error("Error fetching advisory data:", err);
+    }
+  }, []);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -58,10 +108,13 @@ export default function MyOrganizationsPage() {
       router.replace("/dashboard");
       return;
     }
-  }, [status, isAdmin, router]);
+    if (status === "authenticated" && isCounselor) {
+      router.replace("/admin/students");
+    }
+  }, [status, isAdmin, isCounselor, router]);
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!isAdmin || isCounselor) return;
 
     const loadData = async () => {
       try {
@@ -72,13 +125,7 @@ export default function MyOrganizationsPage() {
           setOrganizations(orgData.organizations || []);
         }
 
-        // Load advisory
-        const advisoryRes = await fetch("/api/advisory");
-        if (advisoryRes.ok) {
-          const advisoryData = await advisoryRes.json();
-          setAdvisoryStudents(advisoryData.students || []);
-          setPendingRequests(advisoryData.pendingRequests || []);
-        }
+        await refreshAdvisoryGroups();
       } catch (err) {
         console.error("Error loading data:", err);
         setError("Failed to load data");
@@ -88,22 +135,131 @@ export default function MyOrganizationsPage() {
     };
 
     loadData();
-  }, [isAdmin]);
+  }, [isAdmin, refreshAdvisoryGroups]);
 
-  if (status === "loading" || loading) {
+  if (status === "loading" || loading || adminRoleLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-slate-600">
+      <div className="admin-dark-scope min-h-screen flex items-center justify-center text-slate-600">
         Loading organizations…
       </div>
     );
   }
 
-  if (!isAdmin) {
+  if (!isAdmin || isCounselor) {
     return null;
   }
 
+  const activeGroup =
+    advisoryGroups.find((group) => group.id === activeAdvisoryId) ??
+    advisoryGroups[0] ??
+    null;
+
+  const activeGroupEmail = activeGroup
+    ? groupEmailInputs[activeGroup.id] ?? ""
+    : "";
+
+  const handleAddStudentToGroup = async (groupId: string, email: string) => {
+    if (!email.trim()) return;
+    setSendingGroupId(groupId);
+    setError(null);
+    try {
+      const res = await fetch("/api/advisory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "invite", email: email.trim(), groupId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to send advisory request");
+      }
+      setGroupEmailInputs((prev) => ({ ...prev, [groupId]: "" }));
+      await refreshAdvisoryGroups();
+    } catch (err: any) {
+      setError(err?.message || "Failed to send advisory request");
+    } finally {
+      setSendingGroupId(null);
+    }
+  };
+
+  const handleRenameGroup = async (groupId: string, name: string) => {
+    if (!name.trim()) return;
+    setRenamingGroupId(groupId);
+    try {
+      const res = await fetch("/api/advisory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "rename-group",
+          groupId,
+          name: name.trim(),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to rename advisory");
+      }
+      await refreshAdvisoryGroups();
+    } catch (err: any) {
+      setError(err?.message || "Failed to rename advisory");
+    } finally {
+      setRenamingGroupId(null);
+    }
+  };
+
+  const handleCreateGroup = () => {
+    setShowCreateConfirm(true);
+  };
+
+  const confirmCreateGroup = async () => {
+    setCreatingGroup(true);
+    try {
+      const res = await fetch("/api/advisory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "create-group" }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to create advisory group");
+      }
+      await refreshAdvisoryGroups();
+      if (data?.group?.id) {
+        setActiveAdvisoryId(data.group.id);
+      }
+      setShowCreateConfirm(false);
+    } catch (err: any) {
+      setError(err?.message || "Failed to create advisory group");
+    } finally {
+      setCreatingGroup(false);
+    }
+  };
+
+  const handleCancelPendingRequest = async (email: string) => {
+    if (!email) return;
+    setCancellingRequestEmail(email);
+    setError(null);
+    try {
+      const res = await fetch("/api/advisory", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || "Failed to cancel request");
+      }
+
+      await refreshAdvisoryGroups();
+    } catch (err: any) {
+      setError(err?.message || "Failed to cancel request");
+    } finally {
+      setCancellingRequestEmail(null);
+    }
+  };
+
   return (
-    <div className="flex h-screen w-full bg-transparent">
+    <div className="admin-dark-scope flex h-screen w-full bg-transparent">
       <div className="mx-auto flex h-full w-full max-w-7xl flex-col px-6 py-6 overflow-y-auto">
         <header className="flex flex-col gap-1 mb-8">
           <h1 className={cn(
@@ -183,49 +339,163 @@ export default function MyOrganizationsPage() {
 
           {/* Advisory Section */}
           <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className={cn(
-                "text-xl font-semibold",
-                darkMode ? "text-slate-100" : "text-slate-900"
-              )}>Advisory</h2>
+            <div className="flex flex-col gap-3 mb-4">
+              <div className="flex items-center justify-between gap-4">
+                <h2
+                  className={cn(
+                    "text-xl font-semibold",
+                    darkMode ? "text-slate-100" : "text-slate-900"
+                  )}
+                >
+                  Advisory
+                </h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  {advisoryGroups.map((group) => (
+                    <button
+                      key={group.id}
+                      onClick={() => setActiveAdvisoryId(group.id)}
+                      className={cn(
+                        "rounded-full border px-3 py-1 text-sm font-semibold transition",
+                        activeGroup?.id === group.id
+                          ? darkMode
+                            ? "border-slate-100/30 bg-slate-100/10 text-slate-100"
+                            : "border-slate-900 bg-slate-900 text-white"
+                          : darkMode
+                          ? "border-slate-700 text-slate-300 hover:bg-slate-800/70"
+                          : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                      )}
+                    >
+                      {group.name}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={handleCreateGroup}
+                    disabled={creatingGroup}
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm font-semibold transition",
+                      darkMode
+                        ? "border-slate-700 text-slate-300 hover:bg-slate-800/70"
+                        : "border-slate-200 text-slate-600 hover:bg-slate-50",
+                      creatingGroup && "opacity-60 cursor-not-allowed"
+                    )}
+                  >
+                    <Plus className="h-4 w-4" />
+                    {creatingGroup ? "Creating…" : "New"}
+                  </button>
+                </div>
+              </div>
             </div>
             <AdvisorySection
-              students={advisoryStudents}
-              pendingRequests={pendingRequests}
+              group={activeGroup}
               darkMode={darkMode}
-              onAddStudent={async (email: string) => {
-                setSendingRequest(true);
-                try {
-                  const res = await fetch("/api/advisory", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email }),
-                  });
-                  if (!res.ok) {
-                    const data = await res.json();
-                    throw new Error(data.error || "Failed to send request");
-                  }
-                  setAdvisoryEmail("");
-                  // Reload advisory data
-                  const advisoryRes = await fetch("/api/advisory");
-                  if (advisoryRes.ok) {
-                    const advisoryData = await advisoryRes.json();
-                    setAdvisoryStudents(advisoryData.students || []);
-                    setPendingRequests(advisoryData.pendingRequests || []);
-                  }
-                } catch (err: any) {
-                  setError(err.message || "Failed to send advisory request");
-                } finally {
-                  setSendingRequest(false);
-                }
+              onAddStudent={
+                activeGroup
+                  ? async (email: string) =>
+                      handleAddStudentToGroup(activeGroup.id, email)
+                  : undefined
+              }
+              email={activeGroupEmail}
+              setEmail={(value: string) => {
+                if (!activeGroup) return;
+                setGroupEmailInputs((prev) => ({
+                  ...prev,
+                  [activeGroup.id]: value,
+                }));
               }}
-              email={advisoryEmail}
-              setEmail={setAdvisoryEmail}
-              sendingRequest={sendingRequest}
+              sendingRequest={
+                activeGroup ? sendingGroupId === activeGroup.id : false
+              }
+              onCancelRequest={handleCancelPendingRequest}
+              cancellingRequestEmail={cancellingRequestEmail}
+              onRenameGroup={
+                activeGroup
+                  ? async (name: string) => handleRenameGroup(activeGroup.id, name)
+                  : undefined
+              }
+              renaming={activeGroup ? renamingGroupId === activeGroup.id : false}
             />
           </section>
         </div>
       </div>
+      {showCreateConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[backdropFadeIn_0.25s_ease-out]"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className={cn(
+              "relative w-full max-w-md rounded-2xl border p-6 shadow-2xl animate-[modalFadeIn_0.25s_ease-out]",
+              darkMode
+                ? "border-slate-700 bg-slate-900 text-slate-100"
+                : "border-slate-200 bg-white text-slate-900"
+            )}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p
+                  className={cn(
+                    "text-xs font-semibold uppercase tracking-[0.25em]",
+                    darkMode ? "text-slate-500" : "text-slate-500"
+                  )}
+                >
+                  Confirm
+                </p>
+                <h3 className="text-xl font-semibold mt-1">Create new advisory?</h3>
+              </div>
+              <button
+                onClick={() => setShowCreateConfirm(false)}
+                className={cn(
+                  "rounded-full p-2 transition",
+                  darkMode
+                    ? "text-slate-400 hover:bg-slate-800"
+                    : "text-slate-500 hover:bg-slate-100"
+                )}
+                aria-label="Close create advisory confirmation"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p
+              className={cn(
+                "text-sm",
+                darkMode ? "text-slate-300" : "text-slate-600"
+              )}
+            >
+              You can manage multiple advisory groups to keep students organized.
+              Are you sure you want to spin up another group?
+            </p>
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setShowCreateConfirm(false)}
+                className={cn(
+                  "rounded-xl px-4 py-2 text-sm font-semibold",
+                  darkMode
+                    ? "text-slate-300 hover:bg-slate-800"
+                    : "text-slate-600 hover:bg-slate-100"
+                )}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmCreateGroup}
+                disabled={creatingGroup}
+                className={cn(
+                  "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-lg transition",
+                  creatingGroup ? "opacity-60 cursor-not-allowed" : "",
+                  "bg-indigo-600 hover:bg-indigo-500"
+                )}
+              >
+                {creatingGroup && <Loader2 className="h-4 w-4 animate-spin" />}
+                Create group
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1174,22 +1444,75 @@ function FeatureBadge({
 }
 
 function AdvisorySection({
-  students,
-  pendingRequests,
+  group,
   darkMode,
   onAddStudent,
   email,
   setEmail,
   sendingRequest,
+  onCancelRequest,
+  cancellingRequestEmail,
+  onRenameGroup,
+  renaming,
 }: {
-  students: AdvisoryStudent[];
-  pendingRequests: PendingRequest[];
+  group: AdvisoryGroup | null;
   darkMode: boolean;
-  onAddStudent: (email: string) => Promise<void>;
+  onAddStudent?: (email: string) => Promise<void> | void;
   email: string;
   setEmail: (email: string) => void;
   sendingRequest: boolean;
+  onCancelRequest: (email: string) => Promise<void>;
+  cancellingRequestEmail: string | null;
+  onRenameGroup?: (name: string) => Promise<void> | void;
+  renaming?: boolean;
 }) {
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState(group?.name ?? "My Advisory");
+
+  useEffect(() => {
+    setNameInput(group?.name ?? "My Advisory");
+    setEditingName(false);
+  }, [group?.id, group?.name]);
+
+  const students = group?.students ?? [];
+  const pendingRequests = group?.pendingRequests ?? [];
+  const groupLabel = group?.name ?? "Advisory";
+
+  if (!group) {
+    return (
+      <div
+        className={cn(
+          "rounded-2xl border p-6 text-center",
+          darkMode
+            ? "border-slate-700 bg-slate-900/70 text-slate-300"
+            : "border-slate-200 bg-white/95 text-slate-600"
+        )}
+      >
+        <p>Create your first advisory group to start inviting students.</p>
+      </div>
+    );
+  }
+
+  const handleSubmit = () => {
+    if (!onAddStudent || !email.trim()) return;
+    onAddStudent(email.trim());
+  };
+
+  const handleSaveName = async () => {
+    if (!onRenameGroup) {
+      setEditingName(false);
+      return;
+    }
+    const trimmed = nameInput.trim();
+    if (!trimmed || trimmed === group.name) {
+      setNameInput(group.name);
+      setEditingName(false);
+      return;
+    }
+    await onRenameGroup(trimmed);
+    setEditingName(false);
+  };
+
   return (
     <div className={cn(
       "rounded-2xl border p-6 shadow-lg backdrop-blur",
@@ -1197,13 +1520,85 @@ function AdvisorySection({
         ? "border-slate-700 bg-slate-900/95"
         : "border-slate-200 bg-white/95"
     )}>
+      {/* Header / rename */}
+      <div className="mb-6 flex items-center justify-between gap-3 flex-wrap">
+        {editingName ? (
+          <div className="flex flex-1 items-center gap-2">
+            <input
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              className={cn(
+                "flex-1 rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2",
+                darkMode
+                  ? "border-slate-700 bg-slate-800 text-slate-100 placeholder:text-slate-500 focus:ring-slate-600"
+                  : "border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:ring-slate-400"
+              )}
+            />
+            <button
+              onClick={handleSaveName}
+              disabled={renaming}
+              className={cn(
+                "rounded-lg px-3 py-2 text-sm font-semibold transition",
+                darkMode
+                  ? "bg-indigo-600 text-white hover:bg-indigo-500"
+                  : "bg-indigo-600 text-white hover:bg-indigo-500",
+                renaming && "opacity-60 cursor-not-allowed"
+              )}
+            >
+              Save
+            </button>
+            <button
+              onClick={() => {
+                setEditingName(false);
+                setNameInput(group.name);
+              }}
+              className={cn(
+                "rounded-lg px-3 py-2 text-sm font-semibold transition",
+                darkMode
+                  ? "text-slate-300 hover:text-white"
+                  : "text-slate-600 hover:text-slate-900"
+              )}
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-1 items-center gap-3">
+            <h3
+              className={cn(
+                "text-lg font-semibold",
+                darkMode ? "text-slate-100" : "text-slate-900"
+              )}
+            >
+              {groupLabel}
+            </h3>
+            {onRenameGroup && (
+              <button
+                type="button"
+                onClick={() => setEditingName(true)}
+                className={cn(
+                  "rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide transition",
+                  darkMode
+                    ? "border-slate-700 text-slate-300 hover:bg-slate-800/70"
+                    : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                )}
+              >
+                Rename
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Add Student Form */}
       <div className="mb-6">
-        <label className={cn(
-          "text-xs font-semibold uppercase tracking-wide block mb-2",
-          darkMode ? "text-slate-400" : "text-slate-500"
-        )}>
-          Add Student to Advisory
+        <label
+          className={cn(
+            "text-xs font-semibold uppercase tracking-wide block mb-2",
+            darkMode ? "text-slate-400" : "text-slate-500"
+          )}
+        >
+          Add Student to {groupLabel}
         </label>
         <div className="flex gap-3">
           <input
@@ -1224,13 +1619,20 @@ function AdvisorySection({
             }}
           />
           <button
-            onClick={() => onAddStudent(email.trim())}
-            disabled={!email.trim() || sendingRequest}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleSubmit();
+              }
+            }}
+          />
+          <button
+            onClick={handleSubmit}
+            disabled={!email.trim() || sendingRequest || !onAddStudent}
             className={cn(
               "rounded-lg border px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm",
               darkMode
                 ? "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:border-slate-600"
-                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400"
+                : "border-slate-200 bg-slate-100 text-slate-800 hover:bg-slate-200 hover:border-slate-300"
             )}
           >
             {sendingRequest ? "Sending…" : "Send Request"}
@@ -1240,7 +1642,7 @@ function AdvisorySection({
           "text-xs mt-2",
           darkMode ? "text-slate-500" : "text-slate-500"
         )}>
-          The student will receive a request to join your advisory. They must accept to be added.
+          We'll ping the student on their dashboard and send an email with your invite. They must accept before you're connected.
         </p>
       </div>
 
@@ -1283,6 +1685,20 @@ function AdvisorySection({
                 )}>
                   Awaiting response
                 </span>
+                <button
+                  type="button"
+                  onClick={() => onCancelRequest(request.email)}
+                  disabled={cancellingRequestEmail === request.email}
+                  className={cn(
+                    "rounded-full border p-1.5 transition disabled:opacity-50 disabled:cursor-not-allowed",
+                    darkMode
+                      ? "border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                      : "border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                  )}
+                  aria-label={`Cancel request for ${request.email}`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             ))}
           </div>

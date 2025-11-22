@@ -22,11 +22,11 @@ export default function AdminViewPage() {
   }, [status, session?.user?.role, router]);
 
   if (status === "loading") {
-    return <div className="min-h-screen flex items-center justify-center text-slate-600">Loading view tool…</div>;
+    return <div className="admin-dark-scope min-h-screen flex items-center justify-center text-slate-600">Loading view tool…</div>;
   }
 
   return (
-    <div className="flex h-screen w-full bg-transparent">
+    <div className="admin-dark-scope flex h-screen w-full bg-transparent">
       <div className="mx-auto flex h-full w-full max-w-7xl flex-col px-6 py-6">
         <header className="flex flex-col gap-1 mb-8">
           <h1 className="text-3xl font-semibold text-slate-900">View Tool</h1>

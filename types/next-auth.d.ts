@@ -9,6 +9,7 @@ declare module "next-auth" {
       name: string;
       role: string; // "student" | "admin"
       image?: string;
+      schoolId?: string | null;
     };
   }
 
@@ -18,6 +19,7 @@ declare module "next-auth" {
     name: string;
     role: string;
     image?: string;
+    schoolId?: string | null;
   }
 }
 
@@ -26,5 +28,6 @@ declare module "next-auth/jwt" {
     id: string;
     role: string;
     email: string;
+    schoolId?: string | null;
   }
 }

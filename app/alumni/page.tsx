@@ -100,8 +100,8 @@ export default function AlumniDatabasePage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+      <div className="admin-dark-scope min-h-screen flex items-center justify-center text-slate-600">
+        Loading alumni data…
       </div>
     );
   }
@@ -198,14 +198,14 @@ export default function AlumniDatabasePage() {
   );
 
   return (
-    <div className="min-h-screen">
+    <div className="admin-dark-scope min-h-screen bg-transparent">
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">
             Alumni Database
           </h1>
-          <p className="text-gray-600">
+          <p className="text-slate-600">
             Browse college admissions profiles from past students. Filter by
             major, career interests, and admission results.
           </p>
@@ -222,9 +222,9 @@ export default function AlumniDatabasePage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 mb-6">
+        <div className="rounded-2xl border border-slate-200 bg-white/95 p-6 shadow-lg backdrop-blur mb-6">
           <div className="flex items-center gap-4 mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Filters</h2>
             {(filters.major ||
               filters.tags ||
               filters.rankBucket ||
@@ -240,7 +240,7 @@ export default function AlumniDatabasePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Search
               </label>
               <input
@@ -248,11 +248,11 @@ export default function AlumniDatabasePage() {
                 value={filters.search}
                 onChange={(e) => handleFilterChange("search", e.target.value)}
                 placeholder="Search by name, major, tags..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Major
               </label>
               <input
@@ -260,11 +260,11 @@ export default function AlumniDatabasePage() {
                 value={filters.major}
                 onChange={(e) => handleFilterChange("major", e.target.value)}
                 placeholder="e.g., Computer Science"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Career Tags
               </label>
               <input
@@ -272,11 +272,11 @@ export default function AlumniDatabasePage() {
                 value={filters.tags}
                 onChange={(e) => handleFilterChange("tags", e.target.value)}
                 placeholder="e.g., finance, technology"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Rank Bucket
               </label>
               <select
@@ -284,7 +284,7 @@ export default function AlumniDatabasePage() {
                 onChange={(e) =>
                   handleFilterChange("rankBucket", e.target.value)
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All</option>
                 <option value="top5">Top 5</option>
@@ -293,13 +293,13 @@ export default function AlumniDatabasePage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Decision
               </label>
               <select
                 value={filters.decision}
                 onChange={(e) => handleFilterChange("decision", e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All</option>
                 <option value="admit">Admit</option>
@@ -311,7 +311,7 @@ export default function AlumniDatabasePage() {
         </div>
 
         {/* Results Count */}
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-slate-600 mb-4">
           {filteredApplications.length}{" "}
           {filteredApplications.length === 1 ? "application" : "applications"}{" "}
           found
@@ -319,11 +319,11 @@ export default function AlumniDatabasePage() {
 
         {/* Applications Grid */}
         {filteredApplications.length === 0 ? (
-          <div className="bg-white rounded-xl p-12 text-center border border-gray-200">
-            <p className="text-gray-600 mb-2 font-medium">
+          <div className="rounded-2xl border border-slate-200 bg-white/95 p-12 text-center shadow-lg backdrop-blur">
+            <p className="text-slate-600 mb-2 font-medium">
               No applications found
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-slate-500">
               Try adjusting your filters or be the first to upload!
             </p>
           </div>
@@ -332,21 +332,21 @@ export default function AlumniDatabasePage() {
             {filteredApplications.map((app) => (
               <div
                 key={app.id}
-                className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden"
+                className="rounded-2xl border border-slate-200 bg-white/95 shadow-lg hover:shadow-xl transition-shadow overflow-hidden backdrop-blur"
               >
                 {/* Card Header */}
-                <div className="p-6 border-b border-gray-100">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                <div className="p-6 border-b border-slate-100">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-1">
                     {app.alumniProfile.displayName ||
                       app.alumniProfile.intendedMajor ||
                       "Anonymous"}
                   </h3>
                   {app.alumniProfile.intendedMajor && (
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-slate-600">
                       {app.alumniProfile.intendedMajor}
                     </p>
                   )}
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-slate-500 mt-2">
                     Uploaded {new Date(app.createdAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -361,14 +361,14 @@ export default function AlumniDatabasePage() {
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">📋</span>
                         <div>
-                          <p className="font-medium text-gray-900">Activities</p>
-                          <p className="text-xs text-gray-600">
+                          <p className="font-medium text-slate-900">Activities</p>
+                          <p className="text-xs text-slate-600">
                             {app.extractedActivities.length} items
                           </p>
                         </div>
                       </div>
                       <svg
-                        className="w-5 h-5 text-gray-400"
+                        className="w-5 h-5 text-slate-400"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -389,14 +389,14 @@ export default function AlumniDatabasePage() {
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">✍️</span>
                         <div>
-                          <p className="font-medium text-gray-900">Essays</p>
-                          <p className="text-xs text-gray-600">
+                          <p className="font-medium text-slate-900">Essays</p>
+                          <p className="text-xs text-slate-600">
                             {app.extractedEssays.length} items
                           </p>
                         </div>
                       </div>
                       <svg
-                        className="w-5 h-5 text-gray-400"
+                        className="w-5 h-5 text-slate-400"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -417,14 +417,14 @@ export default function AlumniDatabasePage() {
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">🏆</span>
                         <div>
-                          <p className="font-medium text-gray-900">Awards</p>
-                          <p className="text-xs text-gray-600">
+                          <p className="font-medium text-slate-900">Awards</p>
+                          <p className="text-xs text-slate-600">
                             {app.extractedAwards.length} items
                           </p>
                         </div>
                       </div>
                       <svg
-                        className="w-5 h-5 text-gray-400"
+                        className="w-5 h-5 text-slate-400"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -463,18 +463,18 @@ export default function AlumniDatabasePage() {
 
       {/* Modal for Section Details */}
       {selectedSection && selectedApp && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="rounded-2xl border border-slate-200 bg-white/95 max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col shadow-2xl">
             {/* Modal Header */}
-            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-2xl font-bold text-gray-900">
+            <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="text-2xl font-bold text-slate-900">
                 {selectedSection.section === "activities" && "📋 Activities"}
                 {selectedSection.section === "essays" && "✍️ Essays"}
                 {selectedSection.section === "awards" && "🏆 Awards"}
               </h3>
               <button
                 onClick={closeModal}
-                className="text-gray-400 hover:text-gray-600 text-2xl"
+                className="text-slate-400 hover:text-slate-600 text-2xl"
               >
                 ×
               </button>
@@ -485,34 +485,34 @@ export default function AlumniDatabasePage() {
               {selectedSection.section === "activities" && (
                 <div className="space-y-4">
                   {selectedApp.extractedActivities.length === 0 ? (
-                    <p className="text-gray-500 text-center py-8">
+                    <p className="text-slate-500 text-center py-8">
                       No activities found
                     </p>
                   ) : (
                     selectedApp.extractedActivities.map((activity) => (
                       <div
                         key={activity.id}
-                        className="p-4 bg-gray-50 rounded-lg border border-gray-200"
+                        className="p-4 bg-slate-50 rounded-lg border border-slate-200"
                       >
-                        <h4 className="font-semibold text-gray-900 mb-2">
+                        <h4 className="font-semibold text-slate-900 mb-2">
                           {activity.title}
                         </h4>
                         {activity.role && (
-                          <p className="text-sm text-gray-600 mb-1">
+                          <p className="text-sm text-slate-600 mb-1">
                             Role: {activity.role}
                           </p>
                         )}
                         {activity.organization && (
-                          <p className="text-sm text-gray-600 mb-1">
+                          <p className="text-sm text-slate-600 mb-1">
                             Organization: {activity.organization}
                           </p>
                         )}
                         {activity.description && (
-                          <p className="text-sm text-gray-700 mb-2">
+                          <p className="text-sm text-slate-700 mb-2">
                             {activity.description}
                           </p>
                         )}
-                        <div className="flex gap-4 text-xs text-gray-500">
+                        <div className="flex gap-4 text-xs text-slate-500">
                           {activity.hours && <span>{activity.hours} hours</span>}
                           {activity.years && <span>Years: {activity.years}</span>}
                         </div>
@@ -525,25 +525,25 @@ export default function AlumniDatabasePage() {
               {selectedSection.section === "essays" && (
                 <div className="space-y-4">
                   {selectedApp.extractedEssays.length === 0 ? (
-                    <p className="text-gray-500 text-center py-8">
+                    <p className="text-slate-500 text-center py-8">
                       No essays found
                     </p>
                   ) : (
                     selectedApp.extractedEssays.map((essay) => (
                       <div
                         key={essay.id}
-                        className="p-4 bg-gray-50 rounded-lg border border-gray-200"
+                        className="p-4 bg-slate-50 rounded-lg border border-slate-200"
                       >
-                        <h4 className="font-semibold text-gray-900 mb-2">
+                        <h4 className="font-semibold text-slate-900 mb-2">
                           {essay.topic}
                         </h4>
                         {essay.prompt && (
-                          <p className="text-sm text-gray-600 mb-2 italic">
+                          <p className="text-sm text-slate-600 mb-2 italic">
                             {essay.prompt}
                           </p>
                         )}
                         {essay.summary && (
-                          <p className="text-sm text-gray-700 mb-2">
+                          <p className="text-sm text-slate-700 mb-2">
                             {essay.summary}
                           </p>
                         )}
@@ -568,19 +568,19 @@ export default function AlumniDatabasePage() {
               {selectedSection.section === "awards" && (
                 <div className="space-y-4">
                   {selectedApp.extractedAwards.length === 0 ? (
-                    <p className="text-gray-500 text-center py-8">
+                    <p className="text-slate-500 text-center py-8">
                       No awards found
                     </p>
                   ) : (
                     selectedApp.extractedAwards.map((award) => (
                       <div
                         key={award.id}
-                        className="p-4 bg-gray-50 rounded-lg border border-gray-200"
+                        className="p-4 bg-slate-50 rounded-lg border border-slate-200"
                       >
-                        <h4 className="font-semibold text-gray-900 mb-2">
+                        <h4 className="font-semibold text-slate-900 mb-2">
                           {award.title}
                         </h4>
-                        <div className="flex gap-4 text-sm text-gray-600 mb-2">
+                        <div className="flex gap-4 text-sm text-slate-600 mb-2">
                           {award.level && (
                             <span className="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs rounded-md capitalize">
                               {award.level}
@@ -589,7 +589,7 @@ export default function AlumniDatabasePage() {
                           {award.year && <span>{award.year}</span>}
                         </div>
                         {award.description && (
-                          <p className="text-sm text-gray-700">
+                          <p className="text-sm text-slate-700">
                             {award.description}
                           </p>
                         )}

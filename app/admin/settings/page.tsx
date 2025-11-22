@@ -26,6 +26,7 @@ export default function AdminSettingsPage() {
   const [adminSubRole, setAdminSubRole] = useState<"teacher" | "college_counselor">("teacher");
   const [counselorCode, setCounselorCode] = useState("");
   const [showCodeInput, setShowCodeInput] = useState(false);
+  const [studentBodyCount, setStudentBodyCount] = useState("");
   const [notifications, setNotifications] = useState({
     studentApprovalRequest: true,
     emailOnSignIn: true,
@@ -35,6 +36,7 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingRole, setSavingRole] = useState(false);
+  const [savingStudentBody, setSavingStudentBody] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const isAdmin = session?.user?.role === "admin" || session?.user?.role === "teacher";
@@ -76,6 +78,17 @@ export default function AdminSettingsPage() {
           const notifData = await notifRes.json();
           if (notifData.notifications) {
             setNotifications(notifData.notifications);
+          }
+        }
+
+        // Load school profile settings
+        const schoolSizeRes = await fetch("/api/settings?key=school_student_body_count");
+        if (schoolSizeRes.ok) {
+          const schoolSizeData = await schoolSizeRes.json();
+          if (schoolSizeData.exists && typeof schoolSizeData.value === "string") {
+            setStudentBodyCount(schoolSizeData.value);
+          } else {
+            setStudentBodyCount("");
           }
         }
 
@@ -158,6 +171,35 @@ export default function AdminSettingsPage() {
     }
   };
 
+  const handleSaveStudentBodyCount = async () => {
+    const parsedValue = studentBodyCount.trim();
+    if (parsedValue && Number(parsedValue) <= 0) {
+      setMessage({ type: "error", text: "Student body count must be greater than zero" });
+      return;
+    }
+    setSavingStudentBody(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: "school_student_body_count",
+          value: parsedValue || "",
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || "Failed to save student body count");
+      }
+      setMessage({ type: "success", text: "School profile updated" });
+    } catch (error: any) {
+      setMessage({ type: "error", text: error?.message || "Failed to save school profile" });
+    } finally {
+      setSavingStudentBody(false);
+    }
+  };
+
   const handleSaveRole = async (role?: "teacher" | "college_counselor", code?: string) => {
     const roleToSave = role || adminSubRole;
     const codeToUse = code !== undefined ? code : counselorCode;
@@ -193,7 +235,7 @@ export default function AdminSettingsPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-slate-600">
+      <div className="admin-dark-scope min-h-screen flex items-center justify-center text-slate-600">
         Loading settings…
       </div>
     );
@@ -207,16 +249,16 @@ export default function AdminSettingsPage() {
   const roleDisplayName = getRoleDisplayName(adminSubRole);
 
   return (
-    <div className="flex h-screen w-full bg-transparent">
+    <div className="admin-dark-scope flex h-screen w-full bg-transparent">
       <div className="mx-auto flex h-full w-full max-w-4xl flex-col px-6 py-6 overflow-y-auto">
         <header className="flex flex-col gap-1 mb-8">
           <h1 className={cn(
             "text-3xl font-semibold",
-            darkMode ? "text-slate-100" : "text-slate-900"
+            darkMode ? "text-zinc-100" : "text-slate-900"
           )}>Settings</h1>
           <p className={cn(
             "text-base mt-2 max-w-3xl",
-            darkMode ? "text-slate-400" : "text-slate-600"
+            darkMode ? "text-zinc-500" : "text-slate-600"
           )}>
             Manage your account settings and preferences.
           </p>
@@ -227,8 +269,12 @@ export default function AdminSettingsPage() {
             className={cn(
               "mb-6 rounded-2xl border px-4 py-3 text-sm",
               message.type === "success"
-                ? "border-green-200 bg-green-50 text-green-800"
-                : "border-red-200 bg-red-50 text-red-800"
+                ? darkMode
+                  ? "border-green-500/40 bg-green-500/10 text-green-200"
+                  : "border-green-200 bg-green-50 text-green-800"
+                : darkMode
+                  ? "border-rose-500/40 bg-rose-500/10 text-rose-200"
+                  : "border-red-200 bg-red-50 text-red-800"
             )}
           >
             {message.text}
@@ -240,12 +286,12 @@ export default function AdminSettingsPage() {
           <section className={cn(
             "rounded-2xl border p-6 shadow-lg backdrop-blur",
             darkMode
-              ? "border-slate-700 bg-slate-900/95"
+              ? "border-zinc-800 bg-zinc-900/95"
               : "border-slate-200 bg-white/95"
           )}>
             <h2 className={cn(
               "text-lg font-semibold mb-4",
-              darkMode ? "text-slate-100" : "text-slate-900"
+              darkMode ? "text-zinc-100" : "text-slate-900"
             )}>Profile</h2>
             <div className="flex items-start gap-4 mb-6">
               <img
@@ -253,30 +299,30 @@ export default function AdminSettingsPage() {
                 alt={session?.user?.name || "Profile"}
                 className={cn(
                   "w-16 h-16 rounded-full border-2",
-                  darkMode ? "border-slate-700" : "border-slate-200"
+                  darkMode ? "border-zinc-700" : "border-slate-200"
                 )}
               />
               <div className="flex-1">
                 <h3 className={cn(
                   "text-base font-semibold",
-                  darkMode ? "text-slate-100" : "text-slate-900"
+                  darkMode ? "text-zinc-100" : "text-slate-900"
                 )}>
                   {session?.user?.name || "Admin"}
                 </h3>
                 <p className={cn(
                   "text-sm mt-0.5",
-                  darkMode ? "text-slate-400" : "text-slate-600"
+                  darkMode ? "text-zinc-500" : "text-slate-600"
                 )}>{session?.user?.email}</p>
                 <p className={cn(
                   "text-xs mt-1",
-                  darkMode ? "text-slate-500" : "text-slate-500"
+                  darkMode ? "text-zinc-500" : "text-slate-500"
                 )}>Role: {roleDisplayName}</p>
               </div>
             </div>
             <div className="mb-6">
               <label className={cn(
                 "text-xs font-semibold uppercase tracking-wide block mb-2",
-                darkMode ? "text-slate-400" : "text-slate-500"
+                darkMode ? "text-zinc-400" : "text-slate-500"
               )}>
                 Admin Role
               </label>
@@ -289,10 +335,10 @@ export default function AdminSettingsPage() {
                       "flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium transition",
                       adminSubRole === "teacher"
                         ? darkMode
-                          ? "border-slate-600 bg-slate-800 text-white"
+                          ? "border-zinc-600 bg-zinc-800 text-white"
                           : "border-slate-300 bg-slate-100 text-slate-900"
                         : darkMode
-                          ? "border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800"
+                          ? "border-zinc-700 bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
                           : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
                       savingRole && "opacity-50 cursor-not-allowed"
                     )}
@@ -306,10 +352,10 @@ export default function AdminSettingsPage() {
                       "flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium transition",
                       adminSubRole === "college_counselor"
                         ? darkMode
-                          ? "border-slate-600 bg-slate-800 text-white"
+                          ? "border-zinc-600 bg-zinc-800 text-white"
                           : "border-slate-300 bg-slate-100 text-slate-900"
                         : darkMode
-                          ? "border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800"
+                          ? "border-zinc-700 bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
                           : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
                       savingRole && "opacity-50 cursor-not-allowed"
                     )}
@@ -321,7 +367,7 @@ export default function AdminSettingsPage() {
                   <div className="space-y-2">
                     <label className={cn(
                       "text-xs font-semibold uppercase tracking-wide block",
-                      darkMode ? "text-slate-400" : "text-slate-500"
+                      darkMode ? "text-zinc-400" : "text-slate-500"
                     )}>
                       Access Code
                     </label>
@@ -339,7 +385,7 @@ export default function AdminSettingsPage() {
                         className={cn(
                           "flex-1 rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 uppercase",
                           darkMode
-                            ? "border-slate-700 bg-slate-800 text-slate-100 focus:ring-slate-600"
+                            ? "border-zinc-700 bg-zinc-900 text-zinc-100 focus:ring-zinc-600"
                             : "border-slate-200 bg-white text-slate-900 focus:ring-slate-400"
                         )}
                       />
@@ -349,7 +395,7 @@ export default function AdminSettingsPage() {
                         className={cn(
                           "rounded-xl border px-4 py-2 text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm",
                           darkMode
-                            ? "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:border-slate-600"
+                            ? "border-zinc-700 bg-zinc-800 text-zinc-200 hover:bg-zinc-700 hover:border-zinc-600"
                             : "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 hover:border-slate-300"
                         )}
                       >
@@ -358,7 +404,7 @@ export default function AdminSettingsPage() {
                     </div>
                     <p className={cn(
                       "text-xs",
-                      darkMode ? "text-slate-500" : "text-slate-500"
+                      darkMode ? "text-zinc-500" : "text-slate-500"
                     )}>
                       Contact developers for the College Counselor access code.
                     </p>
@@ -369,7 +415,7 @@ export default function AdminSettingsPage() {
             <div>
               <label className={cn(
                 "text-xs font-semibold uppercase tracking-wide block mb-2",
-                darkMode ? "text-slate-400" : "text-slate-500"
+                darkMode ? "text-zinc-400" : "text-slate-500"
               )}>
                 Display Name
               </label>
@@ -381,7 +427,7 @@ export default function AdminSettingsPage() {
                   className={cn(
                     "flex-1 rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2",
                     darkMode
-                      ? "border-slate-700 bg-slate-800 text-slate-100 focus:ring-slate-600"
+                      ? "border-zinc-700 bg-zinc-900 text-zinc-100 focus:ring-zinc-600"
                       : "border-slate-200 bg-white text-slate-900 focus:ring-slate-400"
                   )}
                 />
@@ -391,7 +437,7 @@ export default function AdminSettingsPage() {
                   className={cn(
                     "rounded-xl border px-4 py-2 text-sm font-medium transition disabled:opacity-50 shadow-sm",
                     darkMode
-                      ? "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:border-slate-600"
+                      ? "border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:border-zinc-600"
                       : "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 hover:border-slate-300"
                   )}
                 >
@@ -401,16 +447,82 @@ export default function AdminSettingsPage() {
             </div>
           </section>
 
+          {/* School Profile - College counselors only */}
+          {adminSubRole === "college_counselor" && (
+            <section
+            className={cn(
+              "rounded-2xl border p-6 shadow-lg backdrop-blur",
+              darkMode ? "border-zinc-800 bg-zinc-900/95" : "border-slate-200 bg-white/95"
+            )}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2
+                    className={cn(
+                      "text-lg font-semibold",
+                      darkMode ? "text-zinc-100" : "text-slate-900"
+                    )}
+                  >
+                    School profile
+                  </h2>
+                  <p className={cn("text-sm mt-1", darkMode ? "text-zinc-500" : "text-slate-600")}>
+                    Set your total student population so organization health scores adjust to your campus size.
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label
+                  className={cn(
+                    "text-xs font-semibold uppercase tracking-wide block",
+                    darkMode ? "text-zinc-400" : "text-slate-500"
+                  )}
+                >
+                  Student body size
+                </label>
+                <div className="flex gap-3">
+                  <input
+                    type="number"
+                    min={0}
+                    value={studentBodyCount}
+                    onChange={(e) => setStudentBodyCount(e.target.value.replace(/[^\d]/g, ""))}
+                    placeholder="e.g. 1200"
+                    className={cn(
+                      "flex-1 rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2",
+                      darkMode
+                      ? "border-zinc-700 bg-zinc-900 text-zinc-100 focus:ring-zinc-600"
+                        : "border-slate-200 bg-white text-slate-900 focus:ring-slate-400"
+                    )}
+                  />
+                  <button
+                    onClick={handleSaveStudentBodyCount}
+                    disabled={savingStudentBody}
+                  className={cn(
+                    "rounded-xl border px-4 py-2 text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm",
+                    darkMode
+                      ? "border-zinc-700 bg-zinc-800 text-zinc-200 hover:bg-zinc-700 hover:border-zinc-600"
+                      : "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 hover:border-slate-300"
+                  )}
+                  >
+                    {savingStudentBody ? "Saving…" : "Save"}
+                  </button>
+                </div>
+                <p className={cn("text-xs", darkMode ? "text-zinc-500" : "text-slate-500")}>
+                  Insights uses this number to judge how many members or advisees count as “healthy” for your school size.
+                </p>
+              </div>
+            </section>
+          )}
+
           {/* Notification Settings */}
           <section className={cn(
             "rounded-2xl border p-6 shadow-lg backdrop-blur",
             darkMode
-              ? "border-slate-700 bg-slate-900/95"
+              ? "border-zinc-800 bg-zinc-900/95"
               : "border-slate-200 bg-white/95"
           )}>
             <h2 className={cn(
               "text-lg font-semibold mb-4",
-              darkMode ? "text-slate-100" : "text-slate-900"
+              darkMode ? "text-zinc-100" : "text-slate-900"
             )}>Notification Settings</h2>
             <div className="space-y-3">
               <ToggleSetting
@@ -448,12 +560,12 @@ export default function AdminSettingsPage() {
           <section className={cn(
             "rounded-2xl border p-6 shadow-lg backdrop-blur",
             darkMode
-              ? "border-slate-700 bg-slate-900/95"
+              ? "border-zinc-800 bg-zinc-900/95"
               : "border-slate-200 bg-white/95"
           )}>
             <h2 className={cn(
               "text-lg font-semibold mb-4",
-              darkMode ? "text-slate-100" : "text-slate-900"
+              darkMode ? "text-zinc-100" : "text-slate-900"
             )}>General Settings</h2>
             <div className="space-y-3">
               <ToggleSetting
@@ -492,26 +604,26 @@ function ToggleSetting({
         className={cn(
           "w-full rounded-xl border px-4 py-3 text-left shadow-sm transition",
           value
-            ? "border-slate-600 bg-slate-800 text-slate-100"
-            : "border-slate-700 bg-slate-900 text-slate-100"
+            ? "border-zinc-700 bg-zinc-800 text-zinc-100"
+            : "border-zinc-800 bg-zinc-900 text-zinc-100"
         )}
       >
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <p className="text-sm font-semibold">{label}</p>
-            <p className="text-xs text-slate-400 mt-0.5">{description}</p>
+            <p className="text-xs text-zinc-500 mt-0.5">{description}</p>
           </div>
           <span
             className={cn(
               "inline-flex h-6 w-10 items-center rounded-full border px-1 transition ml-4",
               value
-                ? "border-slate-500 bg-slate-600"
-                : "border-slate-600 bg-slate-700"
+                ? "border-zinc-500 bg-zinc-400"
+                : "border-zinc-700 bg-zinc-800"
             )}
           >
             <span
               className={cn(
-                "h-4 w-4 rounded-full bg-white shadow transition",
+                "h-4 w-4 rounded-full bg-zinc-100 shadow transition",
                 value ? "translate-x-4" : "translate-x-0"
               )}
             />

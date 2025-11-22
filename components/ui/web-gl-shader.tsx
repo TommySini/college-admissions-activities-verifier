@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react"
 import * as THREE from "three"
 import { useDarkMode } from "@/app/context/DarkModeContext"
+import { cx } from "@/utils/cx"
 
 export function WebGLShader() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -161,7 +162,10 @@ export function WebGLShader() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed top-0 left-0 w-full h-full block opacity-20"
+      className={cx(
+        "fixed top-0 left-0 w-full h-full block pointer-events-none transition-opacity duration-300",
+        darkMode ? undefined : "opacity-20"
+      )}
     />
   )
 }

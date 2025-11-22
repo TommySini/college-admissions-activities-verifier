@@ -67,11 +67,11 @@ export default function AdminPetitionsPage() {
   };
   
   if (status === "loading" || loading) {
-    return <div className="p-8">Loading...</div>;
+    return <div className="admin-dark-scope p-8">Loading...</div>;
   }
   
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="admin-dark-scope min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-2">

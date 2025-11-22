@@ -108,12 +108,19 @@ export const authOptions: NextAuthOptions = {
         // Fetch user from database to get role
         const dbUser = await prisma.user.findUnique({
           where: { email: user.email! },
+          select: {
+            id: true,
+            role: true,
+            email: true,
+            schoolId: true,
+          },
         });
 
         if (dbUser) {
           token.id = dbUser.id;
           token.role = dbUser.role === "verifier" ? "student" : dbUser.role;
           token.email = dbUser.email;
+          token.schoolId = dbUser.schoolId ?? null;
         }
       }
       return token;
@@ -123,6 +130,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
         session.user.email = token.email as string;
+        session.user.schoolId = (token.schoolId as string | null | undefined) ?? null;
       }
       return session;
     },

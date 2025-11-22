@@ -23,8 +23,10 @@ export function AssistantWidget() {
     }
   }, []);
 
-  // Don't render if not authenticated
-  if (status !== "authenticated" || !session) {
+  const isAdmin = session?.user?.role === "admin";
+
+  // Don't render if not authenticated or if admin (sidebar dock handles admin view)
+  if (status !== "authenticated" || !session || isAdmin) {
     return null;
   }
 

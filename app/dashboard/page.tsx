@@ -13,6 +13,8 @@ import {
   Sparkles,
   ArrowUpRight,
   UserRound,
+  UserPlus,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +58,15 @@ type DashboardMetrics = {
   };
 };
 
+type AdvisoryInvite = {
+  requestKey: string;
+  advisorId: string;
+  advisorName: string;
+  advisorEmail: string;
+  studentEmail: string;
+  createdAt: string;
+};
+
 const initialMetrics: DashboardMetrics = {
   activities: { total: 0, verified: 0, pending: 0, highlight: "Your next milestone" },
   volunteering: { totalHours: 0, active: 0, completed: 0, upcoming: 0, highlight: "Log new hours" },
@@ -72,6 +83,11 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activitiesView, setActivitiesView] = useState<'all' | 'verified' | 'pending'>('all');
+  const [advisoryInvites, setAdvisoryInvites] = useState<AdvisoryInvite[]>([]);
+  const [loadingAdvisoryInvites, setLoadingAdvisoryInvites] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteMessage, setInviteMessage] = useState<string | null>(null);
+  const [processingInviteKey, setProcessingInviteKey] = useState<string | null>(null);
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -158,12 +174,68 @@ export default function DashboardPage() {
     }
   }, [status, session?.user.role]);
 
+  const loadAdvisoryInvites = useCallback(async () => {
+    if (status !== "authenticated" || session?.user.role !== "student") return;
+    setLoadingAdvisoryInvites(true);
+    setInviteError(null);
+    try {
+      const res = await fetch("/api/student/advisory", { cache: "no-store" });
+      if (!res.ok) {
+        throw new Error("Failed to load advisory invites");
+      }
+      const data = await res.json();
+      setAdvisoryInvites(data.invites || []);
+    } catch (err) {
+      console.error("[dashboard] advisory invites error:", err);
+      setInviteError("We couldn't load your advisory invites right now.");
+    } finally {
+      setLoadingAdvisoryInvites(false);
+    }
+  }, [session?.user.role, status]);
+
+  const handleInviteAction = useCallback(
+    async (requestKey: string, action: "accept" | "decline") => {
+      setProcessingInviteKey(requestKey);
+      setInviteError(null);
+      setInviteMessage(null);
+      try {
+        const res = await fetch("/api/student/advisory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ requestKey, action }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || "Unable to update invite");
+        }
+        setAdvisoryInvites((prev) => prev.filter((invite) => invite.requestKey !== requestKey));
+        if (action === "accept") {
+          setInviteMessage(`You're now connected with ${data.advisor?.name ?? "your advisor"}.`);
+        } else {
+          setInviteMessage("Invite dismissed. You can always reconnect later.");
+        }
+      } catch (err) {
+        console.error("[dashboard] invite action error:", err);
+        setInviteError(err instanceof Error ? err.message : "Something went wrong.");
+      } finally {
+        setProcessingInviteKey(null);
+      }
+    },
+    []
+  );
+
   useEffect(() => {
     if (status === "authenticated" && session?.user.role !== "admin") {
       loadMetrics();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, session?.user.role]);
+
+  useEffect(() => {
+    if (status === "authenticated" && session?.user.role === "student") {
+      loadAdvisoryInvites();
+    }
+  }, [status, session?.user.role, loadAdvisoryInvites]);
 
   const firstName = useMemo(() => {
     if (!session?.user?.name) return "there";
@@ -189,6 +261,10 @@ export default function DashboardPage() {
         };
     }
   }, [activitiesView, metrics.activities]);
+
+  const shouldShowAdvisoryBanner =
+    session?.user.role === "student" &&
+    (loadingAdvisoryInvites || advisoryInvites.length > 0 || inviteError || !!inviteMessage);
 
   if (status === "loading") {
     return (
@@ -250,6 +326,88 @@ export default function DashboardPage() {
         {error && (
           <div className="mb-6 rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
             {error}
+          </div>
+        )}
+
+        {shouldShowAdvisoryBanner && (
+          <div
+            id="advisory-invites"
+            className="mb-6 rounded-3xl border border-emerald-200 bg-emerald-50/80 px-5 py-5 text-emerald-900 shadow-sm"
+          >
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div className="flex items-start gap-4">
+                <div className="rounded-2xl bg-white/80 p-3 shadow-sm">
+                  <UserPlus className="h-6 w-6 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-emerald-600">Advisory invite</p>
+                  <h3 className="mt-1 text-lg font-semibold text-emerald-900">Your advisor wants to collaborate</h3>
+                  <p className="mt-1 text-sm text-emerald-800">
+                    Accepting lets advisors review your activity log, share new opportunities, and keep families updated on your progress.
+                  </p>
+                </div>
+              </div>
+              {advisoryInvites.length > 0 && (
+                <span className="self-start rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-emerald-700">
+                  {advisoryInvites.length} pending
+                </span>
+              )}
+            </div>
+            <div className="mt-4 space-y-3">
+              {loadingAdvisoryInvites ? (
+                <p className="text-sm text-emerald-800">Checking for invites…</p>
+              ) : advisoryInvites.length > 0 ? (
+                advisoryInvites.map((invite) => {
+                  const isProcessing = processingInviteKey === invite.requestKey;
+                  return (
+                    <div
+                      key={invite.requestKey}
+                      className="rounded-2xl border border-emerald-100 bg-white px-4 py-3 shadow-sm"
+                    >
+                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">{invite.advisorName}</p>
+                          <p className="text-xs text-slate-500">
+                            Invited {new Date(invite.createdAt).toLocaleDateString()} • {invite.advisorEmail}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleInviteAction(invite.requestKey, "accept")}
+                            disabled={isProcessing}
+                            className="rounded-full border border-emerald-500 bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+                          >
+                            {isProcessing ? "Updating…" : "Accept support"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleInviteAction(invite.requestKey, "decline")}
+                            disabled={isProcessing}
+                            className="rounded-full border border-transparent px-4 py-2 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-100 disabled:opacity-50"
+                          >
+                            Maybe later
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-sm text-emerald-800">
+                  {inviteMessage || "No advisory invites right now."}
+                </p>
+              )}
+            </div>
+            {inviteMessage && advisoryInvites.length === 0 && !loadingAdvisoryInvites && (
+              <p className="mt-4 flex items-center gap-2 text-xs font-semibold text-emerald-700">
+                <ShieldCheck className="h-4 w-4" />
+                {inviteMessage}
+              </p>
+            )}
+            {inviteError && (
+              <p className="mt-4 text-xs text-rose-700">{inviteError}</p>
+            )}
           </div>
         )}
 

@@ -1,5 +1,5 @@
 "use client";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { SidebarNavigationSlim } from "@/components/application/app-navigation/sidebar-navigation/sidebar-slim";
@@ -17,6 +17,7 @@ import {
 } from "@untitledui/icons";
 import { Eye } from "lucide-react";
 import { WebGLShader } from "@/components/ui/web-gl-shader";
+import { AdminRoleProvider, type AdminSubRole } from "@/app/context/AdminRoleContext";
 
 const EyeIcon: FC<{ className?: string }> = ({ className }) => (
     <Eye className={className} strokeWidth={1.8} size={18} />
@@ -32,9 +33,70 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     
     const isStudent = session?.user?.role === "student";
     const isAdmin = session?.user?.role === "admin";
+    const [adminSubRole, setAdminSubRole] = useState<AdminSubRole | null>(null);
+    const [adminRoleLoading, setAdminRoleLoading] = useState<boolean>(isAdmin);
+
+    const refreshAdminRole = useCallback(async () => {
+        if (!isAdmin) {
+            setAdminSubRole(null);
+            setAdminRoleLoading(false);
+            return;
+        }
+
+        try {
+            setAdminRoleLoading(true);
+            const response = await fetch("/api/settings/admin-role");
+            if (!response.ok) {
+                throw new Error("Failed to load admin role");
+            }
+            const data = await response.json();
+            const value = data?.adminSubRole === "college_counselor" ? "college_counselor" : "teacher";
+            setAdminSubRole(value);
+        } catch (error) {
+            console.error("Failed to fetch admin sub-role", error);
+            setAdminSubRole("teacher");
+        } finally {
+            setAdminRoleLoading(false);
+        }
+    }, [isAdmin]);
+
+    useEffect(() => {
+        refreshAdminRole();
+    }, [refreshAdminRole]);
 
     const navItems = useMemo<(NavItemType & { icon: FC<{ className?: string }> })[]>(() => {
         if (isAdmin) {
+            const role = adminSubRole ?? "teacher";
+            if (role === "college_counselor") {
+                return [
+                    {
+                        label: "Dashboard",
+                        href: "/admin",
+                        icon: BarChartSquare02,
+                    },
+                    {
+                        label: "Students",
+                        href: "/admin/students",
+                        icon: Users01,
+                    },
+                    {
+                        label: "Insights",
+                        href: "/admin/insights",
+                        icon: BookOpen01,
+                    },
+                    {
+                        label: "View Tool",
+                        href: "/admin/view",
+                        icon: EyeIcon,
+                    },
+                    {
+                        label: "Settings",
+                        href: "/admin/settings",
+                        icon: Settings01,
+                    },
+                ];
+            }
+
             return [
                 {
                     label: "Dashboard",
@@ -43,7 +105,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 },
                 {
                     label: "Insights",
-                    href: "/admin#insights",
+                    href: "/admin/insights",
                     icon: BookOpen01,
                 },
                 {
@@ -103,7 +165,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         }
 
         return items;
-    }, [isAdmin, isStudent]);
+    }, [isAdmin, isStudent, adminSubRole]);
 
     // Footer items - only show Profile for students, not admins
     const footerItems: (NavItemType & { icon: FC<{ className?: string }> })[] = useMemo(() => {
@@ -129,25 +191,35 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     if (status === "loading") {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="text-gray-600">Loading...</div>
+                <div className="text-slate-600">Loading...</div>
             </div>
         );
     }
 
     return (
-        <div className="relative min-h-screen flex overflow-hidden">
-            {/* WebGL Background */}
-            <WebGLShader />
-            
-            {/* Content Layer */}
-            <div className="relative z-10 flex w-full">
-                <SidebarNavigationSlim
-                    items={navItems}
-                    footerItems={footerItems}
-                />
-                <main className="flex-1 min-w-0 overflow-auto">{children}</main>
+        <AdminRoleProvider
+            value={{
+                adminSubRole: isAdmin ? adminSubRole : null,
+                setAdminSubRole,
+                loading: adminRoleLoading,
+                refresh: refreshAdminRole,
+            }}
+        >
+            <div className="relative min-h-screen flex overflow-hidden">
+                {/* WebGL Background */}
+                <WebGLShader />
+                
+                {/* Content Layer */}
+                <div className="relative z-10 flex w-full">
+                    <SidebarNavigationSlim
+                        items={navItems}
+                        footerItems={footerItems}
+                        showAssistantDock={isAdmin}
+                    />
+                    <main className="flex-1 min-w-0 overflow-auto">{children}</main>
+                </div>
             </div>
-        </div>
+        </AdminRoleProvider>
     );
 }
 
