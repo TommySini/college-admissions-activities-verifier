@@ -1,44 +1,44 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { upsertEmbedding } from "@/lib/retrieval/indexer";
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { upsertEmbedding } from '@/lib/retrieval/indexer';
+import { verifyOrigin } from '@/lib/csrf';
 
 // GET - Get activities for current user
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const activities = await prisma.activity.findMany({
       where: { studentId: user.id },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     });
 
     return NextResponse.json({ activities });
   } catch (error) {
-    console.error("Error fetching activities:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch activities" },
-      { status: 500 }
-    );
+    console.error('Error fetching activities:', error);
+    return NextResponse.json({ error: 'Failed to fetch activities' }, { status: 500 });
   }
 }
 
 // POST - Create new activity
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // CSRF protection
+    if (!verifyOrigin(request)) {
+      return NextResponse.json({ error: 'Invalid origin' }, { status: 403 });
     }
 
-    if (user.role !== "student") {
-      return NextResponse.json(
-        { error: "Only students can create activities" },
-        { status: 403 }
-      );
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (user.role !== 'student') {
+      return NextResponse.json({ error: 'Only students can create activities' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -58,10 +58,7 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (!name || !category || !description || !startDate) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     const activity = await prisma.activity.create({
@@ -79,12 +76,12 @@ export async function POST(request: NextRequest) {
         studentNotes: notes || undefined,
         supervisorEmail: verifierEmail || undefined,
         attachments: attachments || undefined,
-        status: "pending",
+        status: 'pending',
       },
     });
 
     // Index activity for semantic search (async, don't await)
-    upsertEmbedding("Activity", activity.id).catch((error) => {
+    upsertEmbedding('Activity', activity.id).catch((error) => {
       console.error(`[POST /api/activities] Failed to index activity ${activity.id}:`, error);
     });
 
@@ -93,11 +90,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ activity }, { status: 201 });
   } catch (error) {
-    console.error("Error creating activity:", error);
-    return NextResponse.json(
-      { error: "Failed to create activity" },
-      { status: 500 }
-    );
+    console.error('Error creating activity:', error);
+    return NextResponse.json({ error: 'Failed to create activity' }, { status: 500 });
   }
 }
-

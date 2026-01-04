@@ -1,9 +1,9 @@
-import { Suspense } from "react";
-import { OpportunitiesListing } from "./OpportunitiesListing";
+import { Suspense } from 'react';
+import { OpportunitiesListing } from './OpportunitiesListing';
 
 export const metadata = {
-  title: "Discover Opportunities | Actify",
-  description: "Find competitions, programs, scholarships, and more for high school students",
+  title: 'Discover Opportunities | Actify',
+  description: 'Find competitions, programs, scholarships, and more for high school students',
 };
 
 export default function OpportunitiesPage() {
@@ -16,7 +16,7 @@ export default function OpportunitiesPage() {
 
 function LoadingSkeleton() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-50">
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="animate-pulse space-y-6">
           <div className="h-12 bg-slate-200 rounded w-1/3"></div>
@@ -31,4 +31,3 @@ function LoadingSkeleton() {
     </div>
   );
 }
-

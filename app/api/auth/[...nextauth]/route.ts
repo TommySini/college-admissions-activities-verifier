@@ -1,17 +1,17 @@
-import NextAuth, { NextAuthOptions } from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
-import { prisma } from "@/lib/prisma";
+import NextAuth, { NextAuthOptions } from 'next-auth';
+import GoogleProvider from 'next-auth/providers/google';
+import { prisma } from '@/lib/prisma';
 
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
       authorization: {
         params: {
-          prompt: "consent",
-          access_type: "offline",
-          response_type: "code",
+          prompt: 'consent',
+          access_type: 'offline',
+          response_type: 'code',
         },
       },
     }),
@@ -21,57 +21,57 @@ export const authOptions: NextAuthOptions = {
       try {
         // Allow any email for now (remove domain restriction for testing)
         if (!user.email) {
-          console.error("SignIn: No email provided", { user });
+          console.error('SignIn: No email provided', { user });
           return false;
         }
 
-        console.log("SignIn: Processing user", { email: user.email, name: user.name });
+        console.log('SignIn: Processing user', { email: user.email, name: user.name });
 
         // Check existing user first
         const existingUser = await prisma.user.findUnique({
           where: { email: user.email },
         });
-        
-        let role = "student"; // Default role for new users
-        
+
+        let role = 'student'; // Default role for new users
+
         if (existingUser) {
           // Coerce legacy verifier accounts back to student
-          role = existingUser.role === "verifier" ? "student" : existingUser.role;
-          console.log("SignIn: Existing user, using role", { email: user.email, role });
+          role = existingUser.role === 'verifier' ? 'student' : existingUser.role;
+          console.log('SignIn: Existing user, using role', { email: user.email, role });
         } else {
-          console.log("SignIn: New user, assigning default role", { email: user.email, role });
+          console.log('SignIn: New user, assigning default role', { email: user.email, role });
         }
 
-        console.log("SignIn: Creating/updating user with role", { email: user.email, role });
+        console.log('SignIn: Creating/updating user with role', { email: user.email, role });
 
         // Create or update user in database
         await prisma.user.upsert({
           where: { email: user.email },
           update: {
-            name: user.name || "",
+            name: user.name || '',
             image: user.image || null,
             role: role, // Update role if changed
           },
           create: {
             email: user.email,
-            name: user.name || "",
+            name: user.name || '',
             image: user.image || null,
             role: role,
           },
         });
 
-        console.log("SignIn: User created/updated successfully", { email: user.email });
+        console.log('SignIn: User created/updated successfully', { email: user.email });
         return true;
       } catch (error: any) {
-        console.error("Error in signIn callback:", error);
-        console.error("Error details:", {
+        console.error('Error in signIn callback:', error);
+        console.error('Error details:', {
           message: error?.message,
           code: error?.code,
           meta: error?.meta,
           stack: error?.stack,
         });
         // Log the full error for debugging
-        console.error("Full error object:", JSON.stringify(error, null, 2));
+        console.error('Full error object:', JSON.stringify(error, null, 2));
         // Return false to prevent sign in if database operation fails
         // This will trigger AccessDenied error
         return false;
@@ -86,7 +86,7 @@ export const authOptions: NextAuthOptions = {
 
         if (dbUser) {
           token.id = dbUser.id;
-          token.role = dbUser.role === "verifier" ? "student" : dbUser.role;
+          token.role = dbUser.role === 'verifier' ? 'student' : dbUser.role;
           token.email = dbUser.email;
         }
       }
@@ -102,11 +102,11 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: "/auth/signin",
-    error: "/auth/error",
+    signIn: '/auth/signin',
+    error: '/auth/error',
   },
   session: {
-    strategy: "jwt",
+    strategy: 'jwt',
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

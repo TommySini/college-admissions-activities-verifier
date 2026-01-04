@@ -1,14 +1,11 @@
-import { prisma } from "@/lib/prisma";
-import { createTextEmbedding, normalize, encodeVector } from "./embeddings";
-import { buildEmbeddableContent, isModelSupported } from "./buildContent";
+import { prisma } from '@/lib/prisma';
+import { createTextEmbedding, normalize, encodeVector } from './embeddings';
+import { buildEmbeddableContent, isModelSupported } from './buildContent';
 
 /**
  * Upsert an embedding for a single record
  */
-export async function upsertEmbedding(
-  modelName: string,
-  recordId: string
-): Promise<boolean> {
+export async function upsertEmbedding(modelName: string, recordId: string): Promise<boolean> {
   try {
     if (!isModelSupported(modelName)) {
       console.warn(`[upsertEmbedding] Model ${modelName} not supported`);
@@ -16,9 +13,7 @@ export async function upsertEmbedding(
     }
 
     // Fetch the record from the appropriate model
-    const prismaModel = (prisma as any)[
-      modelName.charAt(0).toLowerCase() + modelName.slice(1)
-    ];
+    const prismaModel = (prisma as any)[modelName.charAt(0).toLowerCase() + modelName.slice(1)];
 
     if (!prismaModel) {
       console.error(`[upsertEmbedding] Prisma model ${modelName} not found`);
@@ -38,9 +33,7 @@ export async function upsertEmbedding(
     const embeddableContent = buildEmbeddableContent(modelName, record);
 
     if (!embeddableContent || !embeddableContent.content) {
-      console.warn(
-        `[upsertEmbedding] No content to embed for ${modelName}:${recordId}`
-      );
+      console.warn(`[upsertEmbedding] No content to embed for ${modelName}:${recordId}`);
       return false;
     }
 
@@ -97,9 +90,7 @@ export async function indexBatch(
       return { indexed: 0, failed: 0 };
     }
 
-    const prismaModel = (prisma as any)[
-      modelName.charAt(0).toLowerCase() + modelName.slice(1)
-    ];
+    const prismaModel = (prisma as any)[modelName.charAt(0).toLowerCase() + modelName.slice(1)];
 
     if (!prismaModel) {
       console.error(`[indexBatch] Prisma model ${modelName} not found`);
@@ -113,7 +104,7 @@ export async function indexBatch(
     const queryOptions: any = {
       where,
       take: limit,
-      orderBy: { id: "asc" },
+      orderBy: { id: 'asc' },
     };
 
     if (options?.cursor) {
@@ -174,9 +165,7 @@ export async function indexModel(modelName: string): Promise<{
     totalIndexed += result.indexed;
     totalFailed += result.failed;
 
-    console.log(
-      `[indexModel] ${modelName}: ${totalIndexed} indexed, ${totalFailed} failed`
-    );
+    console.log(`[indexModel] ${modelName}: ${totalIndexed} indexed, ${totalFailed} failed`);
 
     if (!result.cursor) {
       // No more records
@@ -196,10 +185,7 @@ export async function indexModel(modelName: string): Promise<{
 /**
  * Delete embedding for a record (useful when record is deleted)
  */
-export async function deleteEmbedding(
-  modelName: string,
-  recordId: string
-): Promise<boolean> {
+export async function deleteEmbedding(modelName: string, recordId: string): Promise<boolean> {
   try {
     await prisma.embedding.delete({
       where: {
@@ -214,11 +200,10 @@ export async function deleteEmbedding(
     return true;
   } catch (error) {
     // Ignore if not found
-    if ((error as any)?.code === "P2025") {
+    if ((error as any)?.code === 'P2025') {
       return true;
     }
     console.error(`[deleteEmbedding] Error deleting ${modelName}:${recordId}:`, error);
     return false;
   }
 }
-

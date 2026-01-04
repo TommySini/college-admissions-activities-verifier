@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { cn } from "@/lib/cn";
-import React, { ReactNode } from "react";
+import { cn } from '@/lib/cn';
+import React, { ReactNode } from 'react';
 
 interface AuroraBackgroundProps extends React.HTMLProps<HTMLDivElement> {
   children: ReactNode;
@@ -17,7 +17,7 @@ export const AuroraBackground = ({
   return (
     <div
       className={cn(
-        "relative flex flex-col items-center justify-center bg-white dark:bg-zinc-900 text-slate-950 transition-bg",
+        'relative flex flex-col items-center justify-center bg-white dark:bg-zinc-900 text-slate-950 transition-bg',
         className
       )}
       {...props}
@@ -49,4 +49,3 @@ export const AuroraBackground = ({
     </div>
   );
 };
-

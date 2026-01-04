@@ -1,17 +1,17 @@
-"use client"
+'use client';
 
-import { useEffect, useRef } from "react"
-import * as THREE from "three"
+import { useEffect, useRef } from 'react';
+import * as THREE from 'three';
 
 export function WebGLShader() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<{
-    scene: THREE.Scene | null
-    camera: THREE.OrthographicCamera | null
-    renderer: THREE.WebGLRenderer | null
-    mesh: THREE.Mesh | null
-    uniforms: any
-    animationId: number | null
+    scene: THREE.Scene | null;
+    camera: THREE.OrthographicCamera | null;
+    renderer: THREE.WebGLRenderer | null;
+    mesh: THREE.Mesh | null;
+    uniforms: any;
+    animationId: number | null;
   }>({
     scene: null,
     camera: null,
@@ -19,20 +19,20 @@ export function WebGLShader() {
     mesh: null,
     uniforms: null,
     animationId: null,
-  })
+  });
 
   useEffect(() => {
-    if (!canvasRef.current) return
+    if (!canvasRef.current) return;
 
-    const canvas = canvasRef.current
-    const { current: refs } = sceneRef
+    const canvas = canvasRef.current;
+    const { current: refs } = sceneRef;
 
     const vertexShader = `
       attribute vec3 position;
       void main() {
         gl_Position = vec4(position, 1.0);
       }
-    `
+    `;
 
     const fragmentShader = `
       precision highp float;
@@ -56,15 +56,15 @@ export function WebGLShader() {
         
         gl_FragColor = vec4(1.0 - r, 1.0 - g, 1.0 - b, 1.0);
       }
-    `
+    `;
 
     const initScene = () => {
-      refs.scene = new THREE.Scene()
-      refs.renderer = new THREE.WebGLRenderer({ canvas })
-      refs.renderer.setPixelRatio(window.devicePixelRatio)
-      refs.renderer.setClearColor(new THREE.Color(0xFFFFFF))
+      refs.scene = new THREE.Scene();
+      refs.renderer = new THREE.WebGLRenderer({ canvas });
+      refs.renderer.setPixelRatio(window.devicePixelRatio);
+      refs.renderer.setClearColor(new THREE.Color(0xffffff));
 
-      refs.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, -1)
+      refs.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, -1);
 
       refs.uniforms = {
         resolution: { value: [window.innerWidth, window.innerHeight] },
@@ -72,76 +72,66 @@ export function WebGLShader() {
         xScale: { value: 0.7 },
         yScale: { value: 0.25 },
         distortion: { value: 0.02 },
-      }
+      };
 
       const position = [
-        -1.0, -1.0, 0.0,
-         1.0, -1.0, 0.0,
-        -1.0,  1.0, 0.0,
-         1.0, -1.0, 0.0,
-        -1.0,  1.0, 0.0,
-         1.0,  1.0, 0.0,
-      ]
+        -1.0, -1.0, 0.0, 1.0, -1.0, 0.0, -1.0, 1.0, 0.0, 1.0, -1.0, 0.0, -1.0, 1.0, 0.0, 1.0, 1.0,
+        0.0,
+      ];
 
-      const positions = new THREE.BufferAttribute(new Float32Array(position), 3)
-      const geometry = new THREE.BufferGeometry()
-      geometry.setAttribute("position", positions)
+      const positions = new THREE.BufferAttribute(new Float32Array(position), 3);
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', positions);
 
       const material = new THREE.RawShaderMaterial({
         vertexShader,
         fragmentShader,
         uniforms: refs.uniforms,
         side: THREE.DoubleSide,
-      })
+      });
 
-      refs.mesh = new THREE.Mesh(geometry, material)
-      refs.scene.add(refs.mesh)
+      refs.mesh = new THREE.Mesh(geometry, material);
+      refs.scene.add(refs.mesh);
 
-      handleResize()
-    }
+      handleResize();
+    };
 
     const animate = () => {
-      if (refs.uniforms) refs.uniforms.time.value += 0.004
+      if (refs.uniforms) refs.uniforms.time.value += 0.004;
       if (refs.renderer && refs.scene && refs.camera) {
-        refs.renderer.render(refs.scene, refs.camera)
+        refs.renderer.render(refs.scene, refs.camera);
       }
-      refs.animationId = requestAnimationFrame(animate)
-    }
+      refs.animationId = requestAnimationFrame(animate);
+    };
 
     const handleResize = () => {
-      if (!refs.renderer || !refs.uniforms) return
+      if (!refs.renderer || !refs.uniforms) return;
 
-      const width = window.innerWidth
-      const height = window.innerHeight
+      const width = window.innerWidth;
+      const height = window.innerHeight;
 
-      refs.renderer.setSize(width, height, false)
-      refs.uniforms.resolution.value = [width, height]
-    }
+      refs.renderer.setSize(width, height, false);
+      refs.uniforms.resolution.value = [width, height];
+    };
 
-    initScene()
-    animate()
+    initScene();
+    animate();
 
-    window.addEventListener("resize", handleResize)
+    window.addEventListener('resize', handleResize);
 
     return () => {
-      if (refs.animationId) cancelAnimationFrame(refs.animationId)
-      window.removeEventListener("resize", handleResize)
+      if (refs.animationId) cancelAnimationFrame(refs.animationId);
+      window.removeEventListener('resize', handleResize);
       if (refs.mesh) {
-        refs.scene?.remove(refs.mesh)
-        refs.mesh.geometry.dispose()
+        refs.scene?.remove(refs.mesh);
+        refs.mesh.geometry.dispose();
         if (refs.mesh.material instanceof THREE.Material) {
-          refs.mesh.material.dispose()
+          refs.mesh.material.dispose();
         }
       }
-      refs.renderer?.dispose()
-    }
-  }, [])
+      refs.renderer?.dispose();
+    };
+  }, []);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      className="fixed top-0 left-0 w-full h-full block opacity-20"
-    />
-  )
+  return <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full block opacity-20" />;
 }
-

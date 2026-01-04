@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { AlumniPrivacy } from "@prisma/client";
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { AlumniPrivacy } from '@prisma/client';
 
 /**
  * Apply privacy filtering to profile data
@@ -16,11 +16,11 @@ function applyPrivacyFilter(profile: any) {
     contactEmail: null as string | null,
   };
 
-  if (profile.privacy === "PSEUDONYM" || profile.privacy === "FULL") {
+  if (profile.privacy === 'PSEUDONYM' || profile.privacy === 'FULL') {
     filtered.displayName = profile.displayName;
   }
 
-  if (profile.privacy === "FULL") {
+  if (profile.privacy === 'FULL') {
     filtered.contactEmail = profile.contactEmail;
   }
 
@@ -36,15 +36,15 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
-    const major = searchParams.get("major");
-    const tags = searchParams.get("tags");
-    const rankBucket = searchParams.get("rankBucket");
-    const decision = searchParams.get("decision");
-    const search = searchParams.get("search");
+    const major = searchParams.get('major');
+    const tags = searchParams.get('tags');
+    const rankBucket = searchParams.get('rankBucket');
+    const decision = searchParams.get('decision');
+    const search = searchParams.get('search');
 
     // Build where clause
     const where: any = {};
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (tags) {
-      const tagList = tags.split(",").map((t) => t.trim());
+      const tagList = tags.split(',').map((t) => t.trim());
       where.careerInterestTags = {
         contains: tagList[0], // Simple search for first tag (SQLite limitation)
       };
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     });
 
     // Filter by admission criteria if specified
@@ -122,9 +122,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ profiles: publicProfiles });
   } catch (error) {
-    console.error("[GET /api/alumni/profiles] Error:", error);
+    console.error('[GET /api/alumni/profiles] Error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch profiles" },
+      { error: error instanceof Error ? error.message : 'Failed to fetch profiles' },
       { status: 500 }
     );
   }
@@ -138,15 +138,15 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
     const { privacy, displayName, contactEmail, intendedMajor, careerInterestTags } = body;
 
     // Validate privacy
-    if (privacy && !["ANONYMOUS", "PSEUDONYM", "FULL"].includes(privacy)) {
-      return NextResponse.json({ error: "Invalid privacy setting" }, { status: 400 });
+    if (privacy && !['ANONYMOUS', 'PSEUDONYM', 'FULL'].includes(privacy)) {
+      return NextResponse.json({ error: 'Invalid privacy setting' }, { status: 400 });
     }
 
     // Check if profile exists
@@ -182,11 +182,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ profile: applyPrivacyFilter(profile) });
   } catch (error) {
-    console.error("[POST /api/alumni/profiles] Error:", error);
+    console.error('[POST /api/alumni/profiles] Error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to save profile" },
+      { error: error instanceof Error ? error.message : 'Failed to save profile' },
       { status: 500 }
     );
   }
 }
-

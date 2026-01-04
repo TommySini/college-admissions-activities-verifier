@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/prisma";
-import { User } from "@prisma/client";
+import { prisma } from '@/lib/prisma';
+import { User } from '@prisma/client';
 
 /**
  * Fetch user's activities with verification status
@@ -11,8 +11,8 @@ export async function getUserActivities(userId: string, limit = 20) {
       verification: true,
     },
     orderBy: [
-      { status: "desc" }, // verified first
-      { updatedAt: "desc" },
+      { status: 'desc' }, // verified first
+      { updatedAt: 'desc' },
     ],
     take: limit,
   });
@@ -29,7 +29,7 @@ export async function getUserActivities(userId: string, limit = 20) {
     hoursPerWeek: activity.hoursPerWeek,
     totalHours: activity.totalHours,
     status: activity.status,
-    verified: activity.verification?.status === "verified",
+    verified: activity.verification?.status === 'verified',
   }));
 }
 
@@ -40,7 +40,7 @@ export async function getVolunteeringStats(userId: string) {
   const participations = await prisma.volunteeringParticipation.findMany({
     where: {
       studentId: userId,
-      status: { in: ["active", "completed"] },
+      status: { in: ['active', 'completed'] },
     },
     include: {
       opportunity: {
@@ -51,7 +51,7 @@ export async function getVolunteeringStats(userId: string) {
         },
       },
     },
-    orderBy: { startDate: "desc" },
+    orderBy: { startDate: 'desc' },
   });
 
   const totalHours = participations.reduce((sum, p) => sum + p.totalHours, 0);
@@ -63,16 +63,14 @@ export async function getVolunteeringStats(userId: string) {
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-  const recentParticipations = participations.filter(
-    (p) => new Date(p.startDate) >= sixMonthsAgo
-  );
+  const recentParticipations = participations.filter((p) => new Date(p.startDate) >= sixMonthsAgo);
 
   const recentHours = recentParticipations.reduce((sum, p) => sum + p.totalHours, 0);
 
   // Categories breakdown
   const categoriesMap = new Map<string, number>();
   participations.forEach((p) => {
-    const category = p.opportunity?.category || "Manual Log";
+    const category = p.opportunity?.category || 'Manual Log';
     categoriesMap.set(category, (categoriesMap.get(category) || 0) + p.totalHours);
   });
 
@@ -88,8 +86,8 @@ export async function getVolunteeringStats(userId: string) {
     })),
     recentActivities: recentParticipations.slice(0, 10).map((p) => ({
       id: p.id,
-      organizationName: p.organizationName || p.opportunity?.organization || "Unknown",
-      activityName: p.activityName || p.opportunity?.title || "Volunteering",
+      organizationName: p.organizationName || p.opportunity?.organization || 'Unknown',
+      activityName: p.activityName || p.opportunity?.title || 'Volunteering',
       totalHours: p.totalHours,
       startDate: p.startDate,
       endDate: p.endDate,
@@ -105,9 +103,9 @@ export async function getVolunteeringGoals(userId: string) {
   const goals = await prisma.volunteeringGoal.findMany({
     where: {
       studentId: userId,
-      status: { in: ["active", "completed"] },
+      status: { in: ['active', 'completed'] },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: { createdAt: 'desc' },
   });
 
   const stats = await getVolunteeringStats(userId);
@@ -157,8 +155,8 @@ export async function getUserProfile(userId: string) {
  * Get admin analytics (only for admin users)
  */
 export async function getAdminAnalytics(user: User) {
-  if (user.role !== "admin") {
-    throw new Error("Unauthorized: Admin access required");
+  if (user.role !== 'admin') {
+    throw new Error('Unauthorized: Admin access required');
   }
 
   const [
@@ -169,14 +167,14 @@ export async function getAdminAnalytics(user: User) {
     pendingVerifications,
     totalOrganizations,
   ] = await Promise.all([
-    prisma.user.count({ where: { role: "student" } }),
+    prisma.user.count({ where: { role: 'student' } }),
     prisma.activity.count(),
-    prisma.activity.count({ where: { status: "verified" } }),
+    prisma.activity.count({ where: { status: 'verified' } }),
     prisma.volunteeringParticipation.aggregate({
       _sum: { totalHours: true },
     }),
-    prisma.verification.count({ where: { status: "pending" } }),
-    prisma.organization.count({ where: { status: "APPROVED" } }),
+    prisma.verification.count({ where: { status: 'pending' } }),
+    prisma.organization.count({ where: { status: 'APPROVED' } }),
   ]);
 
   return {
@@ -186,8 +184,7 @@ export async function getAdminAnalytics(user: User) {
     pendingVerifications,
     totalVolunteeringHours: totalVolunteeringHours._sum.totalHours || 0,
     totalOrganizations,
-    verificationRate:
-      totalActivities > 0 ? (verifiedActivities / totalActivities) * 100 : 0,
+    verificationRate: totalActivities > 0 ? (verifiedActivities / totalActivities) * 100 : 0,
   };
 }
 
@@ -205,7 +202,7 @@ export async function getOrganizations(status?: string, limit = 50) {
         },
       },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: { createdAt: 'desc' },
     take: limit,
   });
 
@@ -231,7 +228,7 @@ export async function findOrganizationByName(searchTerm: string) {
   // Get all approved organizations and filter in JavaScript for SQLite compatibility
   const allOrganizations = await prisma.organization.findMany({
     where: {
-      status: "APPROVED",
+      status: 'APPROVED',
     },
     include: {
       createdBy: {
@@ -278,11 +275,11 @@ export async function buildUserContext(user: User) {
   ]);
 
   let adminData = null;
-  if (user.role === "admin") {
+  if (user.role === 'admin') {
     try {
       adminData = await getAdminAnalytics(user);
     } catch (error) {
-      console.error("Error fetching admin analytics:", error);
+      console.error('Error fetching admin analytics:', error);
     }
   }
 
@@ -294,4 +291,3 @@ export async function buildUserContext(user: User) {
     admin: adminData,
   };
 }
-

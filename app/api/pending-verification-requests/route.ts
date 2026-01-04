@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
 // GET - Get pending verification requests for the logged-in verifier
 // These are activities where supervisorEmail matches the verifier's email
@@ -9,13 +9,13 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Only verifiers and admins can see pending requests
-    if (user.role !== "verifier" && user.role !== "admin") {
+    if (user.role !== 'verifier' && user.role !== 'admin') {
       return NextResponse.json(
-        { error: "Only verifiers can view pending requests" },
+        { error: 'Only verifiers can view pending requests' },
         { status: 403 }
       );
     }
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     const pendingActivities = await prisma.activity.findMany({
       where: {
         supervisorEmail: user.email,
-        status: "pending",
+        status: 'pending',
         // Only include activities that don't have a verification yet, or have a pending verification
         OR: [
           {
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
           },
           {
             verification: {
-              status: "pending", // Verification exists but is still pending
+              status: 'pending', // Verification exists but is still pending
             },
           },
         ],
@@ -56,20 +56,16 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: {
-        createdAt: "desc", // Most recent first
+        createdAt: 'desc', // Most recent first
       },
     });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       pendingRequests: pendingActivities,
       count: pendingActivities.length,
     });
   } catch (error) {
-    console.error("Error fetching pending verification requests:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch pending requests" },
-      { status: 500 }
-    );
+    console.error('Error fetching pending verification requests:', error);
+    return NextResponse.json({ error: 'Failed to fetch pending requests' }, { status: 500 });
   }
 }
-

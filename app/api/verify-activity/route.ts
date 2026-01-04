@@ -1,21 +1,30 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { verifyVerificationToken, isTokenUsed, markTokenAsUsed } from '@/lib/verification-tokens';
 
 // GET - Handle verification response from email link (for users without accounts)
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const activityId = searchParams.get("activityId");
-    const action = searchParams.get("action"); // "accept" or "reject"
+    const token = searchParams.get('token');
 
-    if (!activityId || !action) {
-      return NextResponse.redirect(new URL("/?error=missing_params", request.url));
+    if (!token) {
+      return NextResponse.redirect(new URL('/?error=missing_token', request.url));
     }
 
-    if (action !== "accept" && action !== "reject") {
-      return NextResponse.redirect(new URL("/?error=invalid_action", request.url));
+    // Check if token already used
+    if (isTokenUsed(token)) {
+      return NextResponse.redirect(new URL('/?error=token_already_used', request.url));
     }
+
+    // Verify and parse token
+    const payload = verifyVerificationToken(token);
+    if (!payload) {
+      return NextResponse.redirect(new URL('/?error=invalid_or_expired_token', request.url));
+    }
+
+    const { activityId, action } = payload;
 
     // Find the activity
     const activity = await prisma.activity.findUnique({
@@ -31,7 +40,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!activity) {
-      return NextResponse.redirect(new URL("/?error=activity_not_found", request.url));
+      return NextResponse.redirect(new URL('/?error=activity_not_found', request.url));
     }
 
     // Check if verification already exists
@@ -39,7 +48,7 @@ export async function GET(request: NextRequest) {
       where: { activityId },
     });
 
-    if (verification && verification.status !== "pending") {
+    if (verification && verification.status !== 'pending') {
       // Already verified/rejected
       return NextResponse.redirect(
         new URL(`/?message=already_${verification.status}`, request.url)
@@ -60,18 +69,21 @@ export async function GET(request: NextRequest) {
         verifier = await prisma.user.create({
           data: {
             email: activity.supervisorEmail,
-            name: activity.supervisorEmail.split("@")[0], // Use email prefix as name
-            role: "verifier",
+            name: activity.supervisorEmail.split('@')[0], // Use email prefix as name
+            role: 'verifier',
           },
         });
       }
     }
 
     if (!verifier) {
-      return NextResponse.redirect(new URL("/?error=verifier_not_found", request.url));
+      return NextResponse.redirect(new URL('/?error=verifier_not_found', request.url));
     }
 
-    const status = action === "accept" ? "verified" : "denied";
+    const status = action === 'accept' ? 'verified' : 'denied';
+
+    // Mark token as used
+    markTokenAsUsed(token);
 
     // Create or update verification
     if (verification) {
@@ -88,9 +100,8 @@ export async function GET(request: NextRequest) {
           verifierId: verifier.id,
           studentId: activity.studentId,
           status,
-          verifierNotes: action === "accept" 
-            ? "Verified via email link" 
-            : "Rejected via email link",
+          verifierNotes:
+            action === 'accept' ? 'Verified via email link' : 'Rejected via email link',
         },
       });
     }
@@ -99,18 +110,19 @@ export async function GET(request: NextRequest) {
     await prisma.activity.update({
       where: { id: activity.id },
       data: {
-        status: status === "verified" ? "verified" : "denied",
+        status: status === 'verified' ? 'verified' : 'denied',
       },
     });
 
     // Send notification email to student
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-      
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL ||
+        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+
       await fetch(`${baseUrl}/api/send-student-notification-email`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: activity.student.email,
           studentName: activity.student.name,
@@ -124,7 +136,7 @@ export async function GET(request: NextRequest) {
         }),
       });
     } catch (emailError) {
-      console.error("Error sending notification email:", emailError);
+      console.error('Error sending notification email:', emailError);
       // Don't fail the verification if email fails
     }
 
@@ -136,8 +148,8 @@ export async function GET(request: NextRequest) {
       )
     );
   } catch (error) {
-    console.error("Error processing verification:", error);
-    return NextResponse.redirect(new URL("/?error=verification_failed", request.url));
+    console.error('Error processing verification:', error);
+    return NextResponse.redirect(new URL('/?error=verification_failed', request.url));
   }
 }
 
@@ -146,27 +158,21 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (user.role !== "verifier" && user.role !== "admin") {
-      return NextResponse.json(
-        { error: "Only verifiers can verify activities" },
-        { status: 403 }
-      );
+    if (user.role !== 'verifier' && user.role !== 'admin') {
+      return NextResponse.json({ error: 'Only verifiers can verify activities' }, { status: 403 });
     }
 
     const body = await request.json();
     const { activityId, action } = body;
 
     if (!activityId || !action) {
-      return NextResponse.json(
-        { error: "Missing activityId or action" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing activityId or action' }, { status: 400 });
     }
 
-    if (action !== "accept" && action !== "reject") {
+    if (action !== 'accept' && action !== 'reject') {
       return NextResponse.json(
         { error: "Invalid action. Must be 'accept' or 'reject'" },
         { status: 400 }
@@ -187,16 +193,13 @@ export async function POST(request: NextRequest) {
     });
 
     if (!activity) {
-      return NextResponse.json(
-        { error: "Activity not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
 
     // Verify that the logged-in user's email matches the supervisorEmail
     if (activity.supervisorEmail !== user.email) {
       return NextResponse.json(
-        { error: "You are not authorized to verify this activity" },
+        { error: 'You are not authorized to verify this activity' },
         { status: 403 }
       );
     }
@@ -206,7 +209,7 @@ export async function POST(request: NextRequest) {
       where: { activityId },
     });
 
-    const status = action === "accept" ? "verified" : "denied";
+    const status = action === 'accept' ? 'verified' : 'denied';
 
     // Create or update verification
     if (verification) {
@@ -214,9 +217,7 @@ export async function POST(request: NextRequest) {
         where: { id: verification.id },
         data: {
           status,
-          verifierNotes: action === "accept" 
-            ? "Verified via dashboard" 
-            : "Rejected via dashboard",
+          verifierNotes: action === 'accept' ? 'Verified via dashboard' : 'Rejected via dashboard',
         },
       });
     } else {
@@ -226,9 +227,7 @@ export async function POST(request: NextRequest) {
           verifierId: user.id,
           studentId: activity.studentId,
           status,
-          verifierNotes: action === "accept" 
-            ? "Verified via dashboard" 
-            : "Rejected via dashboard",
+          verifierNotes: action === 'accept' ? 'Verified via dashboard' : 'Rejected via dashboard',
         },
       });
     }
@@ -237,18 +236,19 @@ export async function POST(request: NextRequest) {
     await prisma.activity.update({
       where: { id: activity.id },
       data: {
-        status: status === "verified" ? "verified" : "denied",
+        status: status === 'verified' ? 'verified' : 'denied',
       },
     });
 
     // Send notification email to student
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-      
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL ||
+        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+
       await fetch(`${baseUrl}/api/send-student-notification-email`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: activity.student.email,
           studentName: activity.student.name,
@@ -262,20 +262,17 @@ export async function POST(request: NextRequest) {
         }),
       });
     } catch (emailError) {
-      console.error("Error sending notification email:", emailError);
+      console.error('Error sending notification email:', emailError);
       // Don't fail the verification if email fails
     }
 
     return NextResponse.json({
       success: true,
-      message: `Activity ${status === "verified" ? "verified" : "rejected"} successfully`,
+      message: `Activity ${status === 'verified' ? 'verified' : 'rejected'} successfully`,
       verification,
     });
   } catch (error) {
-    console.error("Error processing verification:", error);
-    return NextResponse.json(
-      { error: "Failed to process verification" },
-      { status: 500 }
-    );
+    console.error('Error processing verification:', error);
+    return NextResponse.json({ error: 'Failed to process verification' }, { status: 500 });
   }
 }

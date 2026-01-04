@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -6,7 +6,7 @@ async function main() {
   try {
     const opportunities = await prisma.volunteeringOpportunity.findMany({
       where: {
-        status: "approved",
+        status: 'approved',
       },
       select: {
         id: true,
@@ -23,7 +23,7 @@ async function main() {
       console.log(`- ${opp.title} (${opp.organization}) - Status: ${opp.status}`);
     });
   } catch (error: any) {
-    console.error("Error:", error.message);
+    console.error('Error:', error.message);
     console.error(error);
   }
 }
@@ -31,4 +31,3 @@ async function main() {
 main()
   .catch(console.error)
   .finally(() => prisma.$disconnect());
-

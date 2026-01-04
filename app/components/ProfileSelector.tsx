@@ -1,53 +1,53 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useProfile } from "../context/ProfileContext";
-import { ProfileType, OrganizationProfile, ApplicantProfile } from "../types";
-import { WebGLShader } from "@/components/ui/web-gl-shader";
+import { useState } from 'react';
+import { useProfile } from '../context/ProfileContext';
+import { ProfileType, OrganizationProfile, ApplicantProfile } from '../types';
+import { WebGLShader } from '@/components/ui/web-gl-shader';
 
 export default function ProfileSelector() {
   const { currentProfile, allProfiles, createProfile, setCurrentProfile, switchProfile } =
     useProfile();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    profileType: "Applicant" as ProfileType,
-    description: "",
-    website: "",
-    location: "",
-    bio: "",
+    name: '',
+    email: '',
+    profileType: 'Applicant' as ProfileType,
+    description: '',
+    website: '',
+    location: '',
+    bio: '',
   });
 
   const handleCreateProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.profileType === "Organization") {
+    if (formData.profileType === 'Organization') {
       createProfile({
         name: formData.name,
         email: formData.email,
-        profileType: "Organization",
+        profileType: 'Organization',
         description: formData.description || undefined,
         website: formData.website || undefined,
         location: formData.location || undefined,
-      } as Omit<OrganizationProfile, "id" | "createdAt" | "updatedAt">);
+      } as Omit<OrganizationProfile, 'id' | 'createdAt' | 'updatedAt'>);
     } else {
       createProfile({
         name: formData.name,
         email: formData.email,
-        profileType: "Applicant",
+        profileType: 'Applicant',
         bio: formData.bio || undefined,
         location: formData.location || undefined,
-      } as Omit<ApplicantProfile, "id" | "createdAt" | "updatedAt">);
+      } as Omit<ApplicantProfile, 'id' | 'createdAt' | 'updatedAt'>);
     }
     setShowCreateForm(false);
     setFormData({
-      name: "",
-      email: "",
-      profileType: "Applicant",
-      description: "",
-      website: "",
-      location: "",
-      bio: "",
+      name: '',
+      email: '',
+      profileType: 'Applicant',
+      description: '',
+      website: '',
+      location: '',
+      bio: '',
     });
   };
 
@@ -82,7 +82,7 @@ export default function ProfileSelector() {
 
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                {formData.profileType === "Organization" ? "Organization Name" : "Your Name"} *
+                {formData.profileType === 'Organization' ? 'Organization Name' : 'Your Name'} *
               </label>
               <input
                 type="text"
@@ -106,7 +106,7 @@ export default function ProfileSelector() {
               />
             </div>
 
-            {formData.profileType === "Organization" ? (
+            {formData.profileType === 'Organization' ? (
               <>
                 <div>
                   <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
@@ -194,22 +194,16 @@ export default function ProfileSelector() {
     <div className="relative min-h-screen overflow-hidden">
       {/* WebGL Background */}
       <WebGLShader />
-      
+
       {/* Content Layer */}
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
         <div className="bg-black/5 backdrop-blur-xl rounded-2xl p-8 max-w-md w-full shadow-2xl border border-black/10">
-          <h1 className="text-3xl font-bold text-black mb-2">
-            Actify
-          </h1>
-          <p className="text-black/60 mb-6">
-            Get started by creating or selecting a profile
-          </p>
+          <h1 className="text-3xl font-bold text-black mb-2">Actify</h1>
+          <p className="text-black/60 mb-6">Get started by creating or selecting a profile</p>
 
           {allProfiles.length > 0 && (
             <div className="mb-6">
-              <h2 className="text-lg font-semibold text-black mb-3">
-                Existing Profiles
-              </h2>
+              <h2 className="text-lg font-semibold text-black mb-3">Existing Profiles</h2>
               <div className="space-y-2">
                 {allProfiles.map((profile) => (
                   <button
@@ -217,9 +211,7 @@ export default function ProfileSelector() {
                     onClick={() => switchProfile(profile.id)}
                     className="w-full text-left px-4 py-3 bg-white/50 backdrop-blur-sm rounded-lg hover:bg-white/70 transition-colors border border-black/10"
                   >
-                    <div className="font-medium text-black">
-                      {profile.name}
-                    </div>
+                    <div className="font-medium text-black">{profile.name}</div>
                     <div className="text-sm text-black/60">
                       {profile.profileType} • {profile.email}
                     </div>
@@ -240,4 +232,3 @@ export default function ProfileSelector() {
     </div>
   );
 }
-

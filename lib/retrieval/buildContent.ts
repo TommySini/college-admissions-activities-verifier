@@ -1,4 +1,4 @@
-import { stripPII } from "./embeddings";
+import { stripPII } from './embeddings';
 
 export interface EmbeddableContent {
   content: string;
@@ -9,24 +9,22 @@ export interface EmbeddableContent {
  * Build embeddable content from a record based on its model type
  * Selects relevant fields, flattens JSON, and strips PII
  */
-export function buildEmbeddableContent(
-  modelName: string,
-  row: any
-): EmbeddableContent | null {
+export function buildEmbeddableContent(modelName: string, row: any): EmbeddableContent | null {
   if (!row) return null;
 
-  let content = "";
+  let content = '';
   let ownerId: string | undefined = undefined;
 
   switch (modelName) {
-    case "AlumniApplication":
+    case 'AlumniApplication': {
       // Use the full raw text from the application
       if (row.rawText) {
         content = row.rawText;
       }
       break;
+    }
 
-    case "ExtractedEssay":
+    case 'ExtractedEssay': {
       // Combine topic, prompt, summary, and tags
       const parts: string[] = [];
       if (row.topic) parts.push(`Topic: ${row.topic}`);
@@ -36,16 +34,17 @@ export function buildEmbeddableContent(
         try {
           const tags = JSON.parse(row.tags);
           if (Array.isArray(tags) && tags.length > 0) {
-            parts.push(`Tags: ${tags.join(", ")}`);
+            parts.push(`Tags: ${tags.join(', ')}`);
           }
         } catch (e) {
           // Ignore parse errors
         }
       }
-      content = parts.join("\n");
+      content = parts.join('\n');
       break;
+    }
 
-    case "ExtractedActivity":
+    case 'ExtractedActivity': {
       // Combine title, description, organization, role
       const activityParts: string[] = [];
       if (row.title) activityParts.push(`Activity: ${row.title}`);
@@ -54,30 +53,33 @@ export function buildEmbeddableContent(
       if (row.description) activityParts.push(`Description: ${row.description}`);
       if (row.hours) activityParts.push(`Hours: ${row.hours}`);
       if (row.years) activityParts.push(`Years: ${row.years}`);
-      content = activityParts.join("\n");
+      content = activityParts.join('\n');
       break;
+    }
 
-    case "ExtractedAward":
+    case 'ExtractedAward': {
       // Combine title, level, year, description
       const awardParts: string[] = [];
       if (row.title) awardParts.push(`Award: ${row.title}`);
       if (row.level) awardParts.push(`Level: ${row.level}`);
       if (row.year) awardParts.push(`Year: ${row.year}`);
       if (row.description) awardParts.push(`Description: ${row.description}`);
-      content = awardParts.join("\n");
+      content = awardParts.join('\n');
       break;
+    }
 
-    case "AdmissionResult":
+    case 'AdmissionResult': {
       // Combine college name, decision, round
       const resultParts: string[] = [];
       if (row.collegeName) resultParts.push(`College: ${row.collegeName}`);
       if (row.decision) resultParts.push(`Decision: ${row.decision}`);
       if (row.decisionRound) resultParts.push(`Round: ${row.decisionRound}`);
       if (row.rankBucket) resultParts.push(`Rank: ${row.rankBucket}`);
-      content = resultParts.join("\n");
+      content = resultParts.join('\n');
       break;
+    }
 
-    case "Organization":
+    case 'Organization': {
       // Combine name, description, leadership, president
       const orgParts: string[] = [];
       if (row.name) orgParts.push(`Organization: ${row.name}`);
@@ -85,10 +87,11 @@ export function buildEmbeddableContent(
       if (row.category) orgParts.push(`Category: ${row.category}`);
       if (row.leadership) orgParts.push(`Leadership: ${row.leadership}`);
       if (row.presidentName) orgParts.push(`President: ${row.presidentName}`);
-      content = orgParts.join("\n");
+      content = orgParts.join('\n');
       break;
+    }
 
-    case "VolunteeringOpportunity":
+    case 'VolunteeringOpportunity': {
       // Combine title, description, organization, category
       const oppParts: string[] = [];
       if (row.title) oppParts.push(`Opportunity: ${row.title}`);
@@ -96,10 +99,11 @@ export function buildEmbeddableContent(
       if (row.description) oppParts.push(`Description: ${row.description}`);
       if (row.category) oppParts.push(`Category: ${row.category}`);
       if (row.location) oppParts.push(`Location: ${row.location}`);
-      content = oppParts.join("\n");
+      content = oppParts.join('\n');
       break;
+    }
 
-    case "Activity":
+    case 'Activity': {
       // User-scoped: student's own activities
       const studentActivityParts: string[] = [];
       if (row.name) studentActivityParts.push(`Activity: ${row.name}`);
@@ -107,19 +111,21 @@ export function buildEmbeddableContent(
       if (row.role) studentActivityParts.push(`Role: ${row.role}`);
       if (row.description) studentActivityParts.push(`Description: ${row.description}`);
       if (row.category) studentActivityParts.push(`Category: ${row.category}`);
-      content = studentActivityParts.join("\n");
+      content = studentActivityParts.join('\n');
       ownerId = row.studentId;
       break;
+    }
 
-    case "VolunteeringParticipation":
+    case 'VolunteeringParticipation': {
       // User-scoped: student's volunteering records
       const partParts: string[] = [];
       if (row.activityName) partParts.push(`Activity: ${row.activityName}`);
       if (row.organizationName) partParts.push(`Organization: ${row.organizationName}`);
       if (row.totalHours) partParts.push(`Hours: ${row.totalHours}`);
-      content = partParts.join("\n");
+      content = partParts.join('\n');
       ownerId = row.studentId;
       break;
+    }
 
     default:
       console.warn(`[buildEmbeddableContent] Unsupported model: ${modelName}`);
@@ -145,15 +151,15 @@ export function buildEmbeddableContent(
  */
 export function getSupportedModels(): string[] {
   return [
-    "AlumniApplication",
-    "ExtractedEssay",
-    "ExtractedActivity",
-    "ExtractedAward",
-    "AdmissionResult",
-    "Organization",
-    "VolunteeringOpportunity",
-    "Activity",
-    "VolunteeringParticipation",
+    'AlumniApplication',
+    'ExtractedEssay',
+    'ExtractedActivity',
+    'ExtractedAward',
+    'AdmissionResult',
+    'Organization',
+    'VolunteeringOpportunity',
+    'Activity',
+    'VolunteeringParticipation',
   ];
 }
 
@@ -163,4 +169,3 @@ export function getSupportedModels(): string[] {
 export function isModelSupported(modelName: string): boolean {
   return getSupportedModels().includes(modelName);
 }
-

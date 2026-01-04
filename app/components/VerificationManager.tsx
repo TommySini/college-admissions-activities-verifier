@@ -1,58 +1,56 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { ActivityCategory, Verification } from "../types";
-import { useProfile } from "../context/ProfileContext";
-import { useVerifications } from "../context/VerificationContext";
+import { useState } from 'react';
+import { ActivityCategory, Verification } from '../types';
+import { useProfile } from '../context/ProfileContext';
+import { useVerifications } from '../context/VerificationContext';
 
 const CATEGORIES: ActivityCategory[] = [
-  "Sports",
-  "Clubs",
-  "Volunteer",
-  "Work",
-  "Academic",
-  "Arts",
-  "Leadership",
-  "Other",
+  'Sports',
+  'Clubs',
+  'Volunteer',
+  'Work',
+  'Academic',
+  'Arts',
+  'Leadership',
+  'Other',
 ];
 
-export function SendVerificationForm({
-  onClose,
-}: {
-  onClose: () => void;
-}) {
+export function SendVerificationForm({ onClose }: { onClose: () => void }) {
   const { currentProfile, allProfiles } = useProfile();
   const { sendVerification } = useVerifications();
   const [formData, setFormData] = useState({
-    applicantEmail: "",
-    title: "",
-    description: "",
-    startDate: new Date().toISOString().split("T")[0],
-    endDate: "",
-    position: "",
-    category: "Other" as ActivityCategory,
+    applicantEmail: '',
+    title: '',
+    description: '',
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: '',
+    position: '',
+    category: 'Other' as ActivityCategory,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setError('');
     setIsSubmitting(true);
 
-    if (!currentProfile || currentProfile.profileType !== "Organization") {
-      setError("You must be logged in as an organization to send verifications.");
+    if (!currentProfile || currentProfile.profileType !== 'Organization') {
+      setError('You must be logged in as an organization to send verifications.');
       setIsSubmitting(false);
       return;
     }
 
     // Find applicant profile by email
     const applicantProfile = allProfiles.find(
-      (p) => p.profileType === "Applicant" && p.email.toLowerCase() === formData.applicantEmail.toLowerCase()
+      (p) =>
+        p.profileType === 'Applicant' &&
+        p.email.toLowerCase() === formData.applicantEmail.toLowerCase()
     );
 
-    const applicantId = applicantProfile?.id || "";
+    const applicantId = applicantProfile?.id || '';
 
     // Send verification
     sendVerification({
@@ -70,9 +68,9 @@ export function SendVerificationForm({
 
     // Send email notification (if API is set up)
     try {
-      await fetch("/api/send-verification-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      await fetch('/api/send-verification-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: formData.applicantEmail,
           organizationName: currentProfile.name,
@@ -81,24 +79,24 @@ export function SendVerificationForm({
         }),
       });
     } catch (err) {
-      console.log("Email notification failed (API may not be configured):", err);
+      console.log('Email notification failed (API may not be configured):', err);
     }
 
     setIsSubmitting(false);
     setSuccess(true);
-    
+
     // Close modal after a brief delay to show success message
     setTimeout(() => {
       onClose();
       setSuccess(false);
       setFormData({
-        applicantEmail: "",
-        title: "",
-        description: "",
-        startDate: new Date().toISOString().split("T")[0],
-        endDate: "",
-        position: "",
-        category: "Other",
+        applicantEmail: '',
+        title: '',
+        description: '',
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: '',
+        position: '',
+        category: 'Other',
       });
     }, 1500);
   };
@@ -110,7 +108,8 @@ export function SendVerificationForm({
           Send Verification
         </h2>
         <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
-          Send a verification to an applicant's email address. They will be able to accept or reject it.
+          Send a verification to an applicant's email address. They will be able to accept or reject
+          it.
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
@@ -232,7 +231,7 @@ export function SendVerificationForm({
               disabled={isSubmitting}
               className="flex-1 px-6 py-2 bg-zinc-900 dark:bg-zinc-50 text-white dark:text-black rounded-lg font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? "Sending..." : "Send Verification"}
+              {isSubmitting ? 'Sending...' : 'Send Verification'}
             </button>
             <button
               type="button"
@@ -260,9 +259,9 @@ export function VerificationCard({
   isApplicant: boolean;
 }) {
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
     });
   };
 
@@ -275,9 +274,13 @@ export function VerificationCard({
           </h3>
           <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-2">
             {isApplicant ? (
-              <>Verified by <span className="font-medium">{verification.organizationName}</span></>
+              <>
+                Verified by <span className="font-medium">{verification.organizationName}</span>
+              </>
             ) : (
-              <>Sent to <span className="font-medium">{verification.applicantEmail}</span></>
+              <>
+                Sent to <span className="font-medium">{verification.applicantEmail}</span>
+              </>
             )}
           </p>
           {verification.category && (
@@ -288,18 +291,18 @@ export function VerificationCard({
         </div>
         <span
           className={`ml-2 px-3 py-1 text-xs font-medium rounded ${
-            verification.status === "accepted"
-              ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
-              : verification.status === "rejected"
-              ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
-              : "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
+            verification.status === 'accepted'
+              ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+              : verification.status === 'rejected'
+                ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                : 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
           }`}
         >
-          {verification.status === "accepted"
-            ? "✓ Accepted"
-            : verification.status === "rejected"
-            ? "✗ Rejected"
-            : "Pending"}
+          {verification.status === 'accepted'
+            ? '✓ Accepted'
+            : verification.status === 'rejected'
+              ? '✗ Rejected'
+              : 'Pending'}
         </span>
       </div>
 
@@ -310,19 +313,17 @@ export function VerificationCard({
       )}
 
       {verification.description && (
-        <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-3">
-          {verification.description}
-        </p>
+        <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-3">{verification.description}</p>
       )}
 
       <div className="text-xs text-zinc-500 dark:text-zinc-500 mb-4">
         <div>
           <span className="font-medium">Dates:</span> {formatDate(verification.startDate)}
-          {verification.endDate ? ` - ${formatDate(verification.endDate)}` : " - Present"}
+          {verification.endDate ? ` - ${formatDate(verification.endDate)}` : ' - Present'}
         </div>
       </div>
 
-      {isApplicant && verification.status === "pending" && (
+      {isApplicant && verification.status === 'pending' && (
         <div className="flex gap-2">
           <button
             onClick={onAccept}
@@ -341,4 +342,3 @@ export function VerificationCard({
     </div>
   );
 }
-

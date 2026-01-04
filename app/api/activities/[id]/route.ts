@@ -1,17 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { upsertEmbedding, deleteEmbedding } from "@/lib/retrieval/indexer";
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { upsertEmbedding, deleteEmbedding } from '@/lib/retrieval/indexer';
 
 // PATCH - Update activity
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -23,17 +20,11 @@ export async function PATCH(
     });
 
     if (!activity) {
-      return NextResponse.json(
-        { error: "Activity not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
 
     if (activity.studentId !== user.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     // Map form fields to schema fields
@@ -57,17 +48,14 @@ export async function PATCH(
     });
 
     // Re-index activity for semantic search (async, don't await)
-    upsertEmbedding("Activity", updated.id).catch((error) => {
+    upsertEmbedding('Activity', updated.id).catch((error) => {
       console.error(`[PATCH /api/activities/${id}] Failed to re-index activity:`, error);
     });
 
     return NextResponse.json({ activity: updated });
   } catch (error) {
-    console.error("Error updating activity:", error);
-    return NextResponse.json(
-      { error: "Failed to update activity" },
-      { status: 500 }
-    );
+    console.error('Error updating activity:', error);
+    return NextResponse.json({ error: 'Failed to update activity' }, { status: 500 });
   }
 }
 
@@ -79,7 +67,7 @@ export async function DELETE(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -90,17 +78,11 @@ export async function DELETE(
     });
 
     if (!activity) {
-      return NextResponse.json(
-        { error: "Activity not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
 
     if (activity.studentId !== user.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     await prisma.activity.delete({
@@ -108,17 +90,13 @@ export async function DELETE(
     });
 
     // Delete embedding for semantic search (async, don't await)
-    deleteEmbedding("Activity", id).catch((error) => {
+    deleteEmbedding('Activity', id).catch((error) => {
       console.error(`[DELETE /api/activities/${id}] Failed to delete embedding:`, error);
     });
 
-    return NextResponse.json({ message: "Activity deleted" });
+    return NextResponse.json({ message: 'Activity deleted' });
   } catch (error) {
-    console.error("Error deleting activity:", error);
-    return NextResponse.json(
-      { error: "Failed to delete activity" },
-      { status: 500 }
-    );
+    console.error('Error deleting activity:', error);
+    return NextResponse.json({ error: 'Failed to delete activity' }, { status: 500 });
   }
 }
-

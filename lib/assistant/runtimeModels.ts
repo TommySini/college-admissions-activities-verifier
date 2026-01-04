@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma } from '@prisma/client';
 
 // Cache for model descriptions
 const modelDescriptionCache = new Map<string, ModelDescription>();
@@ -51,8 +51,8 @@ export function describeModel(modelName: string): ModelDescription | null {
     type: field.type,
     isList: field.isList,
     isRequired: field.isRequired,
-    isRelation: field.kind === "object",
-    relationTo: field.kind === "object" ? field.type : undefined,
+    isRelation: field.kind === 'object',
+    relationTo: field.kind === 'object' ? field.type : undefined,
     isId: field.isId,
     isUnique: field.isUnique,
   }));
@@ -84,24 +84,24 @@ function generateModelDescription(modelName: string, fields: FieldDescription[])
   const fieldNames = nonRelationFields.slice(0, 5).map((f) => f.name);
 
   const descriptions: Record<string, string> = {
-    User: "Platform users (students and admins)",
-    Activity: "Student extracurricular activities",
-    Verification: "Activity verification requests and status",
-    Organization: "School clubs and organizations",
-    VolunteeringOpportunity: "Available volunteering opportunities",
-    VolunteeringParticipation: "Student volunteering participation records",
-    VolunteeringGoal: "Student volunteering hour goals",
-    AlumniProfile: "Alumni user profiles",
-    AlumniApplication: "Alumni college application data",
-    ExtractedActivity: "Activities from alumni applications",
-    ExtractedEssay: "Essays from alumni applications",
-    ExtractedAward: "Awards from alumni applications",
-    AdmissionResult: "College admission outcomes",
-    Settings: "Platform configuration settings",
+    User: 'Platform users (students and admins)',
+    Activity: 'Student extracurricular activities',
+    Verification: 'Activity verification requests and status',
+    Organization: 'School clubs and organizations',
+    VolunteeringOpportunity: 'Available volunteering opportunities',
+    VolunteeringParticipation: 'Student volunteering participation records',
+    VolunteeringGoal: 'Student volunteering hour goals',
+    AlumniProfile: 'Alumni user profiles',
+    AlumniApplication: 'Alumni college application data',
+    ExtractedActivity: 'Activities from alumni applications',
+    ExtractedEssay: 'Essays from alumni applications',
+    ExtractedAward: 'Awards from alumni applications',
+    AdmissionResult: 'College admission outcomes',
+    Settings: 'Platform configuration settings',
   };
 
   const baseDesc = descriptions[modelName] || `${modelName} records`;
-  return `${baseDesc}. Key fields: ${fieldNames.join(", ")}`;
+  return `${baseDesc}. Key fields: ${fieldNames.join(', ')}`;
 }
 
 /**
@@ -110,14 +110,14 @@ function generateModelDescription(modelName: string, fields: FieldDescription[])
  */
 export function getStudentAccessibleModels(): string[] {
   return [
-    "Organization",
-    "VolunteeringOpportunity",
-    "AlumniProfile",
-    "AlumniApplication",
-    "ExtractedActivity",
-    "ExtractedEssay",
-    "ExtractedAward",
-    "AdmissionResult",
+    'Organization',
+    'VolunteeringOpportunity',
+    'AlumniProfile',
+    'AlumniApplication',
+    'ExtractedActivity',
+    'ExtractedEssay',
+    'ExtractedAward',
+    'AdmissionResult',
   ];
 }
 
@@ -126,12 +126,7 @@ export function getStudentAccessibleModels(): string[] {
  * (students can only see their own records)
  */
 export function getUserScopedModels(): string[] {
-  return [
-    "Activity",
-    "Verification",
-    "VolunteeringParticipation",
-    "VolunteeringGoal",
-  ];
+  return ['Activity', 'Verification', 'VolunteeringParticipation', 'VolunteeringGoal'];
 }
 
 /**
@@ -146,8 +141,7 @@ export function isUserScopedModel(modelName: string): boolean {
  */
 export function canStudentAccessModel(modelName: string): boolean {
   return (
-    getStudentAccessibleModels().includes(modelName) ||
-    getUserScopedModels().includes(modelName)
+    getStudentAccessibleModels().includes(modelName) || getUserScopedModels().includes(modelName)
   );
 }
 
@@ -156,11 +150,11 @@ export function canStudentAccessModel(modelName: string): boolean {
  */
 export function getUserScopeField(modelName: string): string | null {
   const scopeFields: Record<string, string> = {
-    Activity: "studentId",
-    Verification: "studentId",
-    VolunteeringParticipation: "studentId",
-    VolunteeringGoal: "studentId",
-    AlumniProfile: "userId",
+    Activity: 'studentId',
+    Verification: 'studentId',
+    VolunteeringParticipation: 'studentId',
+    VolunteeringGoal: 'studentId',
+    AlumniProfile: 'userId',
   };
 
   return scopeFields[modelName] || null;
@@ -177,9 +171,9 @@ export function getSearchableFields(modelName: string): string[] {
     .filter(
       (f) =>
         !f.isRelation &&
-        (f.type === "String") &&
+        f.type === 'String' &&
         !f.isId &&
-        !["password", "secret", "token", "hash"].some((sensitive) =>
+        !['password', 'secret', 'token', 'hash'].some((sensitive) =>
           f.name.toLowerCase().includes(sensitive)
         )
     )
@@ -192,4 +186,3 @@ export function getSearchableFields(modelName: string): string[] {
 export function clearModelCache(): void {
   modelDescriptionCache.clear();
 }
-

@@ -1,12 +1,12 @@
 {
-  "name": "college-admissions-activities-verifier",
+  "name": "student-activity-management-platform",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts,.tsx,.js,.jsx"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
@@ -48,8 +48,14 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/three": "^0.181.0",
-    "eslint": "^9",
-    "eslint-config-next": "16.0.1",
+    "@typescript-eslint/eslint-plugin": "^8.46.0",
+    "@typescript-eslint/parser": "^8.46.0",
+    "eslint": "^9.39.1",
+    "eslint-config-next": "^16.0.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "prettier": "^3.6.2",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

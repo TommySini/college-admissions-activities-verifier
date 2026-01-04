@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useSession, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { useColors } from "../context/ColorContext";
+import { useEffect, useState } from 'react';
+import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useColors } from '../context/ColorContext';
 
 interface Student {
   id: string;
@@ -43,7 +43,7 @@ interface Organization {
   presidentName?: string | null;
   isSchoolClub: boolean;
   contactEmail?: string | null;
-  status: "PENDING" | "APPROVED" | "REJECTED";
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
   createdAt: string;
   createdBy: {
     id: string;
@@ -60,16 +60,16 @@ interface Analytics {
   totalOrganizations: number;
 }
 
-type Tab = "dashboard" | "analytics" | "organizations" | "export" | "settings";
+type Tab = 'dashboard' | 'analytics' | 'organizations' | 'export' | 'settings';
 
 export default function AdminDashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<Tab>("dashboard");
+  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [students, setStudents] = useState<Student[]>([]);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -84,22 +84,22 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (!target.closest(".profile-dropdown-container")) {
+      if (!target.closest('.profile-dropdown-container')) {
         setShowProfileDropdown(false);
       }
     };
 
     if (showProfileDropdown) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [showProfileDropdown]);
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/signin");
-    } else if (status === "authenticated" && session?.user.role !== "admin") {
-      router.push("/dashboard");
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin');
+    } else if (status === 'authenticated' && session?.user.role !== 'admin') {
+      router.push('/dashboard');
     }
   }, [status, session, router]);
 
@@ -107,48 +107,48 @@ export default function AdminDashboardPage() {
     if (session) {
       // Check if user selected a role during signup
       const urlParams = new URLSearchParams(window.location.search);
-      const signupRole = urlParams.get("role");
-      
+      const signupRole = urlParams.get('role');
+
       // Also check cookie as fallback
       const cookieRole = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("signupRole="))
-        ?.split("=")[1];
-      
+        .split('; ')
+        .find((row) => row.startsWith('signupRole='))
+        ?.split('=')[1];
+
       const selectedRole = signupRole || cookieRole;
-      
-      if (selectedRole && selectedRole === "admin") {
+
+      if (selectedRole && selectedRole === 'admin') {
         // Update role if different - this ensures the role is set correctly
         if (session.user.role !== selectedRole) {
-          console.log("Updating user role from", session.user.role, "to", selectedRole);
-          fetch("/api/user/update-role", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+          console.log('Updating user role from', session.user.role, 'to', selectedRole);
+          fetch('/api/user/update-role', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ role: selectedRole }),
           })
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.error) {
-              console.error("Error updating role:", data.error);
-            } else {
-              console.log("Role updated successfully:", data.user);
-              // Clear the cookie
-              document.cookie = "signupRole=; path=/; max-age=0";
-              // Reload to get updated session
-              window.location.href = "/admin";
-            }
-          })
-          .catch((error) => {
-            console.error("Error updating role:", error);
-          });
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.error) {
+                console.error('Error updating role:', data.error);
+              } else {
+                console.log('Role updated successfully:', data.user);
+                // Clear the cookie
+                document.cookie = 'signupRole=; path=/; max-age=0';
+                // Reload to get updated session
+                window.location.href = '/admin';
+              }
+            })
+            .catch((error) => {
+              console.error('Error updating role:', error);
+            });
           return;
         } else {
           // Role is already correct, clear the cookie
-          document.cookie = "signupRole=; path=/; max-age=0";
+          document.cookie = 'signupRole=; path=/; max-age=0';
         }
       }
-      
-      if (session.user.role === "admin") {
+
+      if (session.user.role === 'admin') {
         fetchStudents();
         fetchAnalytics();
         fetchOrganizations();
@@ -158,8 +158,8 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     if (
-      activeTab === "organizations" &&
-      session?.user.role === "admin" &&
+      activeTab === 'organizations' &&
+      session?.user.role === 'admin' &&
       !organizationsLoading &&
       organizations.length === 0
     ) {
@@ -169,17 +169,17 @@ export default function AdminDashboardPage() {
 
   const fetchStudents = async () => {
     try {
-      const response = await fetch("/api/admin/students");
+      const response = await fetch('/api/admin/students');
       const data = await response.json();
-      console.log("Fetched students data:", data);
+      console.log('Fetched students data:', data);
       if (data.error) {
-        console.error("API error:", data.error);
+        console.error('API error:', data.error);
         alert(`Error: ${data.error}`);
       }
       setStudents(data.students || []);
     } catch (error) {
-      console.error("Error fetching students:", error);
-      alert("Failed to fetch students. Check the console for details.");
+      console.error('Error fetching students:', error);
+      alert('Failed to fetch students. Check the console for details.');
     } finally {
       setLoading(false);
     }
@@ -187,11 +187,11 @@ export default function AdminDashboardPage() {
 
   const fetchAnalytics = async () => {
     try {
-      const response = await fetch("/api/admin/analytics");
+      const response = await fetch('/api/admin/analytics');
       const data = await response.json();
       setAnalytics(data);
     } catch (error) {
-      console.error("Error fetching analytics:", error);
+      console.error('Error fetching analytics:', error);
     }
   };
 
@@ -204,7 +204,7 @@ export default function AdminDashboardPage() {
         setStudentParticipations(data.participations || []);
       }
     } catch (error) {
-      console.error("Error fetching student participations:", error);
+      console.error('Error fetching student participations:', error);
     } finally {
       setParticipationsLoading(false);
     }
@@ -213,29 +213,32 @@ export default function AdminDashboardPage() {
   const fetchOrganizations = async () => {
     try {
       setOrganizationsLoading(true);
-      const response = await fetch("/api/admin/organizations");
+      const response = await fetch('/api/admin/organizations');
       const data = await response.json();
 
       if (!response.ok) {
-        console.error("Error fetching organizations:", data.error);
-        alert(data.error || "Failed to fetch organizations.");
+        console.error('Error fetching organizations:', data.error);
+        alert(data.error || 'Failed to fetch organizations.');
         return;
       }
 
       setOrganizations(data.organizations || []);
     } catch (error) {
-      console.error("Error fetching organizations:", error);
-      alert("Failed to fetch organizations. Check the console for details.");
+      console.error('Error fetching organizations:', error);
+      alert('Failed to fetch organizations. Check the console for details.');
     } finally {
       setOrganizationsLoading(false);
     }
   };
 
-  const handleOrganizationDecision = async (organizationId: string, action: "approve" | "reject") => {
+  const handleOrganizationDecision = async (
+    organizationId: string,
+    action: 'approve' | 'reject'
+  ) => {
     try {
       setOrganizationActionId(organizationId);
       const response = await fetch(`/api/admin/organizations/${organizationId}/${action}`, {
-        method: "POST",
+        method: 'POST',
       });
       const data = await response.json();
 
@@ -248,7 +251,7 @@ export default function AdminDashboardPage() {
       setOrganizations((prev) =>
         prev.map((organization) =>
           organization.id === organizationId
-            ? { ...organization, status: action === "approve" ? "APPROVED" : "REJECTED" }
+            ? { ...organization, status: action === 'approve' ? 'APPROVED' : 'REJECTED' }
             : organization
         )
       );
@@ -263,19 +266,19 @@ export default function AdminDashboardPage() {
 
   const handleExport = async () => {
     try {
-      const response = await fetch("/api/admin/export");
+      const response = await fetch('/api/admin/export');
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
-      a.download = `actify-student-data-${new Date().toISOString().split("T")[0]}.csv`;
+      a.download = `actify-student-data-${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-      console.error("Error exporting data:", error);
-      alert("Failed to export data. Please try again.");
+      console.error('Error exporting data:', error);
+      alert('Failed to export data. Please try again.');
     }
   };
 
@@ -285,7 +288,7 @@ export default function AdminDashboardPage() {
       student.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (status === "loading" || loading) {
+  if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-gray-600">Loading...</div>
@@ -293,7 +296,7 @@ export default function AdminDashboardPage() {
     );
   }
 
-  if (!session || session.user.role !== "admin") {
+  if (!session || session.user.role !== 'admin') {
     return null;
   }
 
@@ -304,65 +307,61 @@ export default function AdminDashboardPage() {
         {/* Tabs */}
         <div className="flex items-center gap-1 mb-6 border-b border-gray-200 pb-4">
           <button
-            onClick={() => setActiveTab("dashboard")}
+            onClick={() => setActiveTab('dashboard')}
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              activeTab === "dashboard"
-                ? "bg-blue-50 text-blue-700 border border-blue-200"
-                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              activeTab === 'dashboard'
+                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
             }`}
           >
             Dashboard
           </button>
           <button
-            onClick={() => setActiveTab("analytics")}
+            onClick={() => setActiveTab('analytics')}
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              activeTab === "analytics"
-                ? "bg-blue-50 text-blue-700 border border-blue-200"
-                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              activeTab === 'analytics'
+                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
             }`}
           >
             Analytics
           </button>
           <button
-            onClick={() => setActiveTab("organizations")}
+            onClick={() => setActiveTab('organizations')}
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              activeTab === "organizations"
-                ? "bg-blue-50 text-blue-700 border border-blue-200"
-                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              activeTab === 'organizations'
+                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
             }`}
           >
             Organizations
           </button>
           <button
-            onClick={() => setActiveTab("export")}
+            onClick={() => setActiveTab('export')}
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              activeTab === "export"
-                ? "bg-blue-50 text-blue-700 border border-blue-200"
-                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              activeTab === 'export'
+                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
             }`}
           >
             Export
           </button>
           <button
-            onClick={() => setActiveTab("settings")}
+            onClick={() => setActiveTab('settings')}
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              activeTab === "settings"
-                ? "bg-blue-50 text-blue-700 border border-blue-200"
-                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              activeTab === 'settings'
+                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
             }`}
           >
             Settings
           </button>
         </div>
-        {activeTab === "dashboard" && (
+        {activeTab === 'dashboard' && (
           <div>
             <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                Student Management
-              </h1>
-              <p className="text-gray-600">
-                View and manage student activity verifications
-              </p>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Student Management</h1>
+              <p className="text-gray-600">View and manage student activity verifications</p>
             </div>
 
             {/* Search Bar */}
@@ -420,18 +419,25 @@ export default function AdminDashboardPage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredStudents.length === 0 ? (
                       <tr>
-                        <td
-                          colSpan={6}
-                          className="px-6 py-12 text-center"
-                        >
+                        <td colSpan={6} className="px-6 py-12 text-center">
                           <div className="flex flex-col items-center gap-2">
-                            <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            <svg
+                              className="w-12 h-12 text-gray-400"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                              />
                             </svg>
                             <p className="text-gray-500 font-medium">
                               {searchQuery
-                                ? "No students found matching your search."
-                                : "No students found."}
+                                ? 'No students found matching your search.'
+                                : 'No students found.'}
                             </p>
                             {!searchQuery && (
                               <p className="text-sm text-gray-400 mt-2">
@@ -444,17 +450,10 @@ export default function AdminDashboardPage() {
                       </tr>
                     ) : (
                       filteredStudents.map((student) => (
-                        <tr
-                          key={student.id}
-                          className="hover:bg-gray-50 transition-colors"
-                        >
+                        <tr key={student.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">
-                              {student.name}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {student.email}
-                            </div>
+                            <div className="text-sm font-medium text-gray-900">{student.name}</div>
+                            <div className="text-sm text-gray-500">{student.email}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                             {student.grade}
@@ -471,10 +470,10 @@ export default function AdminDashboardPage() {
                                 <div
                                   className={`h-2 rounded-full ${
                                     student.verifiedPercentage >= 80
-                                      ? "bg-green-500"
+                                      ? 'bg-green-500'
                                       : student.verifiedPercentage >= 50
-                                      ? "bg-blue-500"
-                                      : "bg-red-500"
+                                        ? 'bg-blue-500'
+                                        : 'bg-red-500'
                                   }`}
                                   style={{
                                     width: `${student.verifiedPercentage}%`,
@@ -508,37 +507,25 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {activeTab === "analytics" && analytics && (
+        {activeTab === 'analytics' && analytics && (
           <div>
             <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                Analytics
-              </h1>
-              <p className="text-gray-600">
-                Insights into student activities and verifications
-              </p>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Analytics</h1>
+              <p className="text-gray-600">Insights into student activities and verifications</p>
             </div>
 
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <div className="text-sm text-gray-600 mb-1">Total Students</div>
-                <div className="text-3xl font-bold text-gray-900">
-                  {analytics.totalStudents}
-                </div>
+                <div className="text-3xl font-bold text-gray-900">{analytics.totalStudents}</div>
               </div>
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="text-sm text-gray-600 mb-1">
-                  Total Activities
-                </div>
-                <div className="text-3xl font-bold text-gray-900">
-                  {analytics.totalActivities}
-                </div>
+                <div className="text-sm text-gray-600 mb-1">Total Activities</div>
+                <div className="text-3xl font-bold text-gray-900">{analytics.totalActivities}</div>
               </div>
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="text-sm text-gray-600 mb-1">
-                  Approved Organizations
-                </div>
+                <div className="text-sm text-gray-600 mb-1">Approved Organizations</div>
                 <div className="text-3xl font-bold text-gray-900">
                   {analytics.totalOrganizations}
                 </div>
@@ -561,12 +548,8 @@ export default function AdminDashboardPage() {
                     return (
                       <div key={index}>
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium text-gray-700">
-                            {item.category}
-                          </span>
-                          <span className="text-sm text-gray-600">
-                            {item.count}
-                          </span>
+                          <span className="text-sm font-medium text-gray-700">{item.category}</span>
+                          <span className="text-sm text-gray-600">{item.count}</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div
@@ -588,46 +571,35 @@ export default function AdminDashboardPage() {
                 <div className="flex items-center justify-center">
                   <svg width="200" height="200" viewBox="0 0 200 200">
                     {(() => {
-                      const total =
-                        analytics.verificationByStatus.reduce(
-                          (sum, item) => sum + item.count,
-                          0
-                        );
-                      let currentAngle = -90;
-                      const colors = ["#10b981", "#ef4444", "#f59e0b"]; // green, red, amber
-
-                      return analytics.verificationByStatus.map(
-                        (item, index) => {
-                          const percentage = (item.count / total) * 100;
-                          const angle = (percentage / 100) * 360;
-                          const startAngle = currentAngle;
-                          currentAngle += angle;
-
-                          const x1 =
-                            100 +
-                            100 * Math.cos((startAngle * Math.PI) / 180);
-                          const y1 =
-                            100 +
-                            100 * Math.sin((startAngle * Math.PI) / 180);
-                          const x2 =
-                            100 +
-                            100 * Math.cos((currentAngle * Math.PI) / 180);
-                          const y2 =
-                            100 +
-                            100 * Math.sin((currentAngle * Math.PI) / 180);
-                          const largeArc = angle > 180 ? 1 : 0;
-
-                          return (
-                            <path
-                              key={index}
-                              d={`M 100 100 L ${x1} ${y1} A 100 100 0 ${largeArc} 1 ${x2} ${y2} Z`}
-                              fill={colors[index % colors.length]}
-                              stroke="white"
-                              strokeWidth="2"
-                            />
-                          );
-                        }
+                      const total = analytics.verificationByStatus.reduce(
+                        (sum, item) => sum + item.count,
+                        0
                       );
+                      let currentAngle = -90;
+                      const colors = ['#10b981', '#ef4444', '#f59e0b']; // green, red, amber
+
+                      return analytics.verificationByStatus.map((item, index) => {
+                        const percentage = (item.count / total) * 100;
+                        const angle = (percentage / 100) * 360;
+                        const startAngle = currentAngle;
+                        currentAngle += angle;
+
+                        const x1 = 100 + 100 * Math.cos((startAngle * Math.PI) / 180);
+                        const y1 = 100 + 100 * Math.sin((startAngle * Math.PI) / 180);
+                        const x2 = 100 + 100 * Math.cos((currentAngle * Math.PI) / 180);
+                        const y2 = 100 + 100 * Math.sin((currentAngle * Math.PI) / 180);
+                        const largeArc = angle > 180 ? 1 : 0;
+
+                        return (
+                          <path
+                            key={index}
+                            d={`M 100 100 L ${x1} ${y1} A 100 100 0 ${largeArc} 1 ${x2} ${y2} Z`}
+                            fill={colors[index % colors.length]}
+                            stroke="white"
+                            strokeWidth="2"
+                          />
+                        );
+                      });
                     })()}
                   </svg>
                 </div>
@@ -638,12 +610,9 @@ export default function AdminDashboardPage() {
                       0
                     );
                     const percentage = Math.round((item.count / total) * 100);
-                    const colors = ["#10b981", "#ef4444", "#f59e0b"];
+                    const colors = ['#10b981', '#ef4444', '#f59e0b'];
                     return (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between"
-                      >
+                      <div key={index} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div
                             className="w-4 h-4 rounded"
@@ -651,9 +620,7 @@ export default function AdminDashboardPage() {
                               backgroundColor: colors[index % colors.length],
                             }}
                           ></div>
-                          <span className="text-sm text-gray-700">
-                            {item.status}
-                          </span>
+                          <span className="text-sm text-gray-700">{item.status}</span>
                         </div>
                         <span className="text-sm font-medium text-gray-900">
                           {item.count} ({percentage}%)
@@ -667,15 +634,13 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {activeTab === "organizations" && (
+        {activeTab === 'organizations' && (
           <div>
             <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                Organization Approvals
-              </h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Organization Approvals</h1>
               <p className="text-gray-600 max-w-2xl">
-                Review organization submissions from students. Approving an organization makes it visible to students
-                and signals that it can support activity verification.
+                Review organization submissions from students. Approving an organization makes it
+                visible to students and signals that it can support activity verification.
               </p>
             </div>
 
@@ -713,7 +678,9 @@ export default function AdminDashboardPage() {
                           <td className="px-6 py-4 align-top">
                             <div className="flex items-center gap-3">
                               <div>
-                                <div className="text-sm font-semibold text-gray-900">{organization.name}</div>
+                                <div className="text-sm font-semibold text-gray-900">
+                                  {organization.name}
+                                </div>
                                 <div className="text-xs text-gray-500 mt-1">
                                   Submitted {new Date(organization.createdAt).toLocaleDateString()}
                                 </div>
@@ -722,27 +689,29 @@ export default function AdminDashboardPage() {
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-600 align-top">
                             <div className="space-y-2">
-                              <p>{organization.description || "No description provided."}</p>
+                              <p>{organization.description || 'No description provided.'}</p>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-500">
                                 <div>
-                                  <span className="font-medium text-gray-600">Category:</span>{" "}
-                                  {organization.category || "—"}
+                                  <span className="font-medium text-gray-600">Category:</span>{' '}
+                                  {organization.category || '—'}
                                 </div>
                                 <div>
-                                  <span className="font-medium text-gray-600">President:</span>{" "}
-                                  {organization.presidentName || "—"}
+                                  <span className="font-medium text-gray-600">President:</span>{' '}
+                                  {organization.presidentName || '—'}
                                 </div>
                                 <div className="sm:col-span-2">
-                                  <span className="font-medium text-gray-600">Leadership & Advisor:</span>{" "}
-                                  {organization.leadership || "—"}
+                                  <span className="font-medium text-gray-600">
+                                    Leadership & Advisor:
+                                  </span>{' '}
+                                  {organization.leadership || '—'}
                                 </div>
                                 <div>
-                                  <span className="font-medium text-gray-600">Type:</span>{" "}
-                                  {organization.isSchoolClub ? "TBS club" : "External organization"}
+                                  <span className="font-medium text-gray-600">Type:</span>{' '}
+                                  {organization.isSchoolClub ? 'TBS club' : 'External organization'}
                                 </div>
                                 <div>
-                                  <span className="font-medium text-gray-600">Contact:</span>{" "}
-                                  {organization.contactEmail || "—"}
+                                  <span className="font-medium text-gray-600">Contact:</span>{' '}
+                                  {organization.contactEmail || '—'}
                                 </div>
                               </div>
                             </div>
@@ -751,9 +720,11 @@ export default function AdminDashboardPage() {
                             {organization.createdBy ? (
                               <div>
                                 <div className="font-medium text-gray-800">
-                                  {organization.createdBy.name || "Unknown"}
+                                  {organization.createdBy.name || 'Unknown'}
                                 </div>
-                                <div className="text-xs text-gray-500">{organization.createdBy.email}</div>
+                                <div className="text-xs text-gray-500">
+                                  {organization.createdBy.email}
+                                </div>
                               </div>
                             ) : (
                               <span className="text-xs text-gray-400">—</span>
@@ -763,42 +734,49 @@ export default function AdminDashboardPage() {
                             <div className="inline-flex items-center gap-2">
                               <span
                                 className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                                  organization.status === "APPROVED"
-                                    ? "bg-green-100 text-green-700 border border-green-200"
-                                    : organization.status === "REJECTED"
-                                    ? "bg-red-100 text-red-700 border border-red-200"
-                                    : "bg-amber-100 text-amber-700 border border-amber-200"
+                                  organization.status === 'APPROVED'
+                                    ? 'bg-green-100 text-green-700 border border-green-200'
+                                    : organization.status === 'REJECTED'
+                                      ? 'bg-red-100 text-red-700 border border-red-200'
+                                      : 'bg-amber-100 text-amber-700 border border-amber-200'
                                 }`}
                               >
-                                {organization.status.charAt(0) + organization.status.slice(1).toLowerCase()}
+                                {organization.status.charAt(0) +
+                                  organization.status.slice(1).toLowerCase()}
                               </span>
                               <button
-                                onClick={() => handleOrganizationDecision(organization.id, "reject")}
+                                onClick={() =>
+                                  handleOrganizationDecision(organization.id, 'reject')
+                                }
                                 disabled={
                                   organizationActionId === organization.id ||
-                                  organization.status === "REJECTED"
+                                  organization.status === 'REJECTED'
                                 }
                                 className="px-3 py-1 text-sm font-medium rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
-                                {organizationActionId === organization.id && organization.status !== "REJECTED"
-                                  ? "Updating..."
-                                  : organization.status === "REJECTED"
-                                  ? "Rejected"
-                                  : "Reject"}
+                                {organizationActionId === organization.id &&
+                                organization.status !== 'REJECTED'
+                                  ? 'Updating...'
+                                  : organization.status === 'REJECTED'
+                                    ? 'Rejected'
+                                    : 'Reject'}
                               </button>
                               <button
-                                onClick={() => handleOrganizationDecision(organization.id, "approve")}
+                                onClick={() =>
+                                  handleOrganizationDecision(organization.id, 'approve')
+                                }
                                 disabled={
                                   organizationActionId === organization.id ||
-                                  organization.status === "APPROVED"
+                                  organization.status === 'APPROVED'
                                 }
                                 className="px-3 py-1 text-sm font-medium rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
-                                {organizationActionId === organization.id && organization.status !== "APPROVED"
-                                  ? "Updating..."
-                                  : organization.status === "APPROVED"
-                                  ? "Approved"
-                                  : "Approve"}
+                                {organizationActionId === organization.id &&
+                                organization.status !== 'APPROVED'
+                                  ? 'Updating...'
+                                  : organization.status === 'APPROVED'
+                                    ? 'Approved'
+                                    : 'Approve'}
                               </button>
                             </div>
                           </td>
@@ -812,7 +790,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {activeTab === "export" && (
+        {activeTab === 'export' && (
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
               <div className="mb-6">
@@ -830,12 +808,8 @@ export default function AdminDashboardPage() {
                   />
                 </svg>
               </div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                Export Student Data
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Download all student activity data as a CSV file
-              </p>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">Export Student Data</h2>
+              <p className="text-gray-600 mb-6">Download all student activity data as a CSV file</p>
               <button
                 onClick={handleExport}
                 className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
@@ -846,7 +820,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {activeTab === "settings" && <SettingsTab />}
+        {activeTab === 'settings' && <SettingsTab />}
       </div>
 
       {/* Student Profile Modal */}
@@ -863,9 +837,7 @@ export default function AdminDashboardPage() {
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">
-                  {selectedStudent.name}
-                </h2>
+                <h2 className="text-xl font-semibold text-gray-900">{selectedStudent.name}</h2>
                 <p className="text-sm text-gray-600">{selectedStudent.email}</p>
               </div>
               <button
@@ -875,12 +847,7 @@ export default function AdminDashboardPage() {
                 }}
                 className="text-gray-400 hover:text-gray-600"
               >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -893,9 +860,7 @@ export default function AdminDashboardPage() {
             <div className="px-6 py-4 overflow-y-auto flex-1">
               <div className="mb-6 grid grid-cols-3 gap-4">
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="text-sm text-gray-600 mb-1">
-                    Total Activities
-                  </div>
+                  <div className="text-sm text-gray-600 mb-1">Total Activities</div>
                   <div className="text-2xl font-bold text-gray-900">
                     {selectedStudent.totalActivities}
                   </div>
@@ -907,23 +872,17 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="text-sm text-gray-600 mb-1">
-                    Verification Rate
-                  </div>
+                  <div className="text-sm text-gray-600 mb-1">Verification Rate</div>
                   <div className="text-2xl font-bold text-blue-600">
                     {selectedStudent.verifiedPercentage}%
                   </div>
                 </div>
               </div>
 
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Activities
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Activities</h3>
               <div className="space-y-4 mb-8">
                 {selectedStudent.activities.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">
-                    No activities found
-                  </p>
+                  <p className="text-gray-500 text-center py-8">No activities found</p>
                 ) : (
                   selectedStudent.activities.map((activity) => (
                     <div
@@ -932,39 +891,33 @@ export default function AdminDashboardPage() {
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900">
-                            {activity.name}
-                          </h4>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {activity.description}
-                          </p>
+                          <h4 className="font-semibold text-gray-900">{activity.name}</h4>
+                          <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
                         </div>
                         <span
                           className={`px-2.5 py-1 text-xs font-medium rounded ${
-                            activity.verificationStatus === "verified" ||
-                            activity.verificationStatus === "accepted"
-                              ? "bg-green-100 text-green-700"
-                              : activity.verificationStatus === "denied" ||
-                                activity.verificationStatus === "rejected"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-amber-100 text-amber-700"
+                            activity.verificationStatus === 'verified' ||
+                            activity.verificationStatus === 'accepted'
+                              ? 'bg-green-100 text-green-700'
+                              : activity.verificationStatus === 'denied' ||
+                                  activity.verificationStatus === 'rejected'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-amber-100 text-amber-700'
                           }`}
                         >
-                          {activity.verificationStatus === "verified" ||
-                          activity.verificationStatus === "accepted"
-                            ? "Verified"
-                            : activity.verificationStatus === "denied" ||
-                              activity.verificationStatus === "rejected"
-                            ? "Denied"
-                            : "Pending"}
+                          {activity.verificationStatus === 'verified' ||
+                          activity.verificationStatus === 'accepted'
+                            ? 'Verified'
+                            : activity.verificationStatus === 'denied' ||
+                                activity.verificationStatus === 'rejected'
+                              ? 'Denied'
+                              : 'Pending'}
                         </span>
                       </div>
                       <div className="grid grid-cols-2 gap-4 mt-3 text-sm">
                         <div>
                           <span className="text-gray-600">Category: </span>
-                          <span className="font-medium text-gray-900">
-                            {activity.category}
-                          </span>
+                          <span className="font-medium text-gray-900">{activity.category}</span>
                         </div>
                         <div>
                           <span className="text-gray-600">Dates: </span>
@@ -995,17 +948,13 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* Volunteering Participations */}
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Volunteering Hours
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Volunteering Hours</h3>
               {participationsLoading ? (
                 <p className="text-gray-500 text-center py-8">Loading...</p>
               ) : (
                 <div className="space-y-4">
                   {studentParticipations.length === 0 ? (
-                    <p className="text-gray-500 text-center py-8">
-                      No volunteering hours logged
-                    </p>
+                    <p className="text-gray-500 text-center py-8">No volunteering hours logged</p>
                   ) : (
                     studentParticipations.map((participation) => (
                       <div
@@ -1017,13 +966,13 @@ export default function AdminDashboardPage() {
                           <div className="flex-1">
                             <h4 className="font-semibold text-gray-900">
                               {participation.isManualLog
-                                ? participation.activityName || "Manual Log"
-                                : participation.opportunity?.title || "Unknown Opportunity"}
+                                ? participation.activityName || 'Manual Log'
+                                : participation.opportunity?.title || 'Unknown Opportunity'}
                             </h4>
                             <p className="text-sm text-gray-600 mt-1">
                               {participation.isManualLog
-                                ? participation.organizationName || "N/A"
-                                : participation.opportunity?.organization || "N/A"}
+                                ? participation.organizationName || 'N/A'
+                                : participation.opportunity?.organization || 'N/A'}
                             </p>
                             {participation.isManualLog && participation.activityDescription && (
                               <p className="text-xs text-gray-500 mt-1">
@@ -1037,11 +986,11 @@ export default function AdminDashboardPage() {
                             </span>
                             <span
                               className={`px-2.5 py-1 text-xs font-medium rounded ${
-                                participation.status === "completed"
-                                  ? "bg-green-100 text-green-700"
-                                  : participation.status === "cancelled"
-                                  ? "bg-red-100 text-red-700"
-                                  : "bg-amber-100 text-amber-700"
+                                participation.status === 'completed'
+                                  ? 'bg-green-100 text-green-700'
+                                  : participation.status === 'cancelled'
+                                    ? 'bg-red-100 text-red-700'
+                                    : 'bg-amber-100 text-amber-700'
                               }`}
                             >
                               {participation.status}
@@ -1060,7 +1009,7 @@ export default function AdminDashboardPage() {
                           <div>
                             <span className="text-gray-600">Type: </span>
                             <span className="font-medium text-gray-900">
-                              {participation.isManualLog ? "Manual Log" : "Opportunity"}
+                              {participation.isManualLog ? 'Manual Log' : 'Opportunity'}
                             </span>
                           </div>
                           {participation.serviceSheetUrl && (
@@ -1080,7 +1029,7 @@ export default function AdminDashboardPage() {
                           <div className="col-span-2">
                             <span className="text-gray-600">Verified: </span>
                             <span className="font-medium text-gray-900">
-                              {participation.verified ? "Yes" : "No"}
+                              {participation.verified ? 'Yes' : 'No'}
                             </span>
                           </div>
                         </div>
@@ -1109,25 +1058,20 @@ export default function AdminDashboardPage() {
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">
                   {selectedParticipation.isManualLog
-                    ? selectedParticipation.activityName || "Manual Log"
-                    : selectedParticipation.opportunity?.title || "Volunteering Participation"}
+                    ? selectedParticipation.activityName || 'Manual Log'
+                    : selectedParticipation.opportunity?.title || 'Volunteering Participation'}
                 </h2>
                 <p className="text-sm text-gray-600">
                   {selectedParticipation.isManualLog
-                    ? selectedParticipation.organizationName || "N/A"
-                    : selectedParticipation.opportunity?.organization || "N/A"}
+                    ? selectedParticipation.organizationName || 'N/A'
+                    : selectedParticipation.opportunity?.organization || 'N/A'}
                 </p>
               </div>
               <button
                 onClick={() => setSelectedParticipation(null)}
                 className="text-gray-400 hover:text-gray-600"
               >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -1149,11 +1093,11 @@ export default function AdminDashboardPage() {
                   <span className="text-sm text-gray-600">Status: </span>
                   <span
                     className={`px-2.5 py-1 text-xs font-medium rounded ${
-                      selectedParticipation.status === "completed"
-                        ? "bg-green-100 text-green-700"
-                        : selectedParticipation.status === "cancelled"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-amber-100 text-amber-700"
+                      selectedParticipation.status === 'completed'
+                        ? 'bg-green-100 text-green-700'
+                        : selectedParticipation.status === 'cancelled'
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-amber-100 text-amber-700'
                     }`}
                   >
                     {selectedParticipation.status}
@@ -1170,7 +1114,9 @@ export default function AdminDashboardPage() {
                 {selectedParticipation.isManualLog && selectedParticipation.activityDescription && (
                   <div>
                     <span className="text-sm text-gray-600">Description: </span>
-                    <p className="text-gray-900 mt-1">{selectedParticipation.activityDescription}</p>
+                    <p className="text-gray-900 mt-1">
+                      {selectedParticipation.activityDescription}
+                    </p>
                   </div>
                 )}
                 {selectedParticipation.serviceSheetUrl && (
@@ -1210,11 +1156,12 @@ export default function AdminDashboardPage() {
                 <div>
                   <span className="text-sm text-gray-600">Verified: </span>
                   <span className="font-medium text-gray-900">
-                    {selectedParticipation.verified ? "Yes" : "No"}
+                    {selectedParticipation.verified ? 'Yes' : 'No'}
                   </span>
                   {selectedParticipation.verifier && (
                     <div className="mt-1 text-sm text-gray-600">
-                      Verified by: {selectedParticipation.verifier.name} ({selectedParticipation.verifier.email})
+                      Verified by: {selectedParticipation.verifier.name} (
+                      {selectedParticipation.verifier.email})
                     </div>
                   )}
                 </div>
@@ -1233,7 +1180,7 @@ function SettingsTab() {
   const [tertiaryColor, setTertiaryColor] = useState(colors.tertiary);
   const [accentColor, setAccentColor] = useState(colors.accent);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     setPrimaryColor(colors.primary);
@@ -1246,9 +1193,9 @@ function SettingsTab() {
     setMessage(null);
 
     try {
-      const response = await fetch("/api/settings/colors", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/settings/colors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           primary: primaryColor,
           tertiary: tertiaryColor,
@@ -1259,16 +1206,19 @@ function SettingsTab() {
       const data = await response.json();
 
       if (response.ok) {
-        setMessage({ type: "success", text: "Colors saved successfully! Refresh the page to see changes." });
+        setMessage({
+          type: 'success',
+          text: 'Colors saved successfully! Refresh the page to see changes.',
+        });
         // Reload to apply new colors
         setTimeout(() => {
           window.location.reload();
         }, 1500);
       } else {
-        setMessage({ type: "error", text: data.error || "Failed to save colors" });
+        setMessage({ type: 'error', text: data.error || 'Failed to save colors' });
       }
     } catch (error) {
-      setMessage({ type: "error", text: "Failed to save colors. Please try again." });
+      setMessage({ type: 'error', text: 'Failed to save colors. Please try again.' });
     } finally {
       setSaving(false);
     }
@@ -1369,9 +1319,9 @@ function SettingsTab() {
         {message && (
           <div
             className={`p-4 rounded-lg ${
-              message.type === "success"
-                ? "bg-green-50 text-green-800 border border-green-200"
-                : "bg-red-50 text-red-800 border border-red-200"
+              message.type === 'success'
+                ? 'bg-green-50 text-green-800 border border-green-200'
+                : 'bg-red-50 text-red-800 border border-red-200'
             }`}
           >
             {message.text}
@@ -1385,11 +1335,10 @@ function SettingsTab() {
             disabled={saving}
             className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {saving ? "Saving..." : "Save Colors"}
+            {saving ? 'Saving...' : 'Save Colors'}
           </button>
         </div>
       </div>
     </div>
   );
 }
-

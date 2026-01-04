@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useColors } from "@/app/context/ColorContext";
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useColors } from '@/app/context/ColorContext';
 
 interface PendingOpportunity {
   id: string;
@@ -30,32 +30,32 @@ export default function ReviewOpportunitiesPage() {
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/signin");
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin');
       return;
     }
 
-    if (status === "authenticated" && session?.user?.role !== "admin") {
-      router.push("/volunteering");
+    if (status === 'authenticated' && session?.user?.role !== 'admin') {
+      router.push('/volunteering');
       return;
     }
 
-    if (status === "authenticated") {
+    if (status === 'authenticated') {
       fetchPendingOpportunities();
     }
   }, [status, session, router]);
 
   const fetchPendingOpportunities = async () => {
     try {
-      const response = await fetch("/api/volunteering-opportunities/pending", {
-        credentials: "include",
+      const response = await fetch('/api/volunteering-opportunities/pending', {
+        credentials: 'include',
       });
       const data = await response.json();
       if (response.ok) {
         setOpportunities(data.opportunities || []);
       }
     } catch (error) {
-      console.error("Error fetching pending opportunities:", error);
+      console.error('Error fetching pending opportunities:', error);
     } finally {
       setLoading(false);
     }
@@ -65,17 +65,17 @@ export default function ReviewOpportunitiesPage() {
     setProcessingId(id);
     try {
       const response = await fetch(`/api/volunteering-opportunities/${id}/approve`, {
-        method: "POST",
-        credentials: "include",
+        method: 'POST',
+        credentials: 'include',
       });
       if (response.ok) {
         await fetchPendingOpportunities();
       } else {
-        alert("Failed to approve opportunity");
+        alert('Failed to approve opportunity');
       }
     } catch (error) {
-      console.error("Error approving opportunity:", error);
-      alert("Failed to approve opportunity");
+      console.error('Error approving opportunity:', error);
+      alert('Failed to approve opportunity');
     } finally {
       setProcessingId(null);
     }
@@ -85,23 +85,23 @@ export default function ReviewOpportunitiesPage() {
     setProcessingId(id);
     try {
       const response = await fetch(`/api/volunteering-opportunities/${id}/reject`, {
-        method: "POST",
-        credentials: "include",
+        method: 'POST',
+        credentials: 'include',
       });
       if (response.ok) {
         await fetchPendingOpportunities();
       } else {
-        alert("Failed to reject opportunity");
+        alert('Failed to reject opportunity');
       }
     } catch (error) {
-      console.error("Error rejecting opportunity:", error);
-      alert("Failed to reject opportunity");
+      console.error('Error rejecting opportunity:', error);
+      alert('Failed to reject opportunity');
     } finally {
       setProcessingId(null);
     }
   };
 
-  if (status === "loading" || loading) {
+  if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-gray-600">Loading...</div>
@@ -109,17 +109,17 @@ export default function ReviewOpportunitiesPage() {
     );
   }
 
-  if (!session || session.user.role !== "admin") {
+  if (!session || session.user.role !== 'admin') {
     return null;
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
     });
   };
 
@@ -131,7 +131,7 @@ export default function ReviewOpportunitiesPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
-                onClick={() => router.push("/volunteering")}
+                onClick={() => router.push('/volunteering')}
                 className="text-xl font-bold text-gray-900"
               >
                 Actify
@@ -145,7 +145,7 @@ export default function ReviewOpportunitiesPage() {
                 <p className="text-xs text-gray-500">{session.user.email}</p>
               </div>
               <button
-                onClick={() => router.push("/volunteering")}
+                onClick={() => router.push('/volunteering')}
                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
               >
                 Back to Volunteering
@@ -180,13 +180,15 @@ export default function ReviewOpportunitiesPage() {
                       <div>
                         <span className="font-medium">Date:</span> {formatDate(opp.startDate)}
                         {opp.endDate && ` - ${formatDate(opp.endDate)}`}
-                        {opp.isOngoing && " (Ongoing)"}
+                        {opp.isOngoing && ' (Ongoing)'}
                       </div>
                       <div>
-                        <span className="font-medium">Submitted by:</span> {opp.postedBy.name} ({opp.postedBy.email})
+                        <span className="font-medium">Submitted by:</span> {opp.postedBy.name} (
+                        {opp.postedBy.email})
                       </div>
                       <div>
-                        <span className="font-medium">Submitted on:</span> {formatDate(opp.createdAt)}
+                        <span className="font-medium">Submitted on:</span>{' '}
+                        {formatDate(opp.createdAt)}
                       </div>
                     </div>
                   </div>
@@ -198,20 +200,20 @@ export default function ReviewOpportunitiesPage() {
                     className="flex-1 px-6 py-3 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                     style={{ backgroundColor: colors.primary }}
                     onMouseEnter={(e) => {
-                      if (processingId !== opp.id) e.currentTarget.style.opacity = "0.9";
+                      if (processingId !== opp.id) e.currentTarget.style.opacity = '0.9';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.opacity = "1";
+                      e.currentTarget.style.opacity = '1';
                     }}
                   >
-                    {processingId === opp.id ? "Processing..." : "Approve"}
+                    {processingId === opp.id ? 'Processing...' : 'Approve'}
                   </button>
                   <button
                     onClick={() => handleReject(opp.id)}
                     disabled={processingId === opp.id}
                     className="flex-1 px-6 py-3 border border-red-300 text-red-700 font-medium rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                   >
-                    {processingId === opp.id ? "Processing..." : "Reject"}
+                    {processingId === opp.id ? 'Processing...' : 'Reject'}
                   </button>
                 </div>
               </div>
@@ -222,4 +224,3 @@ export default function ReviewOpportunitiesPage() {
     </div>
   );
 }
-

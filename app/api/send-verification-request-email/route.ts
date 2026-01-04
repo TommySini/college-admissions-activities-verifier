@@ -1,10 +1,22 @@
-import { NextRequest, NextResponse } from "next/server";
-import nodemailer from "nodemailer";
+import { NextRequest, NextResponse } from 'next/server';
+import nodemailer from 'nodemailer';
+import { generateVerificationToken } from '@/lib/verification-tokens';
+import { requireAdminOrInternal } from '@/lib/internal-auth';
 
 // This API route sends an email to a verifier asking them to verify a student's activity
+// Requires admin or internal secret
 
 export async function POST(request: NextRequest) {
   try {
+    // Require authorization
+    const { authorized } = await requireAdminOrInternal(request);
+    if (!authorized) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Admin or internal secret required' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const {
       to,
@@ -21,33 +33,35 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!to || !studentName || !activityName || !activityId) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-    
-    const acceptUrl = `${baseUrl}/api/verify-activity?activityId=${activityId}&action=accept`;
-    const rejectUrl = `${baseUrl}/api/verify-activity?activityId=${activityId}&action=reject`;
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+
+    // Generate signed, expiring tokens
+    const acceptToken = generateVerificationToken(activityId, 'accept');
+    const rejectToken = generateVerificationToken(activityId, 'reject');
+
+    const acceptUrl = `${baseUrl}/api/verify-activity?token=${acceptToken}`;
+    const rejectUrl = `${baseUrl}/api/verify-activity?token=${rejectToken}`;
 
     // Configure email transporter
     // Option 1: Using Gmail SMTP (requires app password)
     // Option 2: Using custom SMTP
     // Option 3: Using Resend (uncomment and use if you have RESEND_API_KEY)
-    
+
     let transporter;
-    
+
     if (process.env.RESEND_API_KEY) {
       // Using Resend (recommended for production)
       transporter = nodemailer.createTransport({
-        host: "smtp.resend.com",
+        host: 'smtp.resend.com',
         port: 465,
         secure: true,
         auth: {
-          user: "resend",
+          user: 'resend',
           pass: process.env.RESEND_API_KEY,
         },
       });
@@ -55,8 +69,8 @@ export async function POST(request: NextRequest) {
       // Using custom SMTP
       transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT || "587"),
-        secure: process.env.SMTP_SECURE === "true",
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: process.env.SMTP_SECURE === 'true',
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS,
@@ -65,7 +79,7 @@ export async function POST(request: NextRequest) {
     } else if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
       // Using Gmail SMTP
       transporter = nodemailer.createTransport({
-        service: "gmail",
+        service: 'gmail',
         auth: {
           user: process.env.GMAIL_USER,
           pass: process.env.GMAIL_APP_PASSWORD,
@@ -73,10 +87,10 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // Fallback: Use Ethereal Email for testing (creates a test account)
-      console.warn("No email configuration found. Using Ethereal Email for testing.");
+      console.warn('No email configuration found. Using Ethereal Email for testing.');
       const testAccount = await nodemailer.createTestAccount();
       transporter = nodemailer.createTransport({
-        host: "smtp.ethereal.email",
+        host: 'smtp.ethereal.email',
         port: 587,
         secure: false,
         auth: {
@@ -86,8 +100,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const fromEmail = process.env.FROM_EMAIL || process.env.GMAIL_USER || "noreply@actify.app";
-    
+    const fromEmail = process.env.FROM_EMAIL || process.env.GMAIL_USER || 'noreply@actify.app';
+
     const mailOptions = {
       from: `Actify <${fromEmail}>`,
       to: to,
@@ -160,22 +174,20 @@ If you did not expect this email, please ignore it.
 
     // If using Ethereal Email (test mode), log the preview URL
     if (!process.env.RESEND_API_KEY && !process.env.SMTP_HOST && !process.env.GMAIL_USER) {
-      console.log("Test email sent! Preview URL:", nodemailer.getTestMessageUrl(info));
+      console.log('Test email sent! Preview URL:', nodemailer.getTestMessageUrl(info));
     }
 
     return NextResponse.json({
       success: true,
-      message: "Verification email sent successfully",
+      message: 'Verification email sent successfully',
       messageId: info.messageId,
-      acceptUrl,
-      rejectUrl,
+      // Do NOT return URLs in response (security best practice)
     });
   } catch (error: any) {
-    console.error("Error sending verification email:", error);
+    console.error('Error sending verification email:', error);
     return NextResponse.json(
-      { error: error.message || "Failed to send verification email" },
+      { error: error.message || 'Failed to send verification email' },
       { status: 500 }
     );
   }
 }
-

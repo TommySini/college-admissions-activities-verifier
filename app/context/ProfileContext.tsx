@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { Profile, OrganizationProfile, ApplicantProfile } from "../types";
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { Profile, OrganizationProfile, ApplicantProfile } from '../types';
 
 interface ProfileContextType {
   currentProfile: Profile | null;
   setCurrentProfile: (profile: Profile | null) => void;
-  createProfile: (profile: Omit<Profile, "id" | "createdAt" | "updatedAt">) => void;
+  createProfile: (profile: Omit<Profile, 'id' | 'createdAt' | 'updatedAt'>) => void;
   switchProfile: (profileId: string) => void;
   allProfiles: Profile[];
 }
@@ -19,8 +19,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
   // Load profiles from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem("profiles");
-    const currentId = localStorage.getItem("currentProfileId");
+    const stored = localStorage.getItem('profiles');
+    const currentId = localStorage.getItem('currentProfileId');
     if (stored) {
       try {
         const profiles = JSON.parse(stored);
@@ -32,22 +32,22 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
           }
         }
       } catch (e) {
-        console.error("Failed to load profiles:", e);
+        console.error('Failed to load profiles:', e);
       }
     }
   }, []);
 
   // Save profiles to localStorage
   useEffect(() => {
-    if (allProfiles.length > 0 || localStorage.getItem("profiles")) {
-      localStorage.setItem("profiles", JSON.stringify(allProfiles));
+    if (allProfiles.length > 0 || localStorage.getItem('profiles')) {
+      localStorage.setItem('profiles', JSON.stringify(allProfiles));
     }
     if (currentProfile) {
-      localStorage.setItem("currentProfileId", currentProfile.id);
+      localStorage.setItem('currentProfileId', currentProfile.id);
     }
   }, [allProfiles, currentProfile]);
 
-  const createProfile = (profileData: Omit<Profile, "id" | "createdAt" | "updatedAt">) => {
+  const createProfile = (profileData: Omit<Profile, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newProfile: Profile = {
       ...profileData,
       id: Date.now().toString(),
@@ -62,9 +62,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const setCurrentProfile = (profile: Profile | null) => {
     setCurrentProfileState(profile);
     if (profile) {
-      localStorage.setItem("currentProfileId", profile.id);
+      localStorage.setItem('currentProfileId', profile.id);
     } else {
-      localStorage.removeItem("currentProfileId");
+      localStorage.removeItem('currentProfileId');
     }
   };
 
@@ -93,8 +93,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 export function useProfile() {
   const context = useContext(ProfileContext);
   if (context === undefined) {
-    throw new Error("useProfile must be used within a ProfileProvider");
+    throw new Error('useProfile must be used within a ProfileProvider');
   }
   return context;
 }
-

@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
-import { z } from "zod";
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth';
+import { z } from 'zod';
 
 const CreatePetitionSchema = z.object({
   title: z.string().min(3).max(200),
@@ -14,17 +14,14 @@ const CreatePetitionSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
-    
-    if (!user || user.role !== "admin") {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
+
     const searchParams = request.nextUrl.searchParams;
-    const status = searchParams.get("status");
-    
+    const status = searchParams.get('status');
+
     const petitions = await prisma.petition.findMany({
       where: status ? { status: status as any } : undefined,
       include: {
@@ -37,17 +34,14 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: {
-        createdAt: "desc",
+        createdAt: 'desc',
       },
     });
-    
+
     return NextResponse.json({ petitions });
   } catch (error) {
-    console.error("Error fetching petitions:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch petitions" },
-      { status: 500 }
-    );
+    console.error('Error fetching petitions:', error);
+    return NextResponse.json({ error: 'Failed to fetch petitions' }, { status: 500 });
   }
 }
 
@@ -55,40 +49,33 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
-    
+
     if (!user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
+
     const body = await request.json();
     const data = CreatePetitionSchema.parse(body);
-    
+
     const petition = await prisma.petition.create({
       data: {
         ...data,
         userId: user.id,
-        status: "pending",
+        status: 'pending',
       },
     });
-    
+
     return NextResponse.json({ petition }, { status: 201 });
   } catch (error) {
-    console.error("Error creating petition:", error);
-    
+    console.error('Error creating petition:', error);
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Invalid petition data", details: error.issues },
+        { error: 'Invalid petition data', details: error.issues },
         { status: 400 }
       );
     }
-    
-    return NextResponse.json(
-      { error: "Failed to create petition" },
-      { status: 500 }
-    );
+
+    return NextResponse.json({ error: 'Failed to create petition' }, { status: 500 });
   }
 }
-

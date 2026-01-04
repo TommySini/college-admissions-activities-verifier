@@ -1,18 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
 // GET - Get verifications for current user
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     let verifications;
 
-    if (user.role === "verifier" || user.role === "admin") {
+    if (user.role === 'verifier' || user.role === 'admin') {
       // Verifiers see verifications they've issued
       verifications = await prisma.verification.findMany({
         where: { verifierId: user.id },
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
       });
     } else {
       // Students see verifications sent to them
@@ -64,17 +64,14 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
       });
     }
 
     return NextResponse.json({ verifications });
   } catch (error) {
-    console.error("Error fetching verifications:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch verifications" },
-      { status: 500 }
-    );
+    console.error('Error fetching verifications:', error);
+    return NextResponse.json({ error: 'Failed to fetch verifications' }, { status: 500 });
   }
 }
 
@@ -83,12 +80,12 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (user.role !== "verifier" && user.role !== "admin") {
+    if (user.role !== 'verifier' && user.role !== 'admin') {
       return NextResponse.json(
-        { error: "Only verifiers can create verifications" },
+        { error: 'Only verifiers can create verifications' },
         { status: 403 }
       );
     }
@@ -97,10 +94,7 @@ export async function POST(request: NextRequest) {
     const { studentEmail, title, description, startDate, endDate, position, category } = body;
 
     if (!studentEmail || !title || !startDate) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     // Try to find student by email
@@ -109,10 +103,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!student) {
-      return NextResponse.json(
-        { error: "Student not found with that email" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Student not found with that email' }, { status: 404 });
     }
 
     // Create an activity for this verification
@@ -120,12 +111,12 @@ export async function POST(request: NextRequest) {
       data: {
         studentId: student.id,
         name: title,
-        category: category || "Other",
-        description: description || "",
+        category: category || 'Other',
+        description: description || '',
         role: position,
         startDate,
         endDate: endDate || undefined,
-        status: "pending",
+        status: 'pending',
       },
     });
 
@@ -135,7 +126,7 @@ export async function POST(request: NextRequest) {
         activityId: activity.id,
         verifierId: user.id,
         studentId: student.id,
-        status: "pending",
+        status: 'pending',
         verifierNotes: description || undefined,
       },
       include: {
@@ -158,11 +149,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ verification }, { status: 201 });
   } catch (error) {
-    console.error("Error creating verification:", error);
-    return NextResponse.json(
-      { error: "Failed to create verification" },
-      { status: 500 }
-    );
+    console.error('Error creating verification:', error);
+    return NextResponse.json({ error: 'Failed to create verification' }, { status: 500 });
   }
 }
-

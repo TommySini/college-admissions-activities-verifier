@@ -1,13 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { prisma } from "@/lib/prisma";
-import { getUserProfile } from "@/lib/assistant/tools";
-import { listModels, describeModel } from "@/lib/assistant/runtimeModels";
-import { executeGenericQuery, buildWhereClause } from "@/lib/assistant/genericQuery";
-import { formatResultsForPrompt, formatModelsList, formatModelDescription } from "@/lib/assistant/format";
-import { semanticSearch, formatSearchResults } from "@/lib/retrieval/search";
-import OpenAI from "openai";
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { prisma } from '@/lib/prisma';
+import { getUserProfile } from '@/lib/assistant/tools';
+import { listModels, describeModel } from '@/lib/assistant/runtimeModels';
+import { executeGenericQuery, buildWhereClause } from '@/lib/assistant/genericQuery';
+import {
+  formatResultsForPrompt,
+  formatModelsList,
+  formatModelDescription,
+} from '@/lib/assistant/format';
+import { semanticSearch, formatSearchResults } from '@/lib/retrieval/search';
+import { checkRateLimit, RateLimitPresets } from '@/lib/rate-limit';
+import OpenAI from 'openai';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -16,106 +21,141 @@ const openai = new OpenAI({
 // Define tools for OpenAI function calling
 const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
-    type: "function",
+    type: 'function',
     function: {
-      name: "list_models",
-      description: "List all available data models/tables in the platform that can be queried",
+      name: 'list_models',
+      description: 'List all available data models/tables in the platform that can be queried',
       parameters: {
-        type: "object",
+        type: 'object',
         properties: {},
       },
     },
   },
   {
-    type: "function",
+    type: 'function',
     function: {
-      name: "describe_model",
-      description: "Get detailed schema information about a specific model including its fields and types",
+      name: 'describe_model',
+      description:
+        'Get detailed schema information about a specific model including its fields and types',
       parameters: {
-        type: "object",
+        type: 'object',
         properties: {
           model: {
-            type: "string",
-            description: "The name of the model to describe (e.g., 'Activity', 'Organization', 'AlumniProfile')",
+            type: 'string',
+            description:
+              "The name of the model to describe (e.g., 'Activity', 'Organization', 'AlumniProfile')",
           },
         },
-        required: ["model"],
+        required: ['model'],
       },
     },
   },
   {
-    type: "function",
+    type: 'function',
     function: {
-      name: "query_model",
-      description: "Query a specific model with filters, field selection, and ordering. Returns actual data from the database.",
+      name: 'query_model',
+      description:
+        'Query a specific model with filters, field selection, and ordering. Returns actual data from the database.',
       parameters: {
-        type: "object",
+        type: 'object',
         properties: {
           model: {
-            type: "string",
-            description: "The model name to query",
+            type: 'string',
+            description: 'The model name to query',
           },
           filters: {
-            type: "object",
-            description: "Filter conditions as key-value pairs. Use 'contains' for text search, 'equals' for exact match, 'gt'/'lt' for numbers",
+            type: 'object',
+            description:
+              "Filter conditions as key-value pairs. Use 'contains' for text search, 'equals' for exact match, 'gt'/'lt' for numbers",
             additionalProperties: true,
           },
           fields: {
-            type: "array",
-            items: { type: "string" },
-            description: "Specific fields to return (optional, returns all if not specified)",
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Specific fields to return (optional, returns all if not specified)',
           },
           limit: {
-            type: "number",
-            description: "Maximum number of records to return (max 50, default 20)",
+            type: 'number',
+            description: 'Maximum number of records to return (max 50, default 20)',
           },
           orderBy: {
-            type: "object",
+            type: 'object',
             properties: {
-              field: { type: "string" },
-              direction: { type: "string", enum: ["asc", "desc"] },
+              field: { type: 'string' },
+              direction: { type: 'string', enum: ['asc', 'desc'] },
             },
-            description: "Sort order for results",
+            description: 'Sort order for results',
           },
         },
-        required: ["model"],
+        required: ['model'],
       },
     },
   },
   {
-    type: "function",
+    type: 'function',
     function: {
-      name: "semantic_search",
-      description: "Semantic search over platform text (essays, activities, organizations, opportunities). Use this for fuzzy/conceptual queries like 'find alumni who mention robotics' or 'clubs related to community service'. Privacy-aware and respects user permissions.",
+      name: 'semantic_search',
+      description:
+        "Semantic search over platform text (essays, activities, organizations, opportunities). Use this for fuzzy/conceptual queries like 'find alumni who mention robotics' or 'clubs related to community service'. Privacy-aware and respects user permissions.",
       parameters: {
-        type: "object",
+        type: 'object',
         properties: {
           query: {
-            type: "string",
-            description: "The search query (natural language)",
+            type: 'string',
+            description: 'The search query (natural language)',
           },
           scope: {
-            type: "array",
-            items: { type: "string" },
-            description: "Optional: specific models to search (e.g., ['ExtractedEssay', 'Organization']). If omitted, searches all supported models.",
+            type: 'array',
+            items: { type: 'string' },
+            description:
+              "Optional: specific models to search (e.g., ['ExtractedEssay', 'Organization']). If omitted, searches all supported models.",
           },
           topK: {
-            type: "number",
-            description: "Number of results to return (default 10, max 20)",
+            type: 'number',
+            description: 'Number of results to return (default 10, max 20)',
           },
         },
-        required: ["query"],
+        required: ['query'],
       },
     },
   },
 ];
 
+type DescribeModelArgs = { model: string };
+type QueryModelArgs = {
+  model: string;
+  filters?: Record<string, unknown>;
+  fields?: string[];
+  limit?: number;
+  orderBy?: { field: string; direction: 'asc' | 'desc' };
+};
+type SemanticSearchArgs = {
+  query: string;
+  scope?: string[];
+  topK?: number;
+};
+
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting for AI assistant (expensive)
+    const rateLimit = checkRateLimit(request, RateLimitPresets.ai);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+            'Retry-After': Math.ceil((rateLimit.resetAt - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
@@ -123,14 +163,14 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     const body = await request.json();
     const { message, action } = body;
 
-    if (!message || typeof message !== "string") {
-      return NextResponse.json({ error: "Message is required" }, { status: 400 });
+    if (!message || typeof message !== 'string') {
+      return NextResponse.json({ error: 'Message is required' }, { status: 400 });
     }
 
     // Get user profile for context
@@ -152,7 +192,9 @@ You have access to tools that let you query the platform's database:
 - semantic_search: Search by meaning/concepts across essays, activities, organizations (fuzzy/semantic queries)
 
 **Access Rules:**
-- You can access ALL platform data without restrictions
+- Students can access their own data and approved public content
+- Admins have full access to all platform data
+- Alumni data respects privacy settings (ANONYMOUS, PSEUDONYM, FULL)
 - Always use tools to fetch current data rather than making assumptions
 
 **CRITICAL Instructions:**
@@ -168,12 +210,12 @@ You have access to tools that let you query the platform's database:
 User: "Tell me about weeklytheta"
 You: Call semantic_search("weeklytheta") → Get results → Answer immediately with what you found
 
-${action ? `The user selected the "${action}" action - apply this if relevant.` : ""}`;
+${action ? `The user selected the "${action}" action - apply this if relevant.` : ''}`;
 
     // Start conversation with tool calling
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: message },
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: message },
     ];
 
     let iterationCount = 0;
@@ -184,10 +226,10 @@ ${action ? `The user selected the "${action}" action - apply this if relevant.` 
       console.log(`\n=== Iteration ${iterationCount}/${MAX_ITERATIONS} ===`);
 
       const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: 'gpt-4o-mini',
         messages,
         tools,
-        tool_choice: "auto",
+        tool_choice: 'auto',
         temperature: 0.7,
         max_tokens: 1000, // Increased for fuller responses
       });
@@ -210,7 +252,7 @@ ${action ? `The user selected the "${action}" action - apply this if relevant.` 
       for (const toolCall of responseMessage.tool_calls) {
         if (toolCall.type !== 'function') continue;
         const functionName = toolCall.function.name;
-        const functionArgs = JSON.parse(toolCall.function.arguments);
+        const functionArgs = JSON.parse(toolCall.function.arguments) as Record<string, unknown>;
 
         console.log(`→ Tool call: ${functionName}`, JSON.stringify(functionArgs, null, 2));
 
@@ -218,73 +260,75 @@ ${action ? `The user selected the "${action}" action - apply this if relevant.` 
 
         try {
           switch (functionName) {
-            case "list_models":
+            case 'list_models': {
               const models = listModels();
               toolResult = formatModelsList(models);
               break;
+            }
 
-            case "describe_model":
-              const modelDesc = describeModel(functionArgs.model);
+            case 'describe_model': {
+              const { model } = functionArgs as DescribeModelArgs;
+              const modelDesc = describeModel(model);
               if (modelDesc) {
-                const fieldNames = modelDesc.fields
-                  .filter((f) => !f.isRelation)
-                  .map((f) => f.name);
-                toolResult = formatModelDescription(functionArgs.model, fieldNames);
+                const fieldNames = modelDesc.fields.filter((f) => !f.isRelation).map((f) => f.name);
+                toolResult = formatModelDescription(model, fieldNames);
               } else {
-                toolResult = `Model '${functionArgs.model}' not found.`;
+                toolResult = `Model '${model}' not found.`;
               }
               break;
+            }
 
-            case "query_model":
-              const where = functionArgs.filters ? buildWhereClause(functionArgs.filters) : undefined;
+            case 'query_model': {
+              const { model, filters, fields, limit, orderBy } = functionArgs as QueryModelArgs;
+              const where = filters ? buildWhereClause(filters) : undefined;
               const queryResult = await executeGenericQuery(
                 {
-                  model: functionArgs.model,
+                  model,
                   where,
-                  select: functionArgs.fields,
-                  limit: functionArgs.limit,
-                  orderBy: functionArgs.orderBy,
+                  select: fields,
+                  limit,
+                  orderBy,
                 },
                 user
               );
 
               if (queryResult.success && queryResult.data) {
-                toolResult = formatResultsForPrompt(
-                  queryResult.data,
-                  functionArgs.model,
-                  10
-                );
+                toolResult = formatResultsForPrompt(queryResult.data, model, 10);
               } else {
-                toolResult = queryResult.error || "Query failed";
+                toolResult = queryResult.error || 'Query failed';
               }
               break;
+            }
 
-            case "semantic_search":
+            case 'semantic_search': {
+              const { query, scope, topK } = functionArgs as SemanticSearchArgs;
               const searchResult = await semanticSearch({
-                query: functionArgs.query,
-                models: functionArgs.scope,
+                query,
+                models: scope,
                 user,
-                topK: Math.min(functionArgs.topK || 10, 20),
+                topK: Math.min(topK || 10, 20),
               });
 
               if (searchResult.matches.length > 0) {
                 toolResult = formatSearchResults(searchResult.matches);
               } else {
-                toolResult = "No relevant results found for your search.";
+                toolResult = 'No relevant results found for your search.';
               }
               break;
+            }
 
             default:
               toolResult = `Unknown tool: ${functionName}`;
           }
-        } catch (error: any) {
+        } catch (error) {
           console.error(`Error executing tool ${functionName}:`, error);
-          toolResult = `Error: ${error.message || "Tool execution failed"}`;
+          const message = error instanceof Error ? error.message : 'Tool execution failed';
+          toolResult = `Error: ${message}`;
         }
 
         // Add tool result to messages
         messages.push({
-          role: "tool",
+          role: 'tool',
           tool_call_id: toolCall.id,
           content: toolResult,
         });
@@ -293,23 +337,19 @@ ${action ? `The user selected the "${action}" action - apply this if relevant.` 
 
     // If we hit max iterations, return what we have
     return NextResponse.json({
-      answer: "I apologize, but I need more iterations to complete this request. Please try rephrasing your question.",
+      answer:
+        'I apologize, but I need more iterations to complete this request. Please try rephrasing your question.',
       citations: [],
     });
+  } catch (error) {
+    console.error('Error in assistant query:', error);
 
-  } catch (error: any) {
-    console.error("Error in assistant query:", error);
-
-    if (error?.status === 401) {
-      return NextResponse.json(
-        { error: "OpenAI API key is invalid or missing" },
-        { status: 500 }
-      );
+    if (error && typeof error === 'object' && 'status' in error && error.status === 401) {
+      return NextResponse.json({ error: 'OpenAI API key is invalid or missing' }, { status: 500 });
     }
 
-    return NextResponse.json(
-      { error: error?.message || "Failed to process query" },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : 'Failed to process query';
+
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

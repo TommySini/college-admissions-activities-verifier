@@ -1,21 +1,43 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { 
-  Calendar, MapPin, Users, Award, Bookmark, Bell, ArrowLeft, 
-  ExternalLink, Globe, Clock, DollarSign, CheckCircle2
-} from "lucide-react";
-import { format, isPast } from "date-fns";
-import { downloadICalFile } from "@/lib/calendar";
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import type { OpportunitiesFilter } from '@/lib/filters';
+import { getMockOpportunities } from '@/lib/opportunities/mock-data';
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Award,
+  Bookmark,
+  Bell,
+  ArrowLeft,
+  ExternalLink,
+  Globe,
+  Clock,
+  DollarSign,
+  CheckCircle2,
+} from 'lucide-react';
+import { format, isPast } from 'date-fns';
+import { downloadICalFile } from '@/lib/calendar';
 
 interface OpportunityDetailProps {
   slug: string;
+}
+
+const MOCK_FILTERS = {
+  page: 1,
+  pageSize: 50,
+} satisfies OpportunitiesFilter;
+
+function getMockOpportunityBySlug(slug: string) {
+  const { editions } = getMockOpportunities(MOCK_FILTERS);
+  return editions.find((edition) => edition.opportunity.slug === slug);
 }
 
 export function OpportunityDetail({ slug }: OpportunityDetailProps) {
@@ -28,12 +50,12 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
   const [isFollowing, setIsFollowing] = useState(false);
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/signin");
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin');
       return;
     }
 
-    if (status === "authenticated") {
+    if (status === 'authenticated') {
       fetchOpportunity();
     }
   }, [status, slug]);
@@ -41,17 +63,37 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
   const fetchOpportunity = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/opportunities/${slug}`);
-      const data = await response.json();
+      const response = await fetch(`/api/opportunities/${encodeURIComponent(slug)}`);
 
       if (response.ok) {
+        const data = await response.json();
         setOpportunity(data.opportunity);
         setCurrentEdition(data.currentEdition);
-      } else {
-        console.error("Failed to fetch opportunity:", data.error);
+        return;
+      }
+
+      const errorData = await response.json().catch(() => null);
+      const errorMessage = errorData?.error || 'Failed to fetch opportunity';
+      console.error('Failed to fetch opportunity:', errorMessage);
+
+      if (response.status >= 500) {
+        const mockEdition = getMockOpportunityBySlug(slug);
+        if (mockEdition) {
+          console.warn('Using mock opportunity data for slug:', slug);
+          setOpportunity(mockEdition.opportunity);
+          setCurrentEdition(mockEdition);
+          return;
+        }
       }
     } catch (error) {
-      console.error("Error fetching opportunity:", error);
+      console.error('Error fetching opportunity:', error);
+      const mockEdition = getMockOpportunityBySlug(slug);
+      if (mockEdition) {
+        console.warn('Using mock opportunity data after network error for slug:', slug);
+        setOpportunity(mockEdition.opportunity);
+        setCurrentEdition(mockEdition);
+        return;
+      }
     } finally {
       setLoading(false);
     }
@@ -61,10 +103,10 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
     if (!currentEdition) return;
     setIsSaving(true);
     try {
-      await fetch(`/api/editions/${currentEdition.id}/save`, { method: "POST" });
+      await fetch(`/api/editions/${currentEdition.id}/save`, { method: 'POST' });
       fetchOpportunity();
     } catch (error) {
-      console.error("Error saving:", error);
+      console.error('Error saving:', error);
     } finally {
       setIsSaving(false);
     }
@@ -74,10 +116,10 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
     if (!currentEdition) return;
     setIsFollowing(true);
     try {
-      await fetch(`/api/editions/${currentEdition.id}/follow`, { method: "POST" });
+      await fetch(`/api/editions/${currentEdition.id}/follow`, { method: 'POST' });
       fetchOpportunity();
     } catch (error) {
-      console.error("Error following:", error);
+      console.error('Error following:', error);
     } finally {
       setIsFollowing(false);
     }
@@ -92,9 +134,9 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
       location: opportunity.location
         ? [opportunity.location.city, opportunity.location.state, opportunity.location.country]
             .filter(Boolean)
-            .join(", ")
+            .join(', ')
         : undefined,
-      url: opportunity.website || "",
+      url: opportunity.website || '',
       startDate: new Date(currentEdition.registrationDeadline),
       endDate: new Date(currentEdition.registrationDeadline),
       organizer: opportunity.provider?.name,
@@ -106,13 +148,13 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
     downloadICalFile({
       uid: `${currentEdition.id}-event`,
       title: opportunity.name,
-      description: opportunity.description || "",
+      description: opportunity.description || '',
       location: opportunity.location
         ? [opportunity.location.city, opportunity.location.state, opportunity.location.country]
             .filter(Boolean)
-            .join(", ")
+            .join(', ')
         : undefined,
-      url: opportunity.website || "",
+      url: opportunity.website || '',
       startDate: new Date(currentEdition.eventStart),
       endDate: currentEdition.eventEnd
         ? new Date(currentEdition.eventEnd)
@@ -121,7 +163,7 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
     });
   };
 
-  if (status === "loading" || loading) {
+  if (status === 'loading' || loading) {
     return <LoadingSkeleton />;
   }
 
@@ -131,7 +173,7 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
         <Card className="max-w-md p-12 text-center">
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Opportunity Not Found</h2>
           <p className="text-slate-600 mb-6">The opportunity you're looking for doesn't exist.</p>
-          <Button variant="shimmer" onClick={() => router.push("/opportunities")}>
+          <Button variant="shimmer" onClick={() => router.push('/opportunities')}>
             Browse All Opportunities
           </Button>
         </Card>
@@ -158,11 +200,14 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
               Back to Opportunities
             </Link>
             <div className="flex items-center gap-3">
-              <Link href="/dashboard" className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors">
+              <Link
+                href="/dashboard"
+                className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+              >
                 Dashboard
               </Link>
               <button
-                onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+                onClick={() => signOut({ callbackUrl: '/auth/signin' })}
                 className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
               >
                 Sign Out
@@ -186,19 +231,17 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
                 )}
               </div>
               {opportunity.provider && (
-                <p className="text-lg text-slate-600 mb-3">
-                  by {opportunity.provider.name}
-                </p>
+                <p className="text-lg text-slate-600 mb-3">by {opportunity.provider.name}</p>
               )}
               <div className="flex flex-wrap gap-2">
                 {currentEdition && (
                   <Badge
                     variant={
-                      currentEdition.status === "open"
-                        ? "success"
-                        : currentEdition.status === "upcoming"
-                        ? "warning"
-                        : "secondary"
+                      currentEdition.status === 'open'
+                        ? 'success'
+                        : currentEdition.status === 'upcoming'
+                          ? 'warning'
+                          : 'secondary'
                     }
                   >
                     {currentEdition.status}
@@ -206,7 +249,7 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
                 )}
                 <Badge variant="outline">{opportunity.type}</Badge>
                 <Badge variant="outline">{opportunity.modality}</Badge>
-                {opportunity.structure === "team" && (
+                {opportunity.structure === 'team' && (
                   <Badge variant="outline">
                     <Users className="h-3 w-3 mr-1" />
                     Team
@@ -218,20 +261,20 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
             {currentEdition && (
               <div className="flex gap-2 shrink-0">
                 <Button
-                  variant={isSaved ? "shimmer" : "outline"}
+                  variant={isSaved ? 'shimmer' : 'outline'}
                   onClick={handleSave}
                   disabled={isSaving}
                 >
-                  <Bookmark className={`h-4 w-4 mr-2 ${isSaved ? "fill-current" : ""}`} />
-                  {isSaved ? "Saved" : "Save"}
+                  <Bookmark className={`h-4 w-4 mr-2 ${isSaved ? 'fill-current' : ''}`} />
+                  {isSaved ? 'Saved' : 'Save'}
                 </Button>
                 <Button
-                  variant={isFollowed ? "shimmer" : "outline"}
+                  variant={isFollowed ? 'shimmer' : 'outline'}
                   onClick={handleFollow}
                   disabled={isFollowing}
                 >
-                  <Bell className={`h-4 w-4 mr-2 ${isFollowed ? "fill-current" : ""}`} />
-                  {isFollowed ? "Following" : "Follow"}
+                  <Bell className={`h-4 w-4 mr-2 ${isFollowed ? 'fill-current' : ''}`} />
+                  {isFollowed ? 'Following' : 'Follow'}
                 </Button>
               </div>
             )}
@@ -262,11 +305,11 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
                         <p
                           className={
                             isPast(new Date(currentEdition.registrationDeadline))
-                              ? "text-red-600 font-medium"
-                              : "text-slate-700"
+                              ? 'text-red-600 font-medium'
+                              : 'text-slate-700'
                           }
                         >
-                          {format(new Date(currentEdition.registrationDeadline), "MMMM d, yyyy")}
+                          {format(new Date(currentEdition.registrationDeadline), 'MMMM d, yyyy')}
                         </p>
                       </div>
                       <Button variant="shimmer" size="sm" onClick={handleExportDeadline}>
@@ -282,9 +325,9 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
                       <div className="flex-1">
                         <p className="font-medium text-slate-900">Event Dates</p>
                         <p className="text-slate-700">
-                          {format(new Date(currentEdition.eventStart), "MMMM d, yyyy")}
+                          {format(new Date(currentEdition.eventStart), 'MMMM d, yyyy')}
                           {currentEdition.eventEnd &&
-                            ` - ${format(new Date(currentEdition.eventEnd), "MMMM d, yyyy")}`}
+                            ` - ${format(new Date(currentEdition.eventEnd), 'MMMM d, yyyy')}`}
                         </p>
                       </div>
                       <Button variant="shimmer" size="sm" onClick={handleExportEvent}>
@@ -301,7 +344,7 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
                       <div className="flex flex-wrap gap-2">
                         {currentEdition.awardTypes.map((award: string) => (
                           <Badge key={award} variant="secondary">
-                            {award.replace(/_/g, " ")}
+                            {award.replace(/_/g, ' ')}
                           </Badge>
                         ))}
                       </div>
@@ -313,7 +356,7 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
                     <div>
                       <p className="font-medium text-slate-900 mb-2">Eligibility</p>
                       <p className="text-slate-700">
-                        Grades {currentEdition.gradeMin || "?"} - {currentEdition.gradeMax || "?"}
+                        Grades {currentEdition.gradeMin || '?'} - {currentEdition.gradeMax || '?'}
                       </p>
                     </div>
                   )}
@@ -326,7 +369,7 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
                         <span className="font-medium text-slate-900">Registration Fee:</span>
                         <span className="text-slate-700">
                           {currentEdition.registrationFee === 0
-                            ? "Free"
+                            ? 'Free'
                             : `$${currentEdition.registrationFee}`}
                         </span>
                       </div>
@@ -371,15 +414,17 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
                   </div>
                 </div>
 
-                <div className="flex items-start gap-2">
-                  <MapPin className="h-4 w-4 text-slate-400 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="font-medium text-slate-900">Geography</p>
-                    <p className="text-slate-600 capitalize">
-                      {opportunity.geography.replace(/_/g, " ")}
-                    </p>
+                {opportunity.geography && (
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 text-slate-400 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="font-medium text-slate-900">Geography</p>
+                      <p className="text-slate-600 capitalize">
+                        {opportunity.geography.replace(/_/g, ' ')}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {opportunity.location && (
                   <div className="flex items-start gap-2">
@@ -393,7 +438,7 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
                           opportunity.location.country,
                         ]
                           .filter(Boolean)
-                          .join(", ")}
+                          .join(', ')}
                       </p>
                     </div>
                   </div>
@@ -420,7 +465,7 @@ export function OpportunityDetail({ slug }: OpportunityDetailProps) {
               <Button
                 variant="shimmer"
                 className="w-full"
-                onClick={() => window.open(opportunity.website, "_blank")}
+                onClick={() => window.open(opportunity.website, '_blank')}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Visit Official Website
@@ -475,4 +520,3 @@ function LoadingSkeleton() {
     </div>
   );
 }
-

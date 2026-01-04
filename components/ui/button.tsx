@@ -1,41 +1,47 @@
-import * as React from "react";
-import { Slot } from "@radix-ui/react-slot";
-import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/cn";
-import { ShimmerButton } from "@/components/ui/shimmer-button";
+import * as React from 'react';
+import { Slot } from '@radix-ui/react-slot';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/cn';
+import { ShimmerButton } from '@/components/ui/shimmer-button';
 
 // Helper to remove text-* classes that could conflict with shimmer's forced white text
 function removeTextClasses(className?: string): string {
-  if (!className) return "";
+  if (!className) return '';
   return className
-    .split(" ")
-    .filter((cls) => !cls.startsWith("text-") || cls.startsWith("text-xs") || cls.startsWith("text-sm") || cls.startsWith("text-lg"))
-    .join(" ");
+    .split(' ')
+    .filter(
+      (cls) =>
+        !cls.startsWith('text-') ||
+        cls.startsWith('text-xs') ||
+        cls.startsWith('text-sm') ||
+        cls.startsWith('text-lg')
+    )
+    .join(' ');
 }
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
-        default: "bg-blue-600 text-white shadow hover:bg-blue-700",
-        destructive: "bg-red-600 text-white shadow-sm hover:bg-red-700",
-        outline: "border border-slate-300 bg-white shadow-sm hover:bg-slate-100",
-        secondary: "bg-slate-100 text-slate-900 shadow-sm hover:bg-slate-200",
-        ghost: "hover:bg-slate-100",
-        link: "text-blue-600 underline-offset-4 hover:underline",
-        shimmer: "", // Handled by ShimmerButton component
+        default: 'bg-blue-600 text-white shadow hover:bg-blue-700',
+        destructive: 'bg-red-600 text-white shadow-sm hover:bg-red-700',
+        outline: 'border border-slate-300 bg-white shadow-sm hover:bg-slate-100',
+        secondary: 'bg-slate-100 text-slate-900 shadow-sm hover:bg-slate-200',
+        ghost: 'hover:bg-slate-100',
+        link: 'text-blue-600 underline-offset-4 hover:underline',
+        shimmer: '', // Handled by ShimmerButton component
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3 text-xs",
-        lg: "h-11 rounded-lg px-8",
-        icon: "h-10 w-10",
+        default: 'h-10 px-4 py-2',
+        sm: 'h-9 rounded-md px-3 text-xs',
+        lg: 'h-11 rounded-lg px-8',
+        icon: 'h-10 w-10',
       },
     },
     defaultVariants: {
-      variant: "default",
-      size: "default",
+      variant: 'default',
+      size: 'default',
     },
   }
 );
@@ -49,19 +55,22 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, children, disabled, ...props }, ref) => {
     // If shimmer variant, render ShimmerButton instead
-    if (variant === "shimmer") {
+    if (variant === 'shimmer') {
       // Remove text-color classes to avoid conflicts with shimmer's white text
       const cleanClassName = removeTextClasses(className);
-      
+
       return (
         <ShimmerButton
           ref={ref}
           className={cn(
             // Map size classes to shimmer button
-            size === "sm" ? "h-9 px-3 text-xs" :
-            size === "lg" ? "h-11 px-8" :
-            size === "icon" ? "h-10 w-10" :
-            "h-10 px-4 py-2",
+            size === 'sm'
+              ? 'h-9 px-3 text-xs'
+              : size === 'lg'
+                ? 'h-11 px-8'
+                : size === 'icon'
+                  ? 'h-10 w-10'
+                  : 'h-10 px-4 py-2',
             cleanClassName
           )}
           disabled={disabled}
@@ -72,7 +81,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       );
     }
 
-    const Comp = asChild ? Slot : "button";
+    const Comp = asChild ? Slot : 'button';
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
@@ -85,7 +94,6 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     );
   }
 );
-Button.displayName = "Button";
+Button.displayName = 'Button';
 
 export { Button, buttonVariants };
-

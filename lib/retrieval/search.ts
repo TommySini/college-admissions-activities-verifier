@@ -1,16 +1,14 @@
-import { prisma } from "@/lib/prisma";
-import { User } from "@prisma/client";
-import { createTextEmbedding, normalize, parseVector, cosine } from "./embeddings";
-import { getSupportedModels } from "./buildContent";
-import {
-  getPrivacyConstraints,
-} from "@/lib/assistant/privacy";
+import { prisma } from '@/lib/prisma';
+import { User } from '@prisma/client';
+import { createTextEmbedding, normalize, parseVector, cosine } from './embeddings';
+import { getSupportedModels } from './buildContent';
+import { getPrivacyConstraints } from '@/lib/assistant/privacy';
 import {
   isUserScopedModel,
   getUserScopeField,
   canStudentAccessModel,
   describeModel,
-} from "@/lib/assistant/runtimeModels";
+} from '@/lib/assistant/runtimeModels';
 
 export interface SearchMatch {
   modelName: string;
@@ -35,9 +33,7 @@ export interface SearchResult {
 /**
  * Perform semantic search across platform data with privacy filtering
  */
-export async function semanticSearch(
-  options: SearchOptions
-): Promise<SearchResult> {
+export async function semanticSearch(options: SearchOptions): Promise<SearchResult> {
   const { query, models, user, topK = 10 } = options;
 
   try {
@@ -45,7 +41,7 @@ export async function semanticSearch(
     const queryVector = normalize(await createTextEmbedding(query));
 
     // Determine which models to search
-    let modelsToSearch = models || getSupportedModels();
+    const modelsToSearch = models || getSupportedModels();
 
     // OPEN MODE: No model filtering
     // TODO: Re-enable model filtering later
@@ -78,7 +74,7 @@ export async function semanticSearch(
       //     modelCondition.ownerId = user.id;
       //   }
       // }
-      
+
       whereConditions.push(modelCondition);
     }
 
@@ -110,8 +106,8 @@ export async function semanticSearch(
         const score = cosine(queryVector, embeddingVector);
 
         // Create snippet (first 200 chars)
-        const snippet = embedding.content.slice(0, 200) + 
-          (embedding.content.length > 200 ? "..." : "");
+        const snippet =
+          embedding.content.slice(0, 200) + (embedding.content.length > 200 ? '...' : '');
 
         return {
           modelName: embedding.modelName,
@@ -144,7 +140,7 @@ export async function semanticSearch(
       totalCandidates: embeddings.length,
     };
   } catch (error) {
-    console.error("[semanticSearch] Error:", error);
+    console.error('[semanticSearch] Error:', error);
     // On error, try fallback
     try {
       console.log(`[semanticSearch] Error occurred, attempting DB text search fallback`);
@@ -155,7 +151,7 @@ export async function semanticSearch(
         totalCandidates: fallbackMatches.length,
       };
     } catch (fallbackError) {
-      console.error("[semanticSearch] Fallback also failed:", fallbackError);
+      console.error('[semanticSearch] Fallback also failed:', fallbackError);
       return { matches: [], totalCandidates: 0 };
     }
   }
@@ -164,10 +160,7 @@ export async function semanticSearch(
 /**
  * Apply record-level privacy filtering (e.g., for alumni profiles)
  */
-async function applyRecordLevelPrivacy(
-  matches: SearchMatch[],
-  user: User
-): Promise<SearchMatch[]> {
+async function applyRecordLevelPrivacy(matches: SearchMatch[], user: User): Promise<SearchMatch[]> {
   // OPEN MODE: No record-level privacy filtering
   // TODO: Re-enable privacy filtering later by removing this line
   return matches;
@@ -182,21 +175,21 @@ async function applyRecordLevelPrivacy(
 
     // Check alumni-related models
     if (
-      match.modelName === "ExtractedEssay" ||
-      match.modelName === "ExtractedActivity" ||
-      match.modelName === "ExtractedAward" ||
-      match.modelName === "AlumniApplication"
+      match.modelName === 'ExtractedEssay' ||
+      match.modelName === 'ExtractedActivity' ||
+      match.modelName === 'ExtractedAward' ||
+      match.modelName === 'AlumniApplication'
     ) {
       // These are linked to applications, which are linked to profiles
       // We need to check the profile's privacy setting
-      
-      if (match.modelName === "AlumniApplication") {
+
+      if (match.modelName === 'AlumniApplication') {
         const app = await prisma.alumniApplication.findUnique({
           where: { id: match.recordId },
           include: { alumniProfile: true },
         });
 
-        if (app?.alumniProfile?.privacy === "ANONYMOUS") {
+        if (app?.alumniProfile?.privacy === 'ANONYMOUS') {
           allowed = false;
         }
       } else {
@@ -214,7 +207,7 @@ async function applyRecordLevelPrivacy(
           },
         });
 
-        if (record?.application?.alumniProfile?.privacy === "ANONYMOUS") {
+        if (record?.application?.alumniProfile?.privacy === 'ANONYMOUS') {
           allowed = false;
         }
       }
@@ -246,15 +239,19 @@ async function databaseTextSearch(
 
       // Get text fields to search
       const textFields = modelDesc.fields
-        .filter((f) => f.type === "String" && !f.isRelation && !f.name.includes("password") && !f.name.includes("token"))
+        .filter(
+          (f) =>
+            f.type === 'String' &&
+            !f.isRelation &&
+            !f.name.includes('password') &&
+            !f.name.includes('token')
+        )
         .map((f) => f.name);
 
       if (textFields.length === 0) continue;
 
       // Get Prisma model
-      const prismaModel = (prisma as any)[
-        modelName.charAt(0).toLowerCase() + modelName.slice(1)
-      ];
+      const prismaModel = (prisma as any)[modelName.charAt(0).toLowerCase() + modelName.slice(1)];
 
       if (!prismaModel) continue;
 
@@ -272,9 +269,9 @@ async function databaseTextSearch(
       // Convert to SearchMatch format
       for (const record of records) {
         // Build snippet from text fields
-        let snippetParts: string[] = [];
+        const snippetParts: string[] = [];
         for (const field of textFields) {
-          if (record[field] && typeof record[field] === "string") {
+          if (record[field] && typeof record[field] === 'string') {
             const fieldValue = record[field] as string;
             if (fieldValue.toLowerCase().includes(searchLower)) {
               snippetParts.push(`${field}: ${fieldValue.slice(0, 100)}`);
@@ -282,13 +279,13 @@ async function databaseTextSearch(
           }
         }
 
-        const snippet = snippetParts.join(" | ").slice(0, 200) + "...";
+        const snippet = snippetParts.join(' | ').slice(0, 200) + '...';
 
         matches.push({
           modelName,
           recordId: record.id,
           score: 0.5, // Fixed score for text matches
-          snippet: snippet || "Match found",
+          snippet: snippet || 'Match found',
           ownerId: record.studentId || record.userId || undefined,
         });
       }
@@ -307,7 +304,7 @@ async function databaseTextSearch(
  */
 export function formatSearchResults(matches: SearchMatch[]): string {
   if (matches.length === 0) {
-    return "No relevant results found.";
+    return 'No relevant results found.';
   }
 
   // Group by model
@@ -323,16 +320,15 @@ export function formatSearchResults(matches: SearchMatch[]): string {
 
   for (const [modelName, modelMatches] of grouped.entries()) {
     output += `**${modelName}** (${modelMatches.length}):\n`;
-    
+
     for (const match of modelMatches) {
       const scorePercent = Math.round(match.score * 100);
       output += `- [${scorePercent}%] ${match.snippet}\n`;
       output += `  (ID: ${match.recordId})\n`;
     }
-    
-    output += "\n";
+
+    output += '\n';
   }
 
   return output;
 }
-

@@ -1,16 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth';
 
 // GET - Get single participation
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -62,39 +59,27 @@ export async function GET(
     });
 
     if (!participation) {
-      return NextResponse.json(
-        { error: "Participation not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Participation not found' }, { status: 404 });
     }
 
     // Students can only see their own participations
-    if (user.role !== "admin" && participation.studentId !== user.id) {
-      return NextResponse.json(
-        { error: "Forbidden" },
-        { status: 403 }
-      );
+    if (user.role !== 'admin' && participation.studentId !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     return NextResponse.json({ participation });
   } catch (error) {
-    console.error("Error fetching participation:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch participation" },
-      { status: 500 }
-    );
+    console.error('Error fetching participation:', error);
+    return NextResponse.json({ error: 'Failed to fetch participation' }, { status: 500 });
   }
 }
 
 // PATCH - Update participation
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -105,31 +90,33 @@ export async function PATCH(
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: "Participation not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Participation not found' }, { status: 404 });
     }
 
     // Students can only update their own participations
-    if (user.role !== "admin" && existing.studentId !== user.id) {
+    if (user.role !== 'admin' && existing.studentId !== user.id) {
       return NextResponse.json(
-        { error: "Forbidden: You can only update your own participations" },
+        { error: 'Forbidden: You can only update your own participations' },
         { status: 403 }
       );
     }
 
     const updateData: any = {};
     if (body.startDate !== undefined) updateData.startDate = new Date(body.startDate);
-    if (body.endDate !== undefined) updateData.endDate = body.endDate ? new Date(body.endDate) : null;
+    if (body.endDate !== undefined)
+      updateData.endDate = body.endDate ? new Date(body.endDate) : null;
     if (body.totalHours !== undefined) updateData.totalHours = parseFloat(body.totalHours);
-    if (body.hoursPerWeek !== undefined) updateData.hoursPerWeek = body.hoursPerWeek ? parseFloat(body.hoursPerWeek) : null;
+    if (body.hoursPerWeek !== undefined)
+      updateData.hoursPerWeek = body.hoursPerWeek ? parseFloat(body.hoursPerWeek) : null;
     if (body.status !== undefined) updateData.status = body.status;
     if (body.activityId !== undefined) updateData.activityId = body.activityId || null;
-    if (body.serviceSheetUrl !== undefined) updateData.serviceSheetUrl = body.serviceSheetUrl || null;
-    if (body.organizationName !== undefined) updateData.organizationName = body.organizationName || null;
+    if (body.serviceSheetUrl !== undefined)
+      updateData.serviceSheetUrl = body.serviceSheetUrl || null;
+    if (body.organizationName !== undefined)
+      updateData.organizationName = body.organizationName || null;
     if (body.activityName !== undefined) updateData.activityName = body.activityName || null;
-    if (body.activityDescription !== undefined) updateData.activityDescription = body.activityDescription || null;
+    if (body.activityDescription !== undefined)
+      updateData.activityDescription = body.activityDescription || null;
 
     const participation = await prisma.volunteeringParticipation.update({
       where: { id },
@@ -172,11 +159,8 @@ export async function PATCH(
 
     return NextResponse.json({ participation });
   } catch (error) {
-    console.error("Error updating participation:", error);
-    return NextResponse.json(
-      { error: "Failed to update participation" },
-      { status: 500 }
-    );
+    console.error('Error updating participation:', error);
+    return NextResponse.json({ error: 'Failed to update participation' }, { status: 500 });
   }
 }
 
@@ -188,7 +172,7 @@ export async function DELETE(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -198,16 +182,13 @@ export async function DELETE(
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: "Participation not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Participation not found' }, { status: 404 });
     }
 
     // Students can only delete their own participations
-    if (user.role !== "admin" && existing.studentId !== user.id) {
+    if (user.role !== 'admin' && existing.studentId !== user.id) {
       return NextResponse.json(
-        { error: "Forbidden: You can only delete your own participations" },
+        { error: 'Forbidden: You can only delete your own participations' },
         { status: 403 }
       );
     }
@@ -218,11 +199,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting participation:", error);
-    return NextResponse.json(
-      { error: "Failed to delete participation" },
-      { status: 500 }
-    );
+    console.error('Error deleting participation:', error);
+    return NextResponse.json({ error: 'Failed to delete participation' }, { status: 500 });
   }
 }
-

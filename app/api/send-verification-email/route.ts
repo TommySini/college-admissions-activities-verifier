@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdminOrInternal } from '@/lib/internal-auth';
 
 // This is a placeholder API route for email notifications
 // To actually send emails, you'll need to integrate with an email service like:
@@ -6,18 +7,25 @@ import { NextRequest, NextResponse } from "next/server";
 // - SendGrid (https://sendgrid.com)
 // - AWS SES (https://aws.amazon.com/ses/)
 // - Nodemailer with SMTP
+// Requires admin or internal secret
 
 export async function POST(request: NextRequest) {
   try {
+    // Require authorization
+    const { authorized } = await requireAdminOrInternal(request);
+    if (!authorized) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Admin or internal secret required' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { to, organizationName, title, applicantExists } = body;
 
     // Validate required fields
     if (!to || !organizationName || !title) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     // TODO: Integrate with your email service provider
@@ -41,7 +49,7 @@ export async function POST(request: NextRequest) {
     */
 
     // For now, just log the email (in production, replace with actual email sending)
-    console.log("Email notification (placeholder):", {
+    console.log('Email notification (placeholder):', {
       to,
       organizationName,
       title,
@@ -50,14 +58,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Email notification sent (placeholder - configure email service)",
+      message: 'Email notification sent (placeholder - configure email service)',
     });
   } catch (error) {
-    console.error("Error sending email:", error);
-    return NextResponse.json(
-      { error: "Failed to send email notification" },
-      { status: 500 }
-    );
+    console.error('Error sending email:', error);
+    return NextResponse.json({ error: 'Failed to send email notification' }, { status: 500 });
   }
 }
-

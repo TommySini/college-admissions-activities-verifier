@@ -1,36 +1,27 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth';
 
-export async function POST(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser();
-    
+
     if (!user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
+
     const params = await context.params;
     const { id: editionId } = params;
-    
+
     // Check if edition exists
     const edition = await prisma.edition.findUnique({
       where: { id: editionId },
     });
-    
+
     if (!edition) {
-      return NextResponse.json(
-        { error: "Edition not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Edition not found' }, { status: 404 });
     }
-    
+
     // Toggle save
     const existing = await prisma.savedEdition.findUnique({
       where: {
@@ -40,7 +31,7 @@ export async function POST(
         },
       },
     });
-    
+
     if (existing) {
       // Remove save
       await prisma.$transaction([
@@ -56,7 +47,7 @@ export async function POST(
           },
         }),
       ]);
-      
+
       return NextResponse.json({ saved: false });
     } else {
       // Add save
@@ -76,15 +67,11 @@ export async function POST(
           },
         }),
       ]);
-      
+
       return NextResponse.json({ saved: true });
     }
   } catch (error) {
-    console.error("Error toggling save:", error);
-    return NextResponse.json(
-      { error: "Failed to toggle save" },
-      { status: 500 }
-    );
+    console.error('Error toggling save:', error);
+    return NextResponse.json({ error: 'Failed to toggle save' }, { status: 500 });
   }
 }
-

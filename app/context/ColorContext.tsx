@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
 interface ColorScheme {
   primary: string;
@@ -9,9 +9,9 @@ interface ColorScheme {
 }
 
 const defaultColors: ColorScheme = {
-  primary: "#7d95b9",
-  tertiary: "#a4c4e0",
-  accent: "#c2dcf2",
+  primary: '#7d95b9',
+  tertiary: '#a4c4e0',
+  accent: '#c2dcf2',
 };
 
 const ColorContext = createContext<ColorScheme>(defaultColors);
@@ -21,7 +21,7 @@ export function ColorProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Fetch colors from API
-    fetch("/api/settings/colors")
+    fetch('/api/settings/colors')
       .then((res) => res.json())
       .then((data) => {
         if (data.colors) {
@@ -29,7 +29,7 @@ export function ColorProvider({ children }: { children: ReactNode }) {
         }
       })
       .catch((err) => {
-        console.error("Error fetching colors:", err);
+        console.error('Error fetching colors:', err);
       });
   }, []);
 
@@ -39,4 +39,3 @@ export function ColorProvider({ children }: { children: ReactNode }) {
 export function useColors() {
   return useContext(ColorContext);
 }
-

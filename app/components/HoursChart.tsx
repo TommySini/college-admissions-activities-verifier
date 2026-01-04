@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
 interface Goal {
   targetHours: number;
@@ -32,7 +32,7 @@ interface HoursChartProps {
     tertiary: string;
     accent: string;
   };
-  timeRange?: "1W" | "1M" | "6M" | "1Y" | "2Y" | "all";
+  timeRange?: '1W' | '1M' | '6M' | '1Y' | '2Y' | 'all';
 }
 
 export function HoursChart({
@@ -43,30 +43,46 @@ export function HoursChart({
   goalDescription, // Deprecated
   currentHours,
   colors,
-  timeRange = "1M",
+  timeRange = '1M',
 }: HoursChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hoverTargetRef = useRef<Array<{ x: number; y: number; goal: Goal }>>([]);
   const participationDotsRef = useRef<Array<{ x: number; y: number; participation: any }>>([]);
-  const [tooltip, setTooltip] = useState<{ visible: boolean; x: number; y: number; content: { title: string; subtitle: string } } | null>(null);
-  const [participationTooltip, setParticipationTooltip] = useState<{ visible: boolean; x: number; y: number; content: { title: string; description: string; hours: string; date: string } } | null>(null);
-  
+  const [tooltip, setTooltip] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    content: { title: string; subtitle: string };
+  } | null>(null);
+  const [participationTooltip, setParticipationTooltip] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    content: { title: string; description: string; hours: string; date: string };
+  } | null>(null);
+
   // Normalize goals: use goals array if provided, otherwise fall back to single goal props
-  const normalizedGoals: Goal[] = goals || (goalHours && goalDate ? [{
-    targetHours: goalHours,
-    targetDate: goalDate,
-    description: goalDescription || null,
-    status: 'active'
-  }] : []);
-  
+  const normalizedGoals: Goal[] =
+    goals ||
+    (goalHours && goalDate
+      ? [
+          {
+            targetHours: goalHours,
+            targetDate: goalDate,
+            description: goalDescription || null,
+            status: 'active',
+          },
+        ]
+      : []);
+
   // Filter to only active goals
-  const activeGoals = normalizedGoals.filter(g => !g.status || g.status === 'active');
+  const activeGoals = normalizedGoals.filter((g) => !g.status || g.status === 'active');
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     // Set canvas dimensions
@@ -74,12 +90,12 @@ export function HoursChart({
     const rect = canvas.getBoundingClientRect();
     const width = rect.width;
     const height = 180;
-    
+
     canvas.width = width * dpr;
     canvas.height = height * dpr;
     ctx.scale(dpr, dpr);
-    canvas.style.width = width + "px";
-    canvas.style.height = height + "px";
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
 
     // Chart dimensions - minimal padding
     const padding = { top: 10, right: 15, bottom: 30, left: 35 };
@@ -92,37 +108,43 @@ export function HoursChart({
     // Calculate date range based on timeRange prop
     const now = new Date();
     let daysToShow = 30; // Default 1 month
-    if (timeRange === "1W") {
+    if (timeRange === '1W') {
       daysToShow = 7;
-    } else if (timeRange === "1M") {
+    } else if (timeRange === '1M') {
       daysToShow = 30;
-    } else if (timeRange === "6M") {
+    } else if (timeRange === '6M') {
       daysToShow = 180;
-    } else if (timeRange === "1Y") {
+    } else if (timeRange === '1Y') {
       daysToShow = 365;
-    } else if (timeRange === "2Y") {
+    } else if (timeRange === '2Y') {
       daysToShow = 730;
-    } else if (timeRange === "all") {
+    } else if (timeRange === 'all') {
       // Find the earliest participation date
-      const earliestDate = participations.length > 0
-        ? participations.reduce((earliest, p) => {
-            const pStart = new Date(p.startDate);
-            return pStart < earliest ? pStart : earliest;
-          }, new Date(participations[0].startDate))
-        : new Date(now);
-      daysToShow = Math.max(30, Math.ceil((now.getTime() - earliestDate.getTime()) / (24 * 60 * 60 * 1000)));
+      const earliestDate =
+        participations.length > 0
+          ? participations.reduce((earliest, p) => {
+              const pStart = new Date(p.startDate);
+              return pStart < earliest ? pStart : earliest;
+            }, new Date(participations[0].startDate))
+          : new Date(now);
+      daysToShow = Math.max(
+        30,
+        Math.ceil((now.getTime() - earliestDate.getTime()) / (24 * 60 * 60 * 1000))
+      );
     }
-    
+
     // If there are goal dates in the future, extend the chart to show them
     let endDate = new Date(now);
     const futureGoalDates = activeGoals
-      .filter(g => g.targetDate)
-      .map(g => new Date(g.targetDate!))
-      .filter(d => d > now);
-    
+      .filter((g) => g.targetDate)
+      .map((g) => new Date(g.targetDate!))
+      .filter((d) => d > now);
+
     if (futureGoalDates.length > 0) {
-      const latestGoalDate = futureGoalDates.reduce((latest, d) => d > latest ? d : latest);
-      const daysUntilGoal = Math.ceil((latestGoalDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
+      const latestGoalDate = futureGoalDates.reduce((latest, d) => (d > latest ? d : latest));
+      const daysUntilGoal = Math.ceil(
+        (latestGoalDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)
+      );
       const totalDays = daysToShow + daysUntilGoal;
       endDate = new Date(latestGoalDate);
       endDate.setHours(23, 59, 59, 999);
@@ -138,7 +160,7 @@ export function HoursChart({
 
     // Sort participations by end date (or start date if no end date)
     const sortedParticipations = [...participations]
-      .filter(p => p.totalHours > 0) // Only include participations with hours
+      .filter((p) => p.totalHours > 0) // Only include participations with hours
       .sort((a, b) => {
         const aEnd = a.endDate ? new Date(a.endDate).getTime() : new Date(a.startDate).getTime();
         const bEnd = b.endDate ? new Date(b.endDate).getTime() : new Date(b.startDate).getTime();
@@ -151,35 +173,40 @@ export function HoursChart({
       const dayDate = new Date(startDate);
       dayDate.setDate(dayDate.getDate() + day);
       dayDate.setHours(23, 59, 59, 999); // End of day
-      
+
       let dayCumulativeHours = 0;
-      
+
       sortedParticipations.forEach((p) => {
         const pStart = new Date(p.startDate);
         pStart.setHours(0, 0, 0, 0);
         const pEnd = p.endDate ? new Date(p.endDate) : new Date(p.startDate);
         pEnd.setHours(23, 59, 59, 999);
-        
+
         // For future dates, use current total hours
         if (dayDate > now) {
           dayCumulativeHours = currentHours;
           return;
         }
-        
+
         // If participation hasn't started yet, skip
         if (dayDate < pStart) {
           return;
         }
-        
+
         // If participation has ended, add all its hours
         if (dayDate >= pEnd) {
           dayCumulativeHours += p.totalHours;
           return;
         }
-        
+
         // Participation is ongoing - distribute hours gradually
-        const participationDuration = Math.max(1, Math.ceil((pEnd.getTime() - pStart.getTime()) / (24 * 60 * 60 * 1000)));
-        const daysIntoParticipation = Math.ceil((dayDate.getTime() - pStart.getTime()) / (24 * 60 * 60 * 1000));
+        const participationDuration = Math.max(
+          1,
+          Math.ceil((pEnd.getTime() - pStart.getTime()) / (24 * 60 * 60 * 1000))
+        );
+        const daysIntoParticipation = Math.ceil(
+          (dayDate.getTime() - pStart.getTime()) / (24 * 60 * 60 * 1000)
+        );
         const hoursSoFar = (p.totalHours / participationDuration) * daysIntoParticipation;
         dayCumulativeHours += hoursSoFar;
       });
@@ -192,9 +219,8 @@ export function HoursChart({
 
     // Calculate max hours for scaling - include all goal hours
     const maxDataHours = dailyCumulative.reduce((max, d) => Math.max(max, d.hours), currentHours);
-    const maxGoalHours = activeGoals.length > 0 
-      ? Math.max(...activeGoals.map(g => g.targetHours))
-      : 0;
+    const maxGoalHours =
+      activeGoals.length > 0 ? Math.max(...activeGoals.map((g) => g.targetHours)) : 0;
     const minMaxHours = 20; // Minimum max for Y-axis
     const calculatedMax = Math.max(maxDataHours, maxGoalHours, minMaxHours) * 1.3;
     const maxHours = Math.max(calculatedMax, minMaxHours);
@@ -203,7 +229,7 @@ export function HoursChart({
     hoverTargetRef.current = [];
     activeGoals.forEach((goal) => {
       if (!goal.targetHours) return;
-      
+
       const goalY = padding.top + chartHeight - (goal.targetHours / maxHours) * chartHeight;
       const goalStartX = padding.left;
       const goalEndX = padding.left + chartWidth;
@@ -223,11 +249,13 @@ export function HoursChart({
       // Draw vertical line and intersection point if goal date exists
       if (goal.targetDate) {
         const goalDateObj = new Date(goal.targetDate);
-        const daysFromStart = Math.floor((goalDateObj.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
-        
+        const daysFromStart = Math.floor(
+          (goalDateObj.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)
+        );
+
         if (daysFromStart >= 0 && daysFromStart <= daysToShow) {
           const goalX = padding.left + (chartWidth / daysToShow) * daysFromStart;
-          
+
           // Draw vertical line at due date (from intersection to bottom)
           ctx.strokeStyle = colors.tertiary;
           ctx.lineWidth = 1.5;
@@ -239,7 +267,7 @@ export function HoursChart({
           ctx.stroke();
           ctx.setLineDash([]);
           ctx.globalAlpha = 1;
-          
+
           // Draw intersection point (goal dot)
           ctx.setLineDash([]);
           ctx.globalAlpha = 1;
@@ -247,7 +275,7 @@ export function HoursChart({
           ctx.beginPath();
           ctx.arc(goalX, goalY, 4, 0, Math.PI * 2);
           ctx.fill();
-          
+
           // Store for hover detection
           hoverTargetRef.current.push({ x: goalX, y: goalY, goal });
         }
@@ -255,11 +283,11 @@ export function HoursChart({
     });
 
     // Draw data line (cumulative hours) - smooth curved line
-    if (dailyCumulative.length > 0 && dailyCumulative.some(d => d.hours > 0)) {
+    if (dailyCumulative.length > 0 && dailyCumulative.some((d) => d.hours > 0)) {
       ctx.strokeStyle = colors.primary;
       ctx.lineWidth = 2.5;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
       ctx.beginPath();
 
       const points = dailyCumulative.map((point, index) => {
@@ -275,32 +303,34 @@ export function HoursChart({
 
       if (points.length > 0) {
         ctx.moveTo(points[0].x, points[0].y);
-        
+
         // Use quadratic bezier curves for smooth flowy lines
         for (let i = 0; i < points.length - 1; i++) {
           const current = points[i];
           const next = points[i + 1];
-          
+
           // Control point is the midpoint, but slightly adjusted for smoother curves
           const controlX = (current.x + next.x) / 2;
           const controlY = (current.y + next.y) / 2;
-          
+
           // Use quadratic curve to create smooth transitions
           ctx.quadraticCurveTo(controlX, controlY, next.x, next.y);
         }
       }
 
       ctx.stroke();
-      
+
       // Draw participation dots and track them for hover
       participationDotsRef.current = [];
       sortedParticipations.forEach((p) => {
         const pEnd = p.endDate ? new Date(p.endDate) : new Date(p.startDate);
         pEnd.setHours(23, 59, 59, 999);
-        
+
         // Only draw dots for participations within the chart range
         if (pEnd >= startDate && pEnd <= endDate) {
-          const daysFromStart = Math.floor((pEnd.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+          const daysFromStart = Math.floor(
+            (pEnd.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)
+          );
           if (daysFromStart >= 0 && daysFromStart <= daysToShow) {
             // Calculate cumulative hours up to this participation
             let cumulativeHours = 0;
@@ -311,16 +341,16 @@ export function HoursChart({
                 cumulativeHours += prevP.totalHours;
               }
             });
-            
+
             const x = padding.left + (chartWidth / daysToShow) * daysFromStart;
             const y = padding.top + chartHeight - (cumulativeHours / maxHours) * chartHeight;
-            
+
             // Draw dot using accent color (different from goal dot)
             ctx.fillStyle = colors.accent;
             ctx.beginPath();
             ctx.arc(x, y, 4, 0, Math.PI * 2);
             ctx.fill();
-            
+
             // Store for hover detection
             participationDotsRef.current.push({ x, y, participation: p });
           }
@@ -356,26 +386,29 @@ export function HoursChart({
     }
 
     // Y-axis labels - include current total hours
-    ctx.fillStyle = "#9ca3af";
+    ctx.fillStyle = '#9ca3af';
     ctx.font = "9px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-    ctx.textAlign = "right";
-    ctx.textBaseline = "middle";
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
     const gridLines = 3;
-    
+
     // Calculate Y position for current hours
     const currentHoursY = padding.top + chartHeight - (currentHours / maxHours) * chartHeight;
-    const currentHoursLabelY = Math.max(padding.top + 8, Math.min(padding.top + chartHeight - 8, currentHoursY));
-    
+    const currentHoursLabelY = Math.max(
+      padding.top + 8,
+      Math.min(padding.top + chartHeight - 8, currentHoursY)
+    );
+
     // Draw grid lines and labels
     for (let i = 0; i <= gridLines; i++) {
       const hours = (maxHours / gridLines) * (gridLines - i);
       const y = padding.top + (chartHeight / gridLines) * i;
-      
+
       // Skip if this label would overlap with current hours label
       if (Math.abs(y - currentHoursLabelY) < 12) {
         continue;
       }
-      
+
       ctx.fillText(hours.toFixed(0), padding.left - 6, y);
     }
 
@@ -387,35 +420,47 @@ export function HoursChart({
     }
 
     // X-axis labels with abbreviated month names (only 4 dates)
-    ctx.fillStyle = "#9ca3af";
+    ctx.fillStyle = '#9ca3af';
     ctx.font = "8px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "top";
-    
-    const monthAbbreviations = ["Jan.", "Feb.", "Mar.", "Apr.", "May", "Jun.", 
-                                "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."];
-    
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+
+    const monthAbbreviations = [
+      'Jan.',
+      'Feb.',
+      'Mar.',
+      'Apr.',
+      'May',
+      'Jun.',
+      'Jul.',
+      'Aug.',
+      'Sep.',
+      'Oct.',
+      'Nov.',
+      'Dec.',
+    ];
+
     const labelInterval = Math.floor(daysToShow / 4);
     for (let i = 0; i <= daysToShow; i += labelInterval) {
       const x = padding.left + (chartWidth / daysToShow) * i;
       const dayDate = new Date(startDate);
       dayDate.setDate(dayDate.getDate() + i);
-      
+
       const month = monthAbbreviations[dayDate.getMonth()];
       const day = dayDate.getDate();
       ctx.fillText(`${month} ${day}`, x, padding.top + chartHeight + 6);
     }
 
     // Minimal axis lines only
-    ctx.strokeStyle = "#e5e7eb";
+    ctx.strokeStyle = '#e5e7eb';
     ctx.lineWidth = 1;
-    
+
     // X-axis
     ctx.beginPath();
     ctx.moveTo(padding.left, padding.top + chartHeight);
     ctx.lineTo(padding.left + chartWidth, padding.top + chartHeight);
     ctx.stroke();
-    
+
     // Y-axis
     ctx.beginPath();
     ctx.moveTo(padding.left, padding.top);
@@ -430,16 +475,32 @@ export function HoursChart({
     const getOrdinalSuffix = (day: number) => {
       if (day > 3 && day < 21) return 'th';
       switch (day % 10) {
-        case 1: return 'st';
-        case 2: return 'nd';
-        case 3: return 'rd';
-        default: return 'th';
+        case 1:
+          return 'st';
+        case 2:
+          return 'nd';
+        case 3:
+          return 'rd';
+        default:
+          return 'th';
       }
     };
 
     const formatDate = (date: Date) => {
-      const months = ['January', 'February', 'March', 'April', 'May', 'June', 
-                      'July', 'August', 'September', 'October', 'November', 'December'];
+      const months = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+      ];
       const day = date.getDate();
       const month = months[date.getMonth()];
       const year = date.getFullYear();
@@ -450,24 +511,24 @@ export function HoursChart({
       const start = new Date(startDate);
       const end = endDate ? new Date(endDate) : start;
       const isSameDay = start.toDateString() === end.toDateString();
-      
+
       if (isSameDay) {
         return formatDate(start);
       }
-      
+
       const startYear = start.getFullYear();
       const endYear = end.getFullYear();
       const sameYear = startYear === endYear;
-      
+
       const startFormatted = formatDate(start);
       const endFormatted = formatDate(end);
-      
+
       // If same year, remove year from start date
       if (sameYear) {
         const startWithoutYear = startFormatted.replace(`, ${startYear}`, '');
         return `${startWithoutYear} to ${endFormatted}`;
       }
-      
+
       return `${startFormatted} to ${endFormatted}`;
     };
 
@@ -475,21 +536,22 @@ export function HoursChart({
       const rect = canvas.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
-      
+
       // Check participation dots first
       let foundParticipation = false;
       for (const dot of participationDotsRef.current) {
         const distance = Math.sqrt((x - dot.x) ** 2 + (y - dot.y) ** 2);
         if (distance <= 8) {
           const p = dot.participation;
-          const activityName = p.opportunity?.title || p.organizationName || "Activity";
-          const description = p.opportunity?.description || p.activityDescription || "";
+          const activityName = p.opportunity?.title || p.organizationName || 'Activity';
+          const description = p.opportunity?.description || p.activityDescription || '';
           const hours = Math.round(p.totalHours);
           const dateRange = formatDateRange(p.startDate, p.endDate);
-          const dateText = p.endDate && p.endDate !== p.startDate 
-            ? `${hours} hrs from ${dateRange}`
-            : `${hours} hrs on ${dateRange}`;
-          
+          const dateText =
+            p.endDate && p.endDate !== p.startDate
+              ? `${hours} hrs from ${dateRange}`
+              : `${hours} hrs on ${dateRange}`;
+
           setParticipationTooltip({
             visible: true,
             x: dot.x,
@@ -505,17 +567,17 @@ export function HoursChart({
           break;
         }
       }
-      
+
       if (!foundParticipation) {
         setParticipationTooltip(null);
       }
-      
+
       // Check goal dots
       const goalTargets = hoverTargetRef.current;
       if (goalTargets && goalTargets.length > 0) {
         let closestGoal: { x: number; y: number; goal: Goal } | null = null;
         let closestDistance = Infinity;
-        
+
         goalTargets.forEach((target) => {
           const distance = Math.sqrt((x - target.x) ** 2 + (y - target.y) ** 2);
           if (distance <= 8 && distance < closestDistance) {
@@ -523,18 +585,18 @@ export function HoursChart({
             closestGoal = target;
           }
         });
-        
+
         if (closestGoal && !foundParticipation) {
           const goal = closestGoal.goal;
-          const formattedDate = goal.targetDate 
-            ? new Date(goal.targetDate).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
+          const formattedDate = goal.targetDate
+            ? new Date(goal.targetDate).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
               })
-            : "No date";
+            : 'No date';
           const content = {
-            title: goal.description || "Goal",
+            title: goal.description || 'Goal',
             subtitle: `${goal.targetHours.toFixed(0)} hrs by ${formattedDate}`,
           };
           setTooltip({
@@ -560,44 +622,48 @@ export function HoursChart({
       }
     };
 
-    canvas.addEventListener("mousemove", handleMouseMove);
-    canvas.addEventListener("mouseleave", handleMouseLeave);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseleave', handleMouseLeave);
 
     return () => {
-      canvas.removeEventListener("mousemove", handleMouseMove);
-      canvas.removeEventListener("mouseleave", handleMouseLeave);
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mouseleave', handleMouseLeave);
     };
   }, [activeGoals, currentHours, participations, colors, timeRange]);
 
   return (
     <div className="relative w-full">
-      <canvas
-        ref={canvasRef}
-        className="w-full"
-        style={{ height: "180px" }}
-      />
+      <canvas ref={canvasRef} className="w-full" style={{ height: '180px' }} />
       {tooltip && tooltip.visible && (
         <div
           className="pointer-events-none absolute rounded-lg bg-white/95 px-4 py-3 text-xs shadow-lg ring-1 ring-black/5"
           style={{ left: tooltip.x + 14, top: tooltip.y - 20, maxWidth: 240 }}
         >
-          <div className="font-semibold text-gray-900 text-sm whitespace-nowrap">{tooltip.content.title}</div>
+          <div className="font-semibold text-gray-900 text-sm whitespace-nowrap">
+            {tooltip.content.title}
+          </div>
           <div className="mt-1 text-gray-600 whitespace-nowrap">{tooltip.content.subtitle}</div>
         </div>
       )}
       {participationTooltip && participationTooltip.visible && (
         <div
           className="pointer-events-none absolute bg-white/95 px-4 py-3 text-xs shadow-lg ring-1 ring-black/5"
-          style={{ 
-            left: participationTooltip.x + 14, 
-            top: participationTooltip.y - 20, 
+          style={{
+            left: participationTooltip.x + 14,
+            top: participationTooltip.y - 20,
             maxWidth: 400,
-            borderRadius: '0px'
+            borderRadius: '0px',
           }}
         >
-          <div className="font-bold text-gray-900 text-sm break-words">{participationTooltip.content.title}</div>
-          <div className="mt-1 text-gray-600 text-xs break-words">{participationTooltip.content.description}</div>
-          <div className="mt-1 text-gray-600 text-xs break-words">{participationTooltip.content.date}</div>
+          <div className="font-bold text-gray-900 text-sm break-words">
+            {participationTooltip.content.title}
+          </div>
+          <div className="mt-1 text-gray-600 text-xs break-words">
+            {participationTooltip.content.description}
+          </div>
+          <div className="mt-1 text-gray-600 text-xs break-words">
+            {participationTooltip.content.date}
+          </div>
         </div>
       )}
     </div>

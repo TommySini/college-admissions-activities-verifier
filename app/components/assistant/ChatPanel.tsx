@@ -1,52 +1,52 @@
-"use client";
+'use client';
 
-import { useState, useRef, useEffect } from "react";
-import { AIInputWithSuggestions } from "@/app/components/ui/ai-input-with-suggestions";
-import { Text, CheckCheck, ArrowDownWideNarrow, Loader2 } from "lucide-react";
+import { useState, useRef, useEffect } from 'react';
+import { AIInputWithSuggestions } from '@/app/components/ui/ai-input-with-suggestions';
+import { Text, CheckCheck, ArrowDownWideNarrow, Loader2 } from 'lucide-react';
 
 const CUSTOM_ACTIONS = [
   {
-    text: "Summarize",
+    text: 'Summarize',
     icon: Text,
     colors: {
-      icon: "text-blue-600",
-      border: "border-blue-500",
-      bg: "bg-blue-100",
+      icon: 'text-blue-600',
+      border: 'border-blue-500',
+      bg: 'bg-blue-100',
     },
   },
   {
-    text: "Proofread",
+    text: 'Proofread',
     icon: CheckCheck,
     colors: {
-      icon: "text-green-600",
-      border: "border-green-500",
-      bg: "bg-green-100",
+      icon: 'text-green-600',
+      border: 'border-green-500',
+      bg: 'bg-green-100',
     },
   },
   {
-    text: "Condense",
+    text: 'Condense',
     icon: ArrowDownWideNarrow,
     colors: {
-      icon: "text-purple-600",
-      border: "border-purple-500",
-      bg: "bg-purple-100",
+      icon: 'text-purple-600',
+      border: 'border-purple-500',
+      bg: 'bg-purple-100',
     },
   },
 ];
 
 const STARTER_PROMPTS = [
   "What's my best activity?",
-  "How many volunteering hours do I have?",
-  "What should I aim for to get into a good college?",
-  "Summarize my extracurricular profile",
-  "Find alumni who mention robotics or engineering",
-  "Show me clubs related to community service",
-  "Search for alumni essays about leadership",
+  'How many volunteering hours do I have?',
+  'What should I aim for to get into a good college?',
+  'Summarize my extracurricular profile',
+  'Find alumni who mention robotics or engineering',
+  'Show me clubs related to community service',
+  'Search for alumni essays about leadership',
 ];
 
 interface Message {
   id: string;
-  role: "user" | "assistant";
+  role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
 }
@@ -62,7 +62,7 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
@@ -74,7 +74,7 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      role: "user",
+      role: 'user',
       content: text,
       timestamp: new Date(),
     };
@@ -83,10 +83,10 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/assistant/query", {
-        method: "POST",
+      const response = await fetch('/api/assistant/query', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           message: text,
@@ -98,23 +98,23 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
 
       if (!response.ok) {
         // Show the actual error from the server
-        throw new Error(data.error || "Failed to get response");
+        throw new Error(data.error || 'Failed to get response');
       }
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
-        role: "assistant",
+        role: 'assistant',
         content: data.answer,
         timestamp: new Date(),
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error: any) {
-      console.error("Error querying assistant:", error);
+      console.error('Error querying assistant:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: `I'm sorry, I encountered an error: ${error.message || "Please try again."}`,
+        role: 'assistant',
+        content: `I'm sorry, I encountered an error: ${error.message || 'Please try again.'}`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -124,7 +124,7 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
   };
 
   const handleStarterPrompt = (prompt: string) => {
-    handleSubmit(prompt, "Summarize");
+    handleSubmit(prompt, 'Summarize');
   };
 
   return (
@@ -146,12 +146,7 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
             className="text-gray-400 hover:text-gray-200 transition-colors"
             aria-label="Close"
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -164,21 +159,16 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
       </div>
 
       {/* Messages */}
-      <div
-        ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
-      >
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-2xl mb-4">
               A
             </div>
-            <h4 className="font-semibold text-white mb-2">
-              Welcome to Actify Assistant!
-            </h4>
+            <h4 className="font-semibold text-white mb-2">Welcome to Actify Assistant!</h4>
             <p className="text-sm text-gray-400 mb-4">
-              Ask me anything about your activities, volunteering hours, or college
-              admissions guidance.
+              Ask me anything about your activities, volunteering hours, or college admissions
+              guidance.
             </p>
             <div className="w-full space-y-2">
               <p className="text-xs text-gray-500 font-medium mb-2">Try asking:</p>
@@ -198,28 +188,22 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${
-                  message.role === "user" ? "justify-end" : "justify-start"
-                }`}
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
                   className={`max-w-[85%] rounded-lg px-4 py-2 ${
-                    message.role === "user"
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-800 text-gray-100"
+                    message.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-100'
                   }`}
                 >
-                  <div className="text-sm whitespace-pre-wrap break-words">
-                    {message.content}
-                  </div>
+                  <div className="text-sm whitespace-pre-wrap break-words">{message.content}</div>
                   <div
                     className={`text-xs mt-1 ${
-                      message.role === "user" ? "text-blue-200" : "text-gray-500"
+                      message.role === 'user' ? 'text-blue-200' : 'text-gray-500'
                     }`}
                   >
                     {message.timestamp.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
+                      hour: '2-digit',
+                      minute: '2-digit',
                     })}
                   </div>
                 </div>
@@ -252,4 +236,3 @@ export function ChatPanel({ onClose }: ChatPanelProps) {
     </div>
   );
 }
-

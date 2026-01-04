@@ -1,9 +1,9 @@
-import { Suspense } from "react";
-import { OpportunityDetail } from "./OpportunityDetail";
+import { Suspense } from 'react';
+import { OpportunityDetail } from './OpportunityDetail';
 
 export const metadata = {
-  title: "Opportunity Details | Actify",
-  description: "View detailed information about this opportunity",
+  title: 'Opportunity Details | Actify',
+  description: 'View detailed information about this opportunity',
 };
 
 interface PageProps {
@@ -32,4 +32,3 @@ function LoadingSkeleton() {
     </div>
   );
 }
-

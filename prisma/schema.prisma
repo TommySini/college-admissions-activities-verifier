@@ -36,6 +36,7 @@ model User {
   studentGoals           VolunteeringGoal[]          @relation("StudentGoals")
   createdGoals           VolunteeringGoal[]          @relation("GoalCreator")
   alumniProfile          AlumniProfile?
+  assistantConversations AssistantConversation[]     @relation("UserConversations")
 
   @@map("users")
 }
@@ -342,4 +343,35 @@ model Embedding {
   @@unique([modelName, recordId])
   @@index([modelName])
   @@map("embeddings")
+}
+
+// ============================================================================
+// AI ASSISTANT MODELS
+// ============================================================================
+
+model AssistantConversation {
+  id        String             @id @default(cuid())
+  ownerId   String
+  title     String
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  messages  AssistantMessage[]
+
+  owner User @relation("UserConversations", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@map("assistant_conversations")
+}
+
+model AssistantMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  role           String   // "user" | "assistant"
+  content        String
+  createdAt      DateTime @default(now())
+
+  conversation AssistantConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("assistant_messages")
 }

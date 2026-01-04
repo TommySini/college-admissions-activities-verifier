@@ -1,12 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth';
 
 // GET - Get single volunteering opportunity
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const user = await getCurrentUser();
@@ -47,7 +44,7 @@ export async function GET(
             },
           },
           orderBy: {
-            createdAt: "desc",
+            createdAt: 'desc',
           },
         },
         _count: {
@@ -59,41 +56,32 @@ export async function GET(
     });
 
     if (!opportunity) {
-      return NextResponse.json(
-        { error: "Volunteering opportunity not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Volunteering opportunity not found' }, { status: 404 });
     }
 
     // Non-admins can only see approved opportunities
-    if (!user || user.role !== "admin") {
-      if (opportunity.status !== "approved") {
-        return NextResponse.json(
-          { error: "Volunteering opportunity not found" },
-          { status: 404 }
-        );
+    if (!user || user.role !== 'admin') {
+      if (opportunity.status !== 'approved') {
+        return NextResponse.json({ error: 'Volunteering opportunity not found' }, { status: 404 });
       }
     }
 
     return NextResponse.json({ opportunity });
   } catch (error) {
-    console.error("Error fetching volunteering opportunity:", error);
+    console.error('Error fetching volunteering opportunity:', error);
     return NextResponse.json(
-      { error: "Failed to fetch volunteering opportunity" },
+      { error: 'Failed to fetch volunteering opportunity' },
       { status: 500 }
     );
   }
 }
 
 // PATCH - Update volunteering opportunity
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -105,16 +93,13 @@ export async function PATCH(
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: "Volunteering opportunity not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Volunteering opportunity not found' }, { status: 404 });
     }
 
     // Only poster or admin can update
-    if (existing.postedById !== user.id && user.role !== "admin") {
+    if (existing.postedById !== user.id && user.role !== 'admin') {
       return NextResponse.json(
-        { error: "Forbidden: You can only update your own opportunities" },
+        { error: 'Forbidden: You can only update your own opportunities' },
         { status: 403 }
       );
     }
@@ -132,19 +117,24 @@ export async function PATCH(
     if (body.contactPhone !== undefined) updateData.contactPhone = body.contactPhone || null;
     if (body.website !== undefined) updateData.website = body.website || null;
     if (body.startDate !== undefined) updateData.startDate = new Date(body.startDate);
-    if (body.endDate !== undefined) updateData.endDate = body.endDate ? new Date(body.endDate) : null;
+    if (body.endDate !== undefined)
+      updateData.endDate = body.endDate ? new Date(body.endDate) : null;
     if (body.isOngoing !== undefined) updateData.isOngoing = body.isOngoing;
-    if (body.hoursPerSession !== undefined) updateData.hoursPerSession = body.hoursPerSession ? parseFloat(body.hoursPerSession) : null;
-    if (body.totalHours !== undefined) updateData.totalHours = body.totalHours ? parseFloat(body.totalHours) : null;
-    if (body.commitmentLevel !== undefined) updateData.commitmentLevel = body.commitmentLevel || null;
+    if (body.hoursPerSession !== undefined)
+      updateData.hoursPerSession = body.hoursPerSession ? parseFloat(body.hoursPerSession) : null;
+    if (body.totalHours !== undefined)
+      updateData.totalHours = body.totalHours ? parseFloat(body.totalHours) : null;
+    if (body.commitmentLevel !== undefined)
+      updateData.commitmentLevel = body.commitmentLevel || null;
     if (body.ageRequirement !== undefined) updateData.ageRequirement = body.ageRequirement || null;
     if (body.skillsRequired !== undefined) updateData.skillsRequired = body.skillsRequired || null;
-    if (body.maxVolunteers !== undefined) updateData.maxVolunteers = body.maxVolunteers ? parseInt(body.maxVolunteers) : null;
+    if (body.maxVolunteers !== undefined)
+      updateData.maxVolunteers = body.maxVolunteers ? parseInt(body.maxVolunteers) : null;
 
     // If status is being changed, only admin can do it
-    if (body.status !== undefined && user.role === "admin") {
+    if (body.status !== undefined && user.role === 'admin') {
       updateData.status = body.status;
-      if (body.status === "approved" && !existing.approvedById) {
+      if (body.status === 'approved' && !existing.approvedById) {
         updateData.approvedById = user.id;
       }
     }
@@ -179,9 +169,9 @@ export async function PATCH(
 
     return NextResponse.json({ opportunity });
   } catch (error) {
-    console.error("Error updating volunteering opportunity:", error);
+    console.error('Error updating volunteering opportunity:', error);
     return NextResponse.json(
-      { error: "Failed to update volunteering opportunity" },
+      { error: 'Failed to update volunteering opportunity' },
       { status: 500 }
     );
   }
@@ -195,7 +185,7 @@ export async function DELETE(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -205,16 +195,13 @@ export async function DELETE(
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: "Volunteering opportunity not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Volunteering opportunity not found' }, { status: 404 });
     }
 
     // Only poster or admin can delete
-    if (existing.postedById !== user.id && user.role !== "admin") {
+    if (existing.postedById !== user.id && user.role !== 'admin') {
       return NextResponse.json(
-        { error: "Forbidden: You can only delete your own opportunities" },
+        { error: 'Forbidden: You can only delete your own opportunities' },
         { status: 403 }
       );
     }
@@ -225,11 +212,10 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting volunteering opportunity:", error);
+    console.error('Error deleting volunteering opportunity:', error);
     return NextResponse.json(
-      { error: "Failed to delete volunteering opportunity" },
+      { error: 'Failed to delete volunteering opportunity' },
       { status: 500 }
     );
   }
 }
-

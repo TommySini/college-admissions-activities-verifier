@@ -1,10 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
-import nodemailer from "nodemailer";
+import { NextRequest, NextResponse } from 'next/server';
+import nodemailer from 'nodemailer';
+import { requireAdminOrInternal } from '@/lib/internal-auth';
 
 // This API route sends notification emails to students when their activity is verified/rejected
+// Requires admin or internal secret
 
 export async function POST(request: NextRequest) {
   try {
+    // Require authorization
+    const { authorized } = await requireAdminOrInternal(request);
+    if (!authorized) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Admin or internal secret required' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const {
       to,
@@ -20,32 +31,29 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!to || !studentName || !activityName || !status) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const isVerified = status === "verified" || status === "accepted";
+    const isVerified = status === 'verified' || status === 'accepted';
 
     // Configure email transporter (same as verification request email)
     let transporter;
-    
+
     if (process.env.RESEND_API_KEY) {
       transporter = nodemailer.createTransport({
-        host: "smtp.resend.com",
+        host: 'smtp.resend.com',
         port: 465,
         secure: true,
         auth: {
-          user: "resend",
+          user: 'resend',
           pass: process.env.RESEND_API_KEY,
         },
       });
     } else if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
       transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT || "587"),
-        secure: process.env.SMTP_SECURE === "true",
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: process.env.SMTP_SECURE === 'true',
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS,
@@ -53,7 +61,7 @@ export async function POST(request: NextRequest) {
       });
     } else if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
       transporter = nodemailer.createTransport({
-        service: "gmail",
+        service: 'gmail',
         auth: {
           user: process.env.GMAIL_USER,
           pass: process.env.GMAIL_APP_PASSWORD,
@@ -62,7 +70,7 @@ export async function POST(request: NextRequest) {
     } else {
       const testAccount = await nodemailer.createTestAccount();
       transporter = nodemailer.createTransport({
-        host: "smtp.ethereal.email",
+        host: 'smtp.ethereal.email',
         port: 587,
         secure: false,
         auth: {
@@ -72,15 +80,16 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const fromEmail = process.env.FROM_EMAIL || process.env.GMAIL_USER || "noreply@actify.app";
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+    const fromEmail = process.env.FROM_EMAIL || process.env.GMAIL_USER || 'noreply@actify.app';
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
     const viewUrl = dashboardUrl || `${baseUrl}/activities`;
-    
+
     const mailOptions = {
       from: `Actify <${fromEmail}>`,
       to: to,
-      subject: isVerified 
+      subject: isVerified
         ? `✓ Your activity "${activityName}" has been verified!`
         : `Activity "${activityName}" verification update`,
       html: `
@@ -103,9 +112,10 @@ export async function POST(request: NextRequest) {
             </p>
             
             <p style="font-size: 16px; margin-bottom: 20px;">
-              ${isVerified 
-                ? `Great news! Your activity has been verified by <strong>${verifierName || 'a verifier'}</strong>.`
-                : `Your activity verification request has been ${status === 'denied' ? 'rejected' : 'updated'} by <strong>${verifierName || 'a verifier'}</strong>.`
+              ${
+                isVerified
+                  ? `Great news! Your activity has been verified by <strong>${verifierName || 'a verifier'}</strong>.`
+                  : `Your activity verification request has been ${status === 'denied' ? 'rejected' : 'updated'} by <strong>${verifierName || 'a verifier'}</strong>.`
               }
             </p>
             
@@ -116,11 +126,12 @@ export async function POST(request: NextRequest) {
               ${activityDescription ? `<p style="margin: 10px 0;"><strong style="color: ${isVerified ? '#10b981' : '#ef4444'};">Description:</strong> ${activityDescription}</p>` : ''}
             </div>
             
-            ${isVerified 
-              ? `<p style="font-size: 16px; margin: 30px 0 20px 0; text-align: center; color: #059669;">
+            ${
+              isVerified
+                ? `<p style="font-size: 16px; margin: 30px 0 20px 0; text-align: center; color: #059669;">
                   Your activity is now verified and will appear in your profile!
                 </p>`
-              : `<p style="font-size: 16px; margin: 30px 0 20px 0; text-align: center; color: #dc2626;">
+                : `<p style="font-size: 16px; margin: 30px 0 20px 0; text-align: center; color: #dc2626;">
                   If you believe this is an error, please contact the verifier or add a new activity.
                 </p>`
             }
@@ -142,9 +153,10 @@ ${isVerified ? '✓ Activity Verified!' : 'Activity Verification Update'}
 
 Hi ${studentName},
 
-${isVerified 
-  ? `Great news! Your activity has been verified by ${verifierName || 'a verifier'}.`
-  : `Your activity verification request has been ${status === 'denied' ? 'rejected' : 'updated'} by ${verifierName || 'a verifier'}.`
+${
+  isVerified
+    ? `Great news! Your activity has been verified by ${verifierName || 'a verifier'}.`
+    : `Your activity verification request has been ${status === 'denied' ? 'rejected' : 'updated'} by ${verifierName || 'a verifier'}.`
 }
 
 Activity: ${activityName}
@@ -152,9 +164,10 @@ ${activityCategory ? `Category: ${activityCategory}` : ''}
 ${activityOrganization ? `Organization: ${activityOrganization}` : ''}
 ${activityDescription ? `Description: ${activityDescription}` : ''}
 
-${isVerified 
-  ? 'Your activity is now verified and will appear in your profile!'
-  : 'If you believe this is an error, please contact the verifier or add a new activity.'
+${
+  isVerified
+    ? 'Your activity is now verified and will appear in your profile!'
+    : 'If you believe this is an error, please contact the verifier or add a new activity.'
 }
 
 View Dashboard: ${viewUrl}
@@ -166,20 +179,19 @@ This is an automated message from Actify.
     const info = await transporter.sendMail(mailOptions);
 
     if (!process.env.RESEND_API_KEY && !process.env.SMTP_HOST && !process.env.GMAIL_USER) {
-      console.log("Test email sent! Preview URL:", nodemailer.getTestMessageUrl(info));
+      console.log('Test email sent! Preview URL:', nodemailer.getTestMessageUrl(info));
     }
 
     return NextResponse.json({
       success: true,
-      message: "Notification email sent successfully",
+      message: 'Notification email sent successfully',
       messageId: info.messageId,
     });
   } catch (error: any) {
-    console.error("Error sending notification email:", error);
+    console.error('Error sending notification email:', error);
     return NextResponse.json(
-      { error: error.message || "Failed to send notification email" },
+      { error: error.message || 'Failed to send notification email' },
       { status: 500 }
     );
   }
 }
-

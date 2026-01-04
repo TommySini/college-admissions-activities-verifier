@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import { useSession, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useEffect, useMemo, useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
-type OrganizationStatus = "PENDING" | "APPROVED" | "REJECTED";
+type ClubStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 interface Club {
   id: string;
@@ -16,15 +16,15 @@ interface Club {
   presidentName?: string | null;
   isSchoolClub: boolean;
   contactEmail?: string | null;
-  status: OrganizationStatus;
+  status: ClubStatus;
   createdAt: string;
   updatedAt: string;
 }
 
-const statusStyles: Record<OrganizationStatus, string> = {
-  PENDING: "bg-amber-100 text-amber-700 border border-amber-200",
-  APPROVED: "bg-green-100 text-green-700 border border-green-200",
-  REJECTED: "bg-red-100 text-red-700 border border-red-200",
+const statusStyles: Record<ClubStatus, string> = {
+  PENDING: 'bg-amber-100 text-amber-700 border border-amber-200',
+  APPROVED: 'bg-green-100 text-green-700 border border-green-200',
+  REJECTED: 'bg-red-100 text-red-700 border border-red-200',
 };
 
 export default function ClubsPage() {
@@ -33,12 +33,12 @@ export default function ClubsPage() {
   const [clubs, setClubs] = useState<Club[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string>("All");
+  const [search, setSearch] = useState('');
+  const [activeCategory, setActiveCategory] = useState<string>('All');
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/signin");
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin');
     }
   }, [router, status]);
 
@@ -47,38 +47,43 @@ export default function ClubsPage() {
       return;
     }
 
-    if (session.user.role === "admin") {
-      router.push("/admin");
+    if (session.user.role === 'admin') {
+      router.push('/admin');
     }
   }, [router, session]);
 
-  useEffect(() => {
-    if (session) {
-      fetchClubs();
-    }
-  }, [session]);
-
   const fetchClubs = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch("/api/clubs");
-      const data = await response.json();
+    const response = await fetch('/api/clubs');
+    const data = await response.json();
 
-      if (!response.ok) {
-        setError(data.error || "Failed to load clubs");
-        return;
-      }
-
-      setClubs(data.clubs || []);
-    } catch (err) {
-      console.error("Error loading clubs:", err);
-      setError("Failed to load clubs");
-    } finally {
-      setLoading(false);
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to load clubs');
     }
+
+    setClubs(data.clubs || []);
   };
 
-  // Extract unique categories from clubs data
+  useEffect(() => {
+    if (!session) {
+      return;
+    }
+
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        await fetchClubs();
+      } catch (err) {
+        console.error('Error loading clubs:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load page data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [session]);
+
   const categories = useMemo(() => {
     const uniqueCategories = new Set<string>();
     clubs.forEach((club) => {
@@ -92,7 +97,7 @@ export default function ClubsPage() {
   const filteredClubs = useMemo(() => {
     let filtered = clubs;
 
-    if (activeCategory !== "All") {
+    if (activeCategory !== 'All') {
       filtered = filtered.filter((club) => club.category === activeCategory);
     }
 
@@ -110,7 +115,7 @@ export default function ClubsPage() {
     return filtered;
   }, [clubs, activeCategory, search]);
 
-  if (status === "loading" || loading) {
+  if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <p className="text-gray-500">Loading your student portal…</p>
@@ -122,12 +127,11 @@ export default function ClubsPage() {
     return null;
   }
 
-  const isStudent = session.user.role === "student";
+  const isStudent = session.user.role === 'student';
 
   return (
     <div className="min-h-screen">
       <main className="max-w-7xl mx-auto px-6 py-12">
-        {/* Header */}
         <header className="mb-12">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 md:gap-8">
             <div>
@@ -139,13 +143,13 @@ export default function ClubsPage() {
               </h1>
               <p className="mt-3 text-slate-600 max-w-2xl">
                 {isStudent
-                  ? "Browse all active clubs on campus. Find your next passion, meet classmates who share your interests, and get involved."
-                  : "Browse the student clubs available on campus."}
+                  ? 'Browse all active clubs on campus. Find your next passion, meet classmates who share your interests, and get involved.'
+                  : 'Browse the student clubs available on campus.'}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
-                href="/organizations"
+                href="/organizations#submit-organization"
                 className="px-5 py-3 rounded-lg bg-blue-600 text-white text-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors"
               >
                 Submit an Organization
@@ -166,13 +170,10 @@ export default function ClubsPage() {
           </div>
         )}
 
-        {/* Search & Filters */}
         <section className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 mb-10">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="w-full lg:w-2/5">
-              <label className="block text-sm font-medium text-slate-500 mb-2">
-                Search clubs
-              </label>
+              <label className="block text-sm font-medium text-slate-500 mb-2">Search clubs</label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-3 flex items-center text-slate-400">
                   <svg
@@ -202,11 +203,11 @@ export default function ClubsPage() {
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={() => setActiveCategory("All")}
+                  onClick={() => setActiveCategory('All')}
                   className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
-                    activeCategory === "All"
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-slate-600 border-slate-300 hover:bg-slate-100"
+                    activeCategory === 'All'
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'
                   }`}
                 >
                   All Clubs
@@ -218,8 +219,8 @@ export default function ClubsPage() {
                     onClick={() => setActiveCategory(category)}
                     className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
                       activeCategory === category
-                        ? "bg-blue-600 text-white border-blue-600"
-                        : "bg-white text-slate-600 border-slate-300 hover:bg-slate-100"
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'
                     }`}
                   >
                     {category}
@@ -230,12 +231,11 @@ export default function ClubsPage() {
           </div>
         </section>
 
-        {/* Results */}
         <section>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-semibold text-slate-900">Clubs Directory</h2>
             <p className="text-sm text-slate-500">
-              Showing {filteredClubs.length} club{filteredClubs.length === 1 ? "" : "s"}
+              Showing {filteredClubs.length} club{filteredClubs.length === 1 ? '' : 's'}
             </p>
           </div>
 
@@ -243,7 +243,8 @@ export default function ClubsPage() {
             <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center shadow-sm">
               <h3 className="text-xl font-semibold text-slate-900 mb-2">No clubs found</h3>
               <p className="text-slate-500 mb-6">
-                Try adjusting your search or selecting a different category. Need help finding something?
+                Try adjusting your search or selecting a different category. Need help finding
+                something?
               </p>
               <a
                 href="mailto:activities@actifyhs.org"
@@ -283,13 +284,15 @@ export default function ClubsPage() {
                         )}
                         <h3 className="text-xl font-semibold text-slate-900 mt-1">{club.name}</h3>
                       </div>
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${statusStyles[club.status]}`}>
+                      <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${statusStyles[club.status]}`}
+                      >
                         {club.status.charAt(0) + club.status.slice(1).toLowerCase()}
                       </span>
                     </div>
 
                     <p className="text-sm text-slate-600 leading-relaxed">
-                      {club.description || "No description provided."}
+                      {club.description || 'No description provided.'}
                     </p>
 
                     <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-600 space-y-3">
@@ -343,7 +346,7 @@ export default function ClubsPage() {
                       )}
                     </div>
 
-                    <div className="mt-auto">
+                    <div className="mt-auto flex flex-col gap-3">
                       {club.contactEmail && (
                         <a
                           href={`mailto:${club.contactEmail}?subject=${encodeURIComponent(
@@ -354,6 +357,12 @@ export default function ClubsPage() {
                           Contact Club Leaders
                         </a>
                       )}
+                      <Link
+                        href="/organizations#your-submissions"
+                        className="text-center text-xs font-medium text-slate-500 hover:text-blue-600 transition-colors"
+                      >
+                        Manage my submissions →
+                      </Link>
                     </div>
                   </div>
                 </article>

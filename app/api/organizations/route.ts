@@ -1,28 +1,25 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { upsertEmbedding } from "@/lib/retrieval/indexer";
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { upsertEmbedding } from '@/lib/retrieval/indexer';
 
 export async function GET() {
   try {
     const user = await getCurrentUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const organizations = await prisma.organization.findMany({
       where: { createdById: user.id },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     } as any);
 
     return NextResponse.json({ organizations });
   } catch (error) {
-    console.error("[GET /api/organizations] Error:", error);
-    return NextResponse.json(
-      { error: "Failed to load organizations" },
-      { status: 500 }
-    );
+    console.error('[GET /api/organizations] Error:', error);
+    return NextResponse.json({ error: 'Failed to load organizations' }, { status: 500 });
   }
 }
 
@@ -31,30 +28,23 @@ export async function POST(request: NextRequest) {
     const user = await getCurrentUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
-    const {
-      name,
-      description,
-      category,
-      leadership,
-      presidentName,
-      isSchoolClub,
-      contactEmail,
-    } = body;
+    const { name, description, category, leadership, presidentName, isSchoolClub, contactEmail } =
+      body;
 
-    if (!name || typeof name !== "string" || name.trim().length < 3) {
+    if (!name || typeof name !== 'string' || name.trim().length < 3) {
       return NextResponse.json(
-        { error: "Organization name must be at least 3 characters" },
+        { error: 'Organization name must be at least 3 characters' },
         { status: 400 }
       );
     }
 
     const isSchoolClubValue =
-      typeof isSchoolClub === "string"
-        ? ["true", "yes", "on", "1"].includes(isSchoolClub.toLowerCase())
+      typeof isSchoolClub === 'string'
+        ? ['true', 'yes', 'on', '1'].includes(isSchoolClub.toLowerCase())
         : Boolean(isSchoolClub);
 
     const organization = await prisma.organization.create({
@@ -71,17 +61,16 @@ export async function POST(request: NextRequest) {
     });
 
     // Index organization for semantic search (async, don't await)
-    upsertEmbedding("Organization", organization.id).catch((error) => {
-      console.error(`[POST /api/organizations] Failed to index organization ${organization.id}:`, error);
+    upsertEmbedding('Organization', organization.id).catch((error) => {
+      console.error(
+        `[POST /api/organizations] Failed to index organization ${organization.id}:`,
+        error
+      );
     });
 
     return NextResponse.json({ organization });
   } catch (error) {
-    console.error("[POST /api/organizations] Error:", error);
-    return NextResponse.json(
-      { error: "Failed to submit organization" },
-      { status: 500 }
-    );
+    console.error('[POST /api/organizations] Error:', error);
+    return NextResponse.json({ error: 'Failed to submit organization' }, { status: 500 });
   }
 }
-

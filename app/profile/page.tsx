@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useSession, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useEffect, useState } from 'react';
+import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface UserProfile {
   id: string;
@@ -22,8 +22,8 @@ export default function ProfilePage() {
   const [totalActivitiesCount, setTotalActivitiesCount] = useState(0);
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/signin");
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin');
     } else if (session) {
       fetchProfile();
       fetchStats();
@@ -32,11 +32,11 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch("/api/profile");
+      const response = await fetch('/api/profile');
       const data = await response.json();
       setProfile(data.profile);
     } catch (error) {
-      console.error("Error fetching profile:", error);
+      console.error('Error fetching profile:', error);
     } finally {
       setLoading(false);
     }
@@ -44,32 +44,31 @@ export default function ProfilePage() {
 
   const fetchStats = async () => {
     try {
-      if (session?.user.role === "admin") {
+      if (session?.user.role === 'admin') {
         // For admins, count total verifications issued
-        const verificationsRes = await fetch("/api/verifications");
+        const verificationsRes = await fetch('/api/verifications');
         const verificationsData = await verificationsRes.json();
         setTotalActivitiesCount(verificationsData.verifications?.length || 0);
       } else {
         // For students, count verified activities + regular activities
-        const verificationsRes = await fetch("/api/verifications");
+        const verificationsRes = await fetch('/api/verifications');
         const verificationsData = await verificationsRes.json();
-        const verifiedActivities = verificationsData.verifications?.filter(
-          (v: any) => v.status === "verified"
-        ) || [];
-        
-        const activitiesRes = await fetch("/api/activities");
+        const verifiedActivities =
+          verificationsData.verifications?.filter((v: any) => v.status === 'verified') || [];
+
+        const activitiesRes = await fetch('/api/activities');
         const activitiesData = await activitiesRes.json();
         const activities = activitiesData.activities || [];
-        
+
         // Total = verified activities + regular activities
         setTotalActivitiesCount(verifiedActivities.length + activities.length);
       }
     } catch (error) {
-      console.error("Error fetching stats:", error);
+      console.error('Error fetching stats:', error);
     }
   };
 
-  if (status === "loading" || loading) {
+  if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-zinc-600 dark:text-zinc-400">Loading...</div>
@@ -81,11 +80,11 @@ export default function ProfilePage() {
     return null;
   }
 
-  const isAdmin = profile.role === "admin";
-  const roleDisplay = isAdmin ? "Administrator" : "Student";
+  const isAdmin = profile.role === 'admin';
+  const roleDisplay = isAdmin ? 'Administrator' : 'Student';
 
-  const isStudent = profile.role === "student";
-  const isVerifier = profile.role === "verifier";
+  const isStudent = profile.role === 'student';
+  const isVerifier = profile.role === 'verifier';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -100,19 +99,17 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
               <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1">
-                {isAdmin ? "Total Verifications" : "Total Activities"}
+                {isAdmin ? 'Total Verifications' : 'Total Activities'}
               </p>
               <p className="text-2xl font-bold text-gray-900">{totalActivitiesCount}</p>
               <p className="text-xs text-gray-500 mt-2">
                 {isAdmin
-                  ? "Completed verifications issued across the platform."
-                  : "Combined total of activities you have created and verified."}
+                  ? 'Completed verifications issued across the platform.'
+                  : 'Combined total of activities you have created and verified.'}
               </p>
             </div>
             <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-              <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1">
-                Role
-              </p>
+              <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1">Role</p>
               <p className="text-2xl font-bold text-gray-900">{roleDisplay}</p>
               <p className="text-xs text-gray-500 mt-2">
                 Access tailored to your current role. Contact support to request changes.
@@ -126,7 +123,8 @@ export default function ProfilePage() {
                 {new Date(profile.createdAt).toLocaleDateString()}
               </p>
               <p className="text-xs text-gray-500 mt-2">
-                Thanks for being part of Actify. Keep your profile up-to-date for seamless verifications.
+                Thanks for being part of Actify. Keep your profile up-to-date for seamless
+                verifications.
               </p>
             </div>
           </div>
@@ -151,7 +149,7 @@ export default function ProfilePage() {
                   />
                 ) : (
                   <div className="w-20 h-20 rounded-full bg-blue-600 text-white flex items-center justify-center text-2xl font-semibold">
-                    {profile.name?.[0] || "U"}
+                    {profile.name?.[0] || 'U'}
                   </div>
                 )}
                 <div>
@@ -201,10 +199,10 @@ export default function ProfilePage() {
               </div>
               <div className="p-6 space-y-3">
                 <Link
-                  href={isAdmin ? "/admin" : "/dashboard"}
+                  href={isAdmin ? '/admin' : '/dashboard'}
                   className="block w-full text-center px-5 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
                 >
-                  {isAdmin ? "Go to Admin Dashboard" : "Open Dashboard"}
+                  {isAdmin ? 'Go to Admin Dashboard' : 'Open Dashboard'}
                 </Link>
                 {!isAdmin && (
                   <Link
@@ -216,14 +214,14 @@ export default function ProfilePage() {
                 )}
                 {isStudent && (
                   <Link
-                    href="/organizations"
+                    href="/organizations#submit-organization"
                     className="block w-full text-center px-5 py-3 border border-green-200 text-green-700 rounded-lg font-medium hover:bg-green-50 transition-colors"
                   >
-                    Browse Organizations
+                    Submit an Organization
                   </Link>
                 )}
                 <button
-                  onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+                  onClick={() => signOut({ callbackUrl: '/auth/signin' })}
                   className="block w-full text-center px-5 py-3 border border-red-200 text-red-700 rounded-lg font-medium hover:bg-red-50 transition-colors"
                 >
                   Sign Out
@@ -244,7 +242,8 @@ export default function ProfilePage() {
                   • For faster approvals, add supporting evidence when submitting new activities.
                 </p>
                 <p>
-                  • Need help? Reach out to your counselor or organization verifier directly from the activity view.
+                  • Need help? Reach out to your counselor or organization verifier directly from
+                  the activity view.
                 </p>
               </div>
             </div>
@@ -254,4 +253,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-

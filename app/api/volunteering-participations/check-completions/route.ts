@@ -1,18 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth';
 
 // GET - Check for opportunities that have ended and need completion confirmation
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (user.role !== "student") {
+    if (user.role !== 'student') {
       return NextResponse.json(
-        { error: "Only students can check for completion prompts" },
+        { error: 'Only students can check for completion prompts' },
         { status: 403 }
       );
     }
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const participations = await prisma.volunteeringParticipation.findMany({
       where: {
         studentId: user.id,
-        status: "active",
+        status: 'active',
         opportunity: {
           OR: [
             {
@@ -60,17 +60,13 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: {
-        createdAt: "desc",
+        createdAt: 'desc',
       },
     });
 
     return NextResponse.json({ participations });
   } catch (error) {
-    console.error("Error checking for completions:", error);
-    return NextResponse.json(
-      { error: "Failed to check for completions" },
-      { status: 500 }
-    );
+    console.error('Error checking for completions:', error);
+    return NextResponse.json({ error: 'Failed to check for completions' }, { status: 500 });
   }
 }
-

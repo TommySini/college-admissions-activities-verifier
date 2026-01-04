@@ -1,21 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth';
 
 // POST - Verify participation (admin/verifier only)
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (user.role !== "admin") {
+    if (user.role !== 'admin') {
       return NextResponse.json(
-        { error: "Forbidden: Only admins can verify participations" },
+        { error: 'Forbidden: Only admins can verify participations' },
         { status: 403 }
       );
     }
@@ -29,10 +26,7 @@ export async function POST(
     });
 
     if (!participation) {
-      return NextResponse.json(
-        { error: "Participation not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Participation not found' }, { status: 404 });
     }
 
     const updated = await prisma.volunteeringParticipation.update({
@@ -84,18 +78,14 @@ export async function POST(
       await prisma.activity.update({
         where: { id: updated.activityId },
         data: {
-          status: "verified",
+          status: 'verified',
         },
       });
     }
 
     return NextResponse.json({ participation: updated });
   } catch (error) {
-    console.error("Error verifying participation:", error);
-    return NextResponse.json(
-      { error: "Failed to verify participation" },
-      { status: 500 }
-    );
+    console.error('Error verifying participation:', error);
+    return NextResponse.json({ error: 'Failed to verify participation' }, { status: 500 });
   }
 }
-

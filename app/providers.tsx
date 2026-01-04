@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { SessionProvider } from "next-auth/react";
-import { ColorProvider } from "./context/ColorContext";
+import { SessionProvider } from 'next-auth/react';
+import { ColorProvider } from './context/ColorContext';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -10,4 +10,3 @@ export function Providers({ children }: { children: React.ReactNode }) {
     </SessionProvider>
   );
 }
-

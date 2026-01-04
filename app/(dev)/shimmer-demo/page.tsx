@@ -1,5 +1,5 @@
-import { ShimmerButton } from "@/components/ui/shimmer-button";
-import { Button } from "@/components/ui/button";
+import { ShimmerButton } from '@/components/ui/shimmer-button';
+import { Button } from '@/components/ui/button';
 
 export default function ShimmerDemoPage() {
   return (
@@ -55,8 +55,12 @@ export default function ShimmerDemoPage() {
           <h2 className="text-xl font-semibold text-white">Via Button Component</h2>
           <div className="flex flex-wrap gap-4 justify-center">
             <Button variant="shimmer">Default Size</Button>
-            <Button variant="shimmer" size="sm">Small Size</Button>
-            <Button variant="shimmer" size="lg">Large Size</Button>
+            <Button variant="shimmer" size="sm">
+              Small Size
+            </Button>
+            <Button variant="shimmer" size="lg">
+              Large Size
+            </Button>
           </div>
         </div>
 
@@ -88,7 +92,9 @@ export default function ShimmerDemoPage() {
         <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-6 text-white">
           <h3 className="font-semibold mb-2">Features:</h3>
           <ul className="list-disc list-inside space-y-1 text-sm text-slate-200">
-            <li>Respects <code className="bg-black/30 px-1 rounded">prefers-reduced-motion</code></li>
+            <li>
+              Respects <code className="bg-black/30 px-1 rounded">prefers-reduced-motion</code>
+            </li>
             <li>Full keyboard navigation support with focus rings</li>
             <li>Accessible with proper ARIA labels</li>
             <li>Integrates seamlessly with Button component</li>
@@ -99,4 +105,3 @@ export default function ShimmerDemoPage() {
     </div>
   );
 }
-

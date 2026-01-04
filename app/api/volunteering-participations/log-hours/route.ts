@@ -1,18 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
-import { upsertEmbedding } from "@/lib/retrieval/indexer";
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth';
+import { upsertEmbedding } from '@/lib/retrieval/indexer';
 
 // POST - Create manual log entry (past hours)
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Debug: Log user role to help diagnose issues
-    console.log("User attempting to log hours:", {
+    console.log('User attempting to log hours:', {
       id: user.id,
       email: user.email,
       role: user.role,
@@ -20,28 +20,28 @@ export async function POST(request: NextRequest) {
     });
 
     // Check role (case-insensitive, trimmed)
-    const userRole = (user.role || "").toString().toLowerCase().trim();
-    if (userRole !== "student") {
-      console.error("Role check failed:", {
-        expected: "student",
+    const userRole = (user.role || '').toString().toLowerCase().trim();
+    if (userRole !== 'student') {
+      console.error('Role check failed:', {
+        expected: 'student',
         actual: userRole,
         rawRole: user.role,
       });
       return NextResponse.json(
-        { 
-          error: "Only students can log hours",
+        {
+          error: 'Only students can log hours',
           debug: {
             role: user.role,
             roleType: typeof user.role,
-          }
+          },
         },
         { status: 403 }
       );
     }
 
     const body = await request.json();
-    console.log("Received request body:", body);
-    
+    console.log('Received request body:', body);
+
     const {
       organizationName,
       activityDescription,
@@ -53,30 +53,33 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!organizationName || !activityDescription || !startDate || totalHours === undefined) {
-      console.error("Validation failed - missing required fields:", {
+      console.error('Validation failed - missing required fields:', {
         organizationName: !!organizationName,
         activityDescription: !!activityDescription,
         startDate: !!startDate,
         totalHours: totalHours !== undefined,
       });
       return NextResponse.json(
-        { error: "Missing required fields: organizationName, activityDescription, startDate, totalHours" },
+        {
+          error:
+            'Missing required fields: organizationName, activityDescription, startDate, totalHours',
+        },
         { status: 400 }
       );
     }
 
     if (totalHours <= 0) {
-      return NextResponse.json(
-        { error: "Total hours must be greater than 0" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Total hours must be greater than 0' }, { status: 400 });
     }
 
     // Calculate hoursPerWeek if date range provided
     let hoursPerWeek: number | null = null;
     const start = new Date(startDate);
     const end = endDate ? new Date(endDate) : start;
-    const daysDiff = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+    const daysDiff = Math.max(
+      1,
+      Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+    );
     const weeks = daysDiff / 7;
     if (weeks > 0) {
       hoursPerWeek = parseFloat(totalHours) / weeks;
@@ -92,7 +95,7 @@ export async function POST(request: NextRequest) {
       endDate: endDate ? new Date(endDate) : null,
       totalHours: parseFloat(totalHours),
       hoursPerWeek: hoursPerWeek,
-      status: "completed" as const,
+      status: 'completed' as const,
       isManualLog: true,
       organizationName: organizationName.trim(),
       activityName: null,
@@ -101,7 +104,7 @@ export async function POST(request: NextRequest) {
       verified: false,
     };
 
-    console.log("Creating participation with data:", {
+    console.log('Creating participation with data:', {
       ...participationData,
       startDate: participationData.startDate.toISOString(),
       endDate: participationData.endDate?.toISOString() || null,
@@ -140,30 +143,32 @@ export async function POST(request: NextRequest) {
     `;
 
     // Fetch the created participation using raw SQL to avoid Prisma relation issues with null opportunityId
-    const participationResult = await prisma.$queryRaw<Array<{
-      id: string;
-      opportunityId: string | null;
-      studentId: string;
-      activityId: string | null;
-      startDate: Date;
-      endDate: Date | null;
-      totalHours: number;
-      hoursPerWeek: number | null;
-      status: string;
-      isManualLog: boolean;
-      organizationName: string | null;
-      activityName: string | null;
-      activityDescription: string | null;
-      serviceSheetUrl: string | null;
-      verified: boolean;
-      createdAt: Date;
-      updatedAt: Date;
-    }>>`
+    const participationResult = await prisma.$queryRaw<
+      Array<{
+        id: string;
+        opportunityId: string | null;
+        studentId: string;
+        activityId: string | null;
+        startDate: Date;
+        endDate: Date | null;
+        totalHours: number;
+        hoursPerWeek: number | null;
+        status: string;
+        isManualLog: boolean;
+        organizationName: string | null;
+        activityName: string | null;
+        activityDescription: string | null;
+        serviceSheetUrl: string | null;
+        verified: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+      }>
+    >`
       SELECT * FROM volunteering_participations WHERE id = ${participationId}
     `;
 
     if (!participationResult || participationResult.length === 0) {
-      throw new Error("Failed to retrieve created participation");
+      throw new Error('Failed to retrieve created participation');
     }
 
     const participationRow = participationResult[0];
@@ -188,38 +193,41 @@ export async function POST(request: NextRequest) {
     };
 
     // Index participation for semantic search (async, don't await)
-    upsertEmbedding("VolunteeringParticipation", participationId).catch((error) => {
-      console.error(`[POST /api/volunteering-participations/log-hours] Failed to index participation ${participationId}:`, error);
+    upsertEmbedding('VolunteeringParticipation', participationId).catch((error) => {
+      console.error(
+        `[POST /api/volunteering-participations/log-hours] Failed to index participation ${participationId}:`,
+        error
+      );
     });
 
     return NextResponse.json({ participation }, { status: 201 });
   } catch (error: any) {
-    console.error("Error creating manual log:", error);
-    console.error("Error type:", typeof error);
-    console.error("Error constructor:", error?.constructor?.name);
-    console.error("Error stringified:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
-    
+    console.error('Error creating manual log:', error);
+    console.error('Error type:', typeof error);
+    console.error('Error constructor:', error?.constructor?.name);
+    console.error('Error stringified:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+
     // Extract error information
-    const errorMessage = error?.message || String(error) || "Failed to log hours";
+    const errorMessage = error?.message || String(error) || 'Failed to log hours';
     const errorCode = error?.code;
     const errorMeta = error?.meta;
     const errorStack = error?.stack;
-    
+
     // Log full error details
-    console.error("Error details:", {
+    console.error('Error details:', {
       message: errorMessage,
       code: errorCode,
       meta: errorMeta,
       stack: errorStack,
       fullError: error,
     });
-    
+
     return NextResponse.json(
-      { 
+      {
         error: errorMessage,
         details: {
           message: errorMessage,
-          code: errorCode || "UNKNOWN",
+          code: errorCode || 'UNKNOWN',
           meta: errorMeta,
           type: error?.constructor?.name || typeof error,
         },
@@ -228,4 +236,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

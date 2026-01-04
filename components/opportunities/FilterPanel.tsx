@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { useState, useEffect } from "react";
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useState, useEffect } from 'react';
 
 interface FilterPanelProps {
   currentFilters: any;
@@ -30,12 +30,12 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
     } else if (current === value) {
       updateFilter(key, undefined);
     } else {
-      const values = current.split(",");
+      const values = current.split(',');
       if (values.includes(value)) {
         const newValues = values.filter((v: string) => v !== value);
-        updateFilter(key, newValues.length > 0 ? newValues.join(",") : undefined);
+        updateFilter(key, newValues.length > 0 ? newValues.join(',') : undefined);
       } else {
-        updateFilter(key, [...values, value].join(","));
+        updateFilter(key, [...values, value].join(','));
       }
     }
   };
@@ -52,7 +52,7 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
   const isFilterActive = (key: string, value: string) => {
     const current = filters[key];
     if (!current) return false;
-    return current === value || current.split(",").includes(value);
+    return current === value || current.split(',').includes(value);
   };
 
   return (
@@ -64,9 +64,9 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
           <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
             <input
               type="checkbox"
-              checked={filters.doneAtMySchool === "true"}
+              checked={filters.doneAtMySchool === 'true'}
               onChange={(e) =>
-                updateFilter("doneAtMySchool", e.target.checked ? "true" : undefined)
+                updateFilter('doneAtMySchool', e.target.checked ? 'true' : undefined)
               }
               disabled={!userSchoolId}
               className="rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-300"
@@ -82,8 +82,8 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
           <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
             <input
               type="checkbox"
-              checked={filters.popular === "true"}
-              onChange={(e) => updateFilter("popular", e.target.checked ? "true" : undefined)}
+              checked={filters.popular === 'true'}
+              onChange={(e) => updateFilter('popular', e.target.checked ? 'true' : undefined)}
               className="rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-300"
             />
             <span className="text-sm text-slate-700">Popular this month</span>
@@ -92,8 +92,8 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
           <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
             <input
               type="checkbox"
-              checked={filters.trending === "true"}
-              onChange={(e) => updateFilter("trending", e.target.checked ? "true" : undefined)}
+              checked={filters.trending === 'true'}
+              onChange={(e) => updateFilter('trending', e.target.checked ? 'true' : undefined)}
               className="rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-300"
             />
             <span className="text-sm text-slate-700">Trending</span>
@@ -111,14 +111,14 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
           <div>
             <p className="text-xs font-medium text-slate-600 mb-2">Modality</p>
             <div className="flex flex-wrap gap-2">
-              {["in_person", "hybrid", "online"].map((mod) => (
+              {['in_person', 'hybrid', 'online'].map((mod) => (
                 <Badge
                   key={mod}
-                  variant={isFilterActive("modality", mod) ? "default" : "outline"}
+                  variant={isFilterActive('modality', mod) ? 'default' : 'outline'}
                   className="cursor-pointer hover:opacity-80"
-                  onClick={() => toggleFilter("modality", mod)}
+                  onClick={() => toggleFilter('modality', mod)}
                 >
-                  {mod.replace(/_/g, " ")}
+                  {mod.replace(/_/g, ' ')}
                 </Badge>
               ))}
             </div>
@@ -128,19 +128,19 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
             <p className="text-xs font-medium text-slate-600 mb-2">Event Format</p>
             <div className="flex flex-wrap gap-2">
               {[
-                "competition",
-                "program",
-                "scholarship",
-                "internship",
-                "conference",
-                "volunteer",
-                "course",
+                'competition',
+                'program',
+                'scholarship',
+                'internship',
+                'conference',
+                'volunteer',
+                'course',
               ].map((type) => (
                 <Badge
                   key={type}
-                  variant={isFilterActive("type", type) ? "default" : "outline"}
+                  variant={isFilterActive('type', type) ? 'default' : 'outline'}
                   className="cursor-pointer hover:opacity-80"
-                  onClick={() => toggleFilter("type", type)}
+                  onClick={() => toggleFilter('type', type)}
                 >
                   {type}
                 </Badge>
@@ -151,12 +151,14 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
           <div>
             <p className="text-xs font-medium text-slate-600 mb-2">Structure</p>
             <div className="flex gap-2">
-              {["team", "individual", "either"].map((struct) => (
+              {['team', 'individual', 'either'].map((struct) => (
                 <Badge
                   key={struct}
-                  variant={filters.structure === struct ? "default" : "outline"}
+                  variant={filters.structure === struct ? 'default' : 'outline'}
                   className="cursor-pointer hover:opacity-80 flex-1 justify-center"
-                  onClick={() => updateFilter("structure", filters.structure === struct ? undefined : struct)}
+                  onClick={() =>
+                    updateFilter('structure', filters.structure === struct ? undefined : struct)
+                  }
                 >
                   {struct}
                 </Badge>
@@ -164,7 +166,7 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
             </div>
           </div>
 
-          {filters.structure === "team" && (
+          {filters.structure === 'team' && (
             <div>
               <p className="text-xs font-medium text-slate-600 mb-2">Team Size</p>
               <div className="grid grid-cols-2 gap-3">
@@ -174,8 +176,8 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
                     type="number"
                     min="1"
                     max="20"
-                    value={filters.teamMin || ""}
-                    onChange={(e) => updateFilter("teamMin", e.target.value || undefined)}
+                    value={filters.teamMin || ''}
+                    onChange={(e) => updateFilter('teamMin', e.target.value || undefined)}
                     placeholder="1"
                     className="w-full mt-1 px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-300"
                   />
@@ -186,8 +188,8 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
                     type="number"
                     min="1"
                     max="20"
-                    value={filters.teamMax || ""}
-                    onChange={(e) => updateFilter("teamMax", e.target.value || undefined)}
+                    value={filters.teamMax || ''}
+                    onChange={(e) => updateFilter('teamMax', e.target.value || undefined)}
                     placeholder="10"
                     className="w-full mt-1 px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-300"
                   />
@@ -205,33 +207,33 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
         <h3 className="text-sm font-semibold text-slate-900 mb-3">Domain</h3>
         <div className="flex flex-wrap gap-2">
           {[
-            "Finance",
-            "Economics",
-            "Business",
-            "CS",
-            "Cybersecurity",
-            "Math",
-            "Engineering",
-            "Biology",
-            "Health",
-            "Physics",
-            "Chemistry",
-            "Environment",
-            "Arts",
-            "Music",
-            "Writing",
-            "Debate",
-            "Civics",
-            "Policy",
-            "Entrepreneurship",
-            "Journalism",
-            "Languages",
+            'Finance',
+            'Economics',
+            'Business',
+            'CS',
+            'Cybersecurity',
+            'Math',
+            'Engineering',
+            'Biology',
+            'Health',
+            'Physics',
+            'Chemistry',
+            'Environment',
+            'Arts',
+            'Music',
+            'Writing',
+            'Debate',
+            'Civics',
+            'Policy',
+            'Entrepreneurship',
+            'Journalism',
+            'Languages',
           ].map((domain) => (
             <Badge
               key={domain}
-              variant={isFilterActive("domain", domain) ? "default" : "outline"}
+              variant={isFilterActive('domain', domain) ? 'default' : 'outline'}
               className="cursor-pointer hover:opacity-80 text-xs"
-              onClick={() => toggleFilter("domain", domain)}
+              onClick={() => toggleFilter('domain', domain)}
             >
               {domain}
             </Badge>
@@ -252,8 +254,8 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
               <div>
                 <label className="text-xs text-slate-500">Min</label>
                 <select
-                  value={filters.gradeMin || ""}
-                  onChange={(e) => updateFilter("gradeMin", e.target.value || undefined)}
+                  value={filters.gradeMin || ''}
+                  onChange={(e) => updateFilter('gradeMin', e.target.value || undefined)}
                   className="w-full mt-1 px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-300 text-slate-800"
                 >
                   <option value="">Any</option>
@@ -267,8 +269,8 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
               <div>
                 <label className="text-xs text-slate-500">Max</label>
                 <select
-                  value={filters.gradeMax || ""}
-                  onChange={(e) => updateFilter("gradeMax", e.target.value || undefined)}
+                  value={filters.gradeMax || ''}
+                  onChange={(e) => updateFilter('gradeMax', e.target.value || undefined)}
                   className="w-full mt-1 px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-300 text-slate-800"
                 >
                   <option value="">Any</option>
@@ -285,12 +287,12 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
           <div>
             <p className="text-xs font-medium text-slate-600 mb-2">Edition Status</p>
             <div className="flex flex-wrap gap-2">
-              {["open", "upcoming", "closed", "unknown"].map((status) => (
+              {['open', 'upcoming', 'closed', 'unknown'].map((status) => (
                 <Badge
                   key={status}
-                  variant={isFilterActive("status", status) ? "default" : "outline"}
+                  variant={isFilterActive('status', status) ? 'default' : 'outline'}
                   className="cursor-pointer hover:opacity-80"
-                  onClick={() => toggleFilter("status", status)}
+                  onClick={() => toggleFilter('status', status)}
                 >
                   {status}
                 </Badge>
@@ -301,8 +303,8 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
           <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
             <input
               type="checkbox"
-              checked={filters.rolling === "true"}
-              onChange={(e) => updateFilter("rolling", e.target.checked ? "true" : undefined)}
+              checked={filters.rolling === 'true'}
+              onChange={(e) => updateFilter('rolling', e.target.checked ? 'true' : undefined)}
               className="rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-300"
             />
             <span className="text-sm text-slate-700">Rolling deadlines</span>
@@ -320,8 +322,8 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
           <div>
             <p className="text-xs font-medium text-slate-600 mb-2">Geography Scope</p>
             <select
-              value={filters.geo || ""}
-              onChange={(e) => updateFilter("geo", e.target.value || undefined)}
+              value={filters.geo || ''}
+              onChange={(e) => updateFilter('geo', e.target.value || undefined)}
               className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-300 text-slate-800"
             >
               <option value="">Any</option>
@@ -336,16 +338,19 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
             <p className="text-xs font-medium text-slate-600 mb-2">Travel Required</p>
             <div className="flex gap-2">
               {[
-                { value: "req", label: "Yes" },
-                { value: "opt", label: "Optional" },
-                { value: "no", label: "No" },
+                { value: 'req', label: 'Yes' },
+                { value: 'opt', label: 'Optional' },
+                { value: 'no', label: 'No' },
               ].map((option) => (
                 <Badge
                   key={option.value}
-                  variant={filters.travel === option.value ? "default" : "outline"}
+                  variant={filters.travel === option.value ? 'default' : 'outline'}
                   className="cursor-pointer hover:opacity-80 flex-1 justify-center"
                   onClick={() =>
-                    updateFilter("travel", filters.travel === option.value ? undefined : option.value)
+                    updateFilter(
+                      'travel',
+                      filters.travel === option.value ? undefined : option.value
+                    )
                   }
                 >
                   {option.label}
@@ -367,21 +372,21 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
             <p className="text-xs font-medium text-slate-600 mb-2">Award Types</p>
             <div className="flex flex-wrap gap-2">
               {[
-                "cash",
-                "scholarship",
-                "recognition",
-                "internship",
-                "publication",
-                "college_credit",
-                "credential",
+                'cash',
+                'scholarship',
+                'recognition',
+                'internship',
+                'publication',
+                'college_credit',
+                'credential',
               ].map((award) => (
                 <Badge
                   key={award}
-                  variant={isFilterActive("award", award) ? "default" : "outline"}
+                  variant={isFilterActive('award', award) ? 'default' : 'outline'}
                   className="cursor-pointer hover:opacity-80 text-xs"
-                  onClick={() => toggleFilter("award", award)}
+                  onClick={() => toggleFilter('award', award)}
                 >
-                  {award.replace(/_/g, " ")}
+                  {award.replace(/_/g, ' ')}
                 </Badge>
               ))}
             </div>
@@ -390,8 +395,8 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
           <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
             <input
               type="checkbox"
-              checked={filters.alumniNotable === "true"}
-              onChange={(e) => updateFilter("alumniNotable", e.target.checked ? "true" : undefined)}
+              checked={filters.alumniNotable === 'true'}
+              onChange={(e) => updateFilter('alumniNotable', e.target.checked ? 'true' : undefined)}
               className="rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-300"
             />
             <span className="text-sm text-slate-700">Notable alumni outcomes</span>
@@ -407,8 +412,8 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
         <label className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
           <input
             type="checkbox"
-            checked={filters.free === "true"}
-            onChange={(e) => updateFilter("free", e.target.checked ? "true" : undefined)}
+            checked={filters.free === 'true'}
+            onChange={(e) => updateFilter('free', e.target.checked ? 'true' : undefined)}
             className="rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-300"
           />
           <span className="text-sm text-slate-700">Free only (no registration fee)</span>
@@ -427,4 +432,3 @@ export function FilterPanel({ currentFilters, onFiltersChange, userSchoolId }: F
     </div>
   );
 }
-

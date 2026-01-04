@@ -1,21 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
-import { upsertEmbedding } from "@/lib/retrieval/indexer";
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth';
+import { upsertEmbedding } from '@/lib/retrieval/indexer';
+
+// Cache public listings for 2 minutes
+export const revalidate = 120;
 
 // GET - List volunteering opportunities with filtering
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const status = searchParams.get("status");
-    const category = searchParams.get("category");
-    const categories = searchParams.get("categories"); // Comma-separated list
-    const location = searchParams.get("location");
-    const isOnline = searchParams.get("isOnline");
-    const search = searchParams.get("search");
-    const postedBy = searchParams.get("postedBy");
-    const limit = parseInt(searchParams.get("limit") || "50");
-    const offset = parseInt(searchParams.get("offset") || "0");
+    const status = searchParams.get('status');
+    const category = searchParams.get('category');
+    const categories = searchParams.get('categories'); // Comma-separated list
+    const location = searchParams.get('location');
+    const isOnline = searchParams.get('isOnline');
+    const search = searchParams.get('search');
+    const postedBy = searchParams.get('postedBy');
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const offset = parseInt(searchParams.get('offset') || '0');
 
     const where: any = {};
 
@@ -23,14 +26,14 @@ export async function GET(request: NextRequest) {
     const user = await getCurrentUser();
     if (status) {
       where.status = status;
-    } else if (!user || user.role !== "admin") {
+    } else if (!user || user.role !== 'admin') {
       // Non-admins only see approved opportunities
-      where.status = "approved";
+      where.status = 'approved';
     }
 
     // Filter by category (single or multiple)
     if (categories) {
-      const categoryList = categories.split(",").filter(Boolean);
+      const categoryList = categories.split(',').filter(Boolean);
       if (categoryList.length > 0) {
         where.category = { in: categoryList };
       }
@@ -47,7 +50,7 @@ export async function GET(request: NextRequest) {
 
     // Filter by online status
     if (isOnline !== null && isOnline !== undefined) {
-      where.isOnline = isOnline === "true";
+      where.isOnline = isOnline === 'true';
     }
 
     // Search in title, description, organization
@@ -95,7 +98,7 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: {
-        createdAt: "desc",
+        createdAt: 'desc',
       },
       take: limit,
       skip: offset,
@@ -110,10 +113,10 @@ export async function GET(request: NextRequest) {
       offset,
     });
   } catch (error: any) {
-    console.error("Error fetching volunteering opportunities:", error);
-    console.error("Error details:", error.message, error.stack);
+    console.error('Error fetching volunteering opportunities:', error);
+    console.error('Error details:', error.message, error.stack);
     return NextResponse.json(
-      { error: "Failed to fetch volunteering opportunities", details: error.message },
+      { error: 'Failed to fetch volunteering opportunities', details: error.message },
       { status: 500 }
     );
   }
@@ -124,7 +127,7 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
@@ -153,16 +156,16 @@ export async function POST(request: NextRequest) {
     // Validate required fields
     if (!title || !description || !organization || !category || !startDate) {
       return NextResponse.json(
-        { error: "Missing required fields: title, description, organization, category, startDate" },
+        { error: 'Missing required fields: title, description, organization, category, startDate' },
         { status: 400 }
       );
     }
 
     // Determine status based on user role
-    let status = "pending";
+    let status = 'pending';
     let approvedById = null;
-    if (user.role === "admin") {
-      status = "approved";
+    if (user.role === 'admin') {
+      status = 'approved';
       approvedById = user.id;
     }
 
@@ -217,17 +220,19 @@ export async function POST(request: NextRequest) {
     });
 
     // Index opportunity for semantic search (async, don't await)
-    upsertEmbedding("VolunteeringOpportunity", opportunity.id).catch((error) => {
-      console.error(`[POST /api/volunteering-opportunities] Failed to index opportunity ${opportunity.id}:`, error);
+    upsertEmbedding('VolunteeringOpportunity', opportunity.id).catch((error) => {
+      console.error(
+        `[POST /api/volunteering-opportunities] Failed to index opportunity ${opportunity.id}:`,
+        error
+      );
     });
 
     return NextResponse.json({ opportunity }, { status: 201 });
   } catch (error) {
-    console.error("Error creating volunteering opportunity:", error);
+    console.error('Error creating volunteering opportunity:', error);
     return NextResponse.json(
-      { error: "Failed to create volunteering opportunity" },
+      { error: 'Failed to create volunteering opportunity' },
       { status: 500 }
     );
   }
 }
-

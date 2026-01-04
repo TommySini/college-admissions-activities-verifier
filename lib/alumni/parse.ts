@@ -1,9 +1,9 @@
-import mammoth from "mammoth";
-import { readFile } from "fs/promises";
-import OpenAI from "openai";
-import { getRankBucket } from "./top-colleges";
-import { prisma } from "@/lib/prisma";
-import { upsertEmbedding } from "@/lib/retrieval/indexer";
+import mammoth from 'mammoth';
+import { readFile } from 'fs/promises';
+import OpenAI from 'openai';
+import { getRankBucket } from './top-colleges';
+import { prisma } from '@/lib/prisma';
+import { upsertEmbedding } from '@/lib/retrieval/indexer';
 
 interface ParsedActivity {
   title: string;
@@ -23,8 +23,8 @@ interface ParsedEssay {
 
 interface ParsedResult {
   collegeName: string;
-  decision: "admit" | "waitlist" | "deny";
-  decisionRound?: "ED" | "EA" | "RD";
+  decision: 'admit' | 'waitlist' | 'deny';
+  decisionRound?: 'ED' | 'EA' | 'RD';
 }
 
 interface ParsedAward {
@@ -48,26 +48,26 @@ interface ParsedData {
  */
 async function extractText(filePath: string, mimeType: string): Promise<string> {
   try {
-    if (mimeType === "application/pdf") {
+    if (mimeType === 'application/pdf') {
       // PDF parsing is complex in Next.js server environment
       // Recommend converting to TXT or DOCX for now
       throw new Error(
-        "PDF parsing requires additional setup. Please convert your PDF to TXT or DOCX format. " +
-        "You can do this by opening the PDF and using 'Save As' → 'Plain Text' or 'Word Document'."
+        'PDF parsing requires additional setup. Please convert your PDF to TXT or DOCX format. ' +
+          "You can do this by opening the PDF and using 'Save As' → 'Plain Text' or 'Word Document'."
       );
     } else if (
-      mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-      mimeType === "application/msword"
+      mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      mimeType === 'application/msword'
     ) {
       const result = await mammoth.extractRawText({ path: filePath });
       return result.value;
-    } else if (mimeType.startsWith("text/")) {
-      return await readFile(filePath, "utf-8");
+    } else if (mimeType.startsWith('text/')) {
+      return await readFile(filePath, 'utf-8');
     } else {
       throw new Error(`Unsupported file type: ${mimeType}`);
     }
   } catch (error) {
-    console.error("[extractText] Error:", error);
+    console.error('[extractText] Error:', error);
     throw error;
   }
 }
@@ -77,10 +77,10 @@ async function extractText(filePath: string, mimeType: string): Promise<string> 
  */
 async function parseWithAI(rawText: string): Promise<ParsedData> {
   const apiKey = process.env.OPENAI_API_KEY;
-  const aiEnabled = process.env.ALUMNI_AI_ENABLED === "true";
+  const aiEnabled = process.env.ALUMNI_AI_ENABLED === 'true';
 
   if (!aiEnabled || !apiKey) {
-    console.warn("[parseWithAI] AI parsing disabled or no API key");
+    console.warn('[parseWithAI] AI parsing disabled or no API key');
     return {
       activities: [],
       essays: [],
@@ -144,27 +144,28 @@ ${rawText.slice(0, 15000)}`;
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: 'gpt-4o-mini',
       messages: [
         {
-          role: "system",
-          content: "You are a helpful assistant that extracts structured data from college admissions documents. Always respond with valid JSON.",
+          role: 'system',
+          content:
+            'You are a helpful assistant that extracts structured data from college admissions documents. Always respond with valid JSON.',
         },
-        { role: "user", content: prompt },
+        { role: 'user', content: prompt },
       ],
       temperature: 0.3,
-      response_format: { type: "json_object" },
+      response_format: { type: 'json_object' },
     });
 
     const content = response.choices[0]?.message?.content;
     if (!content) {
-      throw new Error("No response from OpenAI");
+      throw new Error('No response from OpenAI');
     }
 
     const parsed = JSON.parse(content) as ParsedData;
     return parsed;
   } catch (error) {
-    console.error("[parseWithAI] Error:", error);
+    console.error('[parseWithAI] Error:', error);
     throw error;
   }
 }
@@ -176,7 +177,7 @@ async function indexAlumniData(applicationId: string): Promise<void> {
   console.log(`[indexAlumniData] Starting indexing for application ${applicationId}`);
 
   // Index the application itself (rawText)
-  await upsertEmbedding("AlumniApplication", applicationId);
+  await upsertEmbedding('AlumniApplication', applicationId);
 
   // Get all related records
   const [activities, essays, awards, results] = await Promise.all([
@@ -188,27 +189,27 @@ async function indexAlumniData(applicationId: string): Promise<void> {
 
   // Index all extracted activities
   for (const activity of activities) {
-    await upsertEmbedding("ExtractedActivity", activity.id);
+    await upsertEmbedding('ExtractedActivity', activity.id);
   }
 
   // Index all extracted essays
   for (const essay of essays) {
-    await upsertEmbedding("ExtractedEssay", essay.id);
+    await upsertEmbedding('ExtractedEssay', essay.id);
   }
 
   // Index all extracted awards
   for (const award of awards) {
-    await upsertEmbedding("ExtractedAward", award.id);
+    await upsertEmbedding('ExtractedAward', award.id);
   }
 
   // Index all admission results
   for (const result of results) {
-    await upsertEmbedding("AdmissionResult", result.id);
+    await upsertEmbedding('AdmissionResult', result.id);
   }
 
   console.log(
     `[indexAlumniData] Indexed ${activities.length} activities, ${essays.length} essays, ` +
-    `${awards.length} awards, ${results.length} results for application ${applicationId}`
+      `${awards.length} awards, ${results.length} results for application ${applicationId}`
   );
 }
 
@@ -311,7 +312,7 @@ export async function parseApplicationFile(
       await tx.alumniApplication.update({
         where: { id: applicationId },
         data: {
-          parseStatus: "success",
+          parseStatus: 'success',
           parseError: null,
         },
       });
@@ -321,7 +322,10 @@ export async function parseApplicationFile(
 
     // Index all created records for semantic search (async, don't block)
     indexAlumniData(applicationId).catch((error) => {
-      console.error(`[parseApplicationFile] Failed to index alumni data for ${applicationId}:`, error);
+      console.error(
+        `[parseApplicationFile] Failed to index alumni data for ${applicationId}:`,
+        error
+      );
     });
   } catch (error) {
     console.error(`[parseApplicationFile] Error parsing application ${applicationId}:`, error);
@@ -330,12 +334,11 @@ export async function parseApplicationFile(
     await prisma.alumniApplication.update({
       where: { id: applicationId },
       data: {
-        parseStatus: "failed",
-        parseError: error instanceof Error ? error.message : "Unknown error",
+        parseStatus: 'failed',
+        parseError: error instanceof Error ? error.message : 'Unknown error',
       },
     });
 
     throw error;
   }
 }
-

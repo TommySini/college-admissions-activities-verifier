@@ -1,27 +1,27 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
-type Step = "privacy" | "upload" | "processing" | "complete";
+type Step = 'privacy' | 'upload' | 'processing' | 'complete';
 
 export default function UploadApplicationPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [step, setStep] = useState<Step>("privacy");
-  const [privacy, setPrivacy] = useState<"ANONYMOUS" | "PSEUDONYM" | "FULL">("ANONYMOUS");
-  const [displayName, setDisplayName] = useState("");
-  const [contactEmail, setContactEmail] = useState("");
-  const [intendedMajor, setIntendedMajor] = useState("");
-  const [careerTags, setCareerTags] = useState("");
+  const [step, setStep] = useState<Step>('privacy');
+  const [privacy, setPrivacy] = useState<'ANONYMOUS' | 'PSEUDONYM' | 'FULL'>('ANONYMOUS');
+  const [displayName, setDisplayName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [intendedMajor, setIntendedMajor] = useState('');
+  const [careerTags, setCareerTags] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [applicationId, setApplicationId] = useState<string | null>(null);
 
-  if (status === "loading") {
+  if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-gray-600">Loading...</div>
@@ -29,37 +29,40 @@ export default function UploadApplicationPage() {
     );
   }
 
-  if (status === "unauthenticated") {
-    router.push("/auth/signin");
+  if (status === 'unauthenticated') {
+    router.push('/auth/signin');
     return null;
   }
 
   const handlePrivacyNext = async () => {
     try {
       // Save profile settings
-      const tags = careerTags.split(",").map((t) => t.trim()).filter(Boolean);
-      const res = await fetch("/api/alumni/profiles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const tags = careerTags
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean);
+      const res = await fetch('/api/alumni/profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           privacy,
-          displayName: privacy !== "ANONYMOUS" ? displayName : null,
-          contactEmail: privacy === "FULL" ? contactEmail : null,
+          displayName: privacy !== 'ANONYMOUS' ? displayName : null,
+          contactEmail: privacy === 'FULL' ? contactEmail : null,
           intendedMajor,
           careerInterestTags: tags,
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to save profile");
-      setStep("upload");
+      if (!res.ok) throw new Error('Failed to save profile');
+      setStep('upload');
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+      setError(err instanceof Error ? err.message : 'Unknown error');
     }
   };
 
   const handleFileUpload = async () => {
     if (!file) {
-      setError("Please select a file");
+      setError('Please select a file');
       return;
     }
 
@@ -68,26 +71,26 @@ export default function UploadApplicationPage() {
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append('file', file);
 
-      const res = await fetch("/api/alumni/applications", {
-        method: "POST",
+      const res = await fetch('/api/alumni/applications', {
+        method: 'POST',
         body: formData,
       });
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Failed to upload file");
+        throw new Error(data.error || 'Failed to upload file');
       }
 
       const data = await res.json();
       setApplicationId(data.application.id);
-      setStep("processing");
+      setStep('processing');
 
       // Poll for parse status
       pollParseStatus(data.application.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+      setError(err instanceof Error ? err.message : 'Unknown error');
       setUploading(false);
     }
   };
@@ -100,24 +103,24 @@ export default function UploadApplicationPage() {
       attempts++;
       try {
         const res = await fetch(`/api/alumni/applications/${appId}`);
-        if (!res.ok) throw new Error("Failed to check status");
+        if (!res.ok) throw new Error('Failed to check status');
 
         const data = await res.json();
         const status = data.application.parseStatus;
 
-        if (status === "success") {
+        if (status === 'success') {
           clearInterval(interval);
-          setStep("complete");
-        } else if (status === "failed") {
+          setStep('complete');
+        } else if (status === 'failed') {
           clearInterval(interval);
-          setError("Parsing failed: " + data.application.parseError);
+          setError('Parsing failed: ' + data.application.parseError);
           setUploading(false);
         } else if (attempts >= maxAttempts) {
           clearInterval(interval);
-          setStep("complete"); // Still show as complete, parsing may continue in background
+          setStep('complete'); // Still show as complete, parsing may continue in background
         }
       } catch (err) {
-        console.error("Poll error:", err);
+        console.error('Poll error:', err);
       }
     }, 1000);
   };
@@ -153,20 +156,20 @@ export default function UploadApplicationPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             {[
-              { key: "privacy", label: "Privacy Settings" },
-              { key: "upload", label: "Upload File" },
-              { key: "processing", label: "Processing" },
-              { key: "complete", label: "Complete" },
+              { key: 'privacy', label: 'Privacy Settings' },
+              { key: 'upload', label: 'Upload File' },
+              { key: 'processing', label: 'Processing' },
+              { key: 'complete', label: 'Complete' },
             ].map((s, idx) => (
               <div key={s.key} className="flex items-center flex-1">
                 <div className="flex flex-col items-center flex-1">
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center ${
                       step === s.key
-                        ? "bg-blue-600 text-white"
-                        : idx < ["privacy", "upload", "processing", "complete"].indexOf(step)
-                        ? "bg-green-600 text-white"
-                        : "bg-gray-200 text-gray-600"
+                        ? 'bg-blue-600 text-white'
+                        : idx < ['privacy', 'upload', 'processing', 'complete'].indexOf(step)
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-200 text-gray-600'
                     }`}
                   >
                     {idx + 1}
@@ -186,7 +189,7 @@ export default function UploadApplicationPage() {
         )}
 
         {/* Step: Privacy Settings */}
-        {step === "privacy" && (
+        {step === 'privacy' && (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Privacy Settings</h2>
             <p className="text-gray-600 mb-6">
@@ -199,14 +202,15 @@ export default function UploadApplicationPage() {
                   type="radio"
                   name="privacy"
                   value="ANONYMOUS"
-                  checked={privacy === "ANONYMOUS"}
+                  checked={privacy === 'ANONYMOUS'}
                   onChange={(e) => setPrivacy(e.target.value as any)}
                   className="mt-1"
                 />
                 <div>
                   <p className="font-medium text-gray-900">Anonymous</p>
                   <p className="text-sm text-gray-600">
-                    Your name and contact info will be hidden. Only your activities, essays, and results will be visible.
+                    Your name and contact info will be hidden. Only your activities, essays, and
+                    results will be visible.
                   </p>
                 </div>
               </label>
@@ -216,7 +220,7 @@ export default function UploadApplicationPage() {
                   type="radio"
                   name="privacy"
                   value="PSEUDONYM"
-                  checked={privacy === "PSEUDONYM"}
+                  checked={privacy === 'PSEUDONYM'}
                   onChange={(e) => setPrivacy(e.target.value as any)}
                   className="mt-1"
                 />
@@ -233,7 +237,7 @@ export default function UploadApplicationPage() {
                   type="radio"
                   name="privacy"
                   value="FULL"
-                  checked={privacy === "FULL"}
+                  checked={privacy === 'FULL'}
                   onChange={(e) => setPrivacy(e.target.value as any)}
                   className="mt-1"
                 />
@@ -246,7 +250,7 @@ export default function UploadApplicationPage() {
               </label>
             </div>
 
-            {privacy !== "ANONYMOUS" && (
+            {privacy !== 'ANONYMOUS' && (
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Display Name</label>
                 <input
@@ -259,9 +263,11 @@ export default function UploadApplicationPage() {
               </div>
             )}
 
-            {privacy === "FULL" && (
+            {privacy === 'FULL' && (
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Contact Email</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Contact Email
+                </label>
                 <input
                   type="email"
                   value={contactEmail}
@@ -306,14 +312,16 @@ export default function UploadApplicationPage() {
         )}
 
         {/* Step: Upload File */}
-        {step === "upload" && (
+        {step === 'upload' && (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Upload Your Application File</h2>
             <p className="text-gray-600 mb-6">
-              Upload your college admissions document (DOCX or TXT). Our AI will extract activities, essays, and results.
+              Upload your college admissions document (DOCX or TXT). Our AI will extract activities,
+              essays, and results.
             </p>
             <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
-              <strong>Tip:</strong> If you have a PDF, open it and use "Save As" → "Plain Text (.txt)" or "Word Document (.docx)" to convert it first.
+              <strong>Tip:</strong> If you have a PDF, open it and use "Save As" → "Plain Text
+              (.txt)" or "Word Document (.docx)" to convert it first.
             </div>
 
             <div className="mb-6">
@@ -328,7 +336,9 @@ export default function UploadApplicationPage() {
                   {file ? (
                     <div>
                       <p className="text-gray-900 font-medium">{file.name}</p>
-                      <p className="text-sm text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                      <p className="text-sm text-gray-500">
+                        {(file.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
                     </div>
                   ) : (
                     <div>
@@ -342,7 +352,7 @@ export default function UploadApplicationPage() {
 
             <div className="flex gap-3">
               <button
-                onClick={() => setStep("privacy")}
+                onClick={() => setStep('privacy')}
                 className="flex-1 px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
               >
                 Back
@@ -352,38 +362,50 @@ export default function UploadApplicationPage() {
                 disabled={!file || uploading}
                 className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {uploading ? "Uploading..." : "Upload & Process"}
+                {uploading ? 'Uploading...' : 'Upload & Process'}
               </button>
             </div>
           </div>
         )}
 
         {/* Step: Processing */}
-        {step === "processing" && (
+        {step === 'processing' && (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 text-center">
             <div className="mb-4">
               <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Processing Your Application</h2>
             <p className="text-gray-600">
-              Our AI is extracting activities, essays, and admission results from your file. This may take a minute...
+              Our AI is extracting activities, essays, and admission results from your file. This
+              may take a minute...
             </p>
           </div>
         )}
 
         {/* Step: Complete */}
-        {step === "complete" && (
+        {step === 'complete' && (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 text-center">
             <div className="mb-4">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg
+                  className="w-8 h-8 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               </div>
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Upload Complete!</h2>
             <p className="text-gray-600 mb-6">
-              Your application has been uploaded and processed. You can now view it in the alumni database.
+              Your application has been uploaded and processed. You can now view it in the alumni
+              database.
             </p>
             <div className="flex gap-3 justify-center">
               <Link
@@ -405,4 +427,3 @@ export default function UploadApplicationPage() {
     </div>
   );
 }
-

@@ -1,14 +1,14 @@
 export type ActivityCategory =
-  | "Sports"
-  | "Clubs"
-  | "Volunteer"
-  | "Work"
-  | "Academic"
-  | "Arts"
-  | "Leadership"
-  | "Other";
+  | 'Sports'
+  | 'Clubs'
+  | 'Volunteer'
+  | 'Work'
+  | 'Academic'
+  | 'Arts'
+  | 'Leadership'
+  | 'Other';
 
-export type ProfileType = "Organization" | "Applicant";
+export type ProfileType = 'Organization' | 'Applicant';
 
 export interface BaseProfile {
   id: string;
@@ -20,14 +20,14 @@ export interface BaseProfile {
 }
 
 export interface OrganizationProfile extends BaseProfile {
-  profileType: "Organization";
+  profileType: 'Organization';
   description?: string;
   website?: string;
   location?: string;
 }
 
 export interface ApplicantProfile extends BaseProfile {
-  profileType: "Applicant";
+  profileType: 'Applicant';
   bio?: string;
   location?: string;
 }
@@ -46,7 +46,7 @@ export interface Verification {
   endDate?: string;
   position?: string;
   category?: ActivityCategory;
-  status: "pending" | "accepted" | "rejected";
+  status: 'pending' | 'accepted' | 'rejected';
   createdAt: string;
   updatedAt: string;
 }

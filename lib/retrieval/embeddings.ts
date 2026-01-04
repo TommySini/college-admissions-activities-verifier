@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import OpenAI from 'openai';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -9,7 +9,7 @@ const openai = new OpenAI({
  */
 export async function createTextEmbedding(text: string): Promise<number[]> {
   if (!text || text.trim().length === 0) {
-    throw new Error("Cannot create embedding for empty text");
+    throw new Error('Cannot create embedding for empty text');
   }
 
   // Truncate to ~8000 tokens (roughly 32k characters) to stay within model limits
@@ -17,14 +17,14 @@ export async function createTextEmbedding(text: string): Promise<number[]> {
 
   try {
     const response = await openai.embeddings.create({
-      model: "text-embedding-3-small",
+      model: 'text-embedding-3-small',
       input: truncated,
-      encoding_format: "float",
+      encoding_format: 'float',
     });
 
     return response.data[0].embedding;
   } catch (error) {
-    console.error("[createTextEmbedding] Error:", error);
+    console.error('[createTextEmbedding] Error:', error);
     throw error;
   }
 }
@@ -34,7 +34,7 @@ export async function createTextEmbedding(text: string): Promise<number[]> {
  */
 export function normalize(vector: number[]): number[] {
   const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
-  
+
   if (magnitude === 0) {
     return vector;
   }
@@ -48,7 +48,7 @@ export function normalize(vector: number[]): number[] {
  */
 export function cosine(a: number[], b: number[]): number {
   if (a.length !== b.length) {
-    throw new Error("Vectors must have the same length");
+    throw new Error('Vectors must have the same length');
   }
 
   return a.reduce((sum, val, i) => sum + val * b[i], 0);
@@ -61,14 +61,14 @@ export function stripPII(text: string): string {
   let cleaned = text;
 
   // Remove email addresses
-  cleaned = cleaned.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, "[EMAIL]");
+  cleaned = cleaned.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, '[EMAIL]');
 
   // Remove phone numbers (various formats)
-  cleaned = cleaned.replace(/\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g, "[PHONE]");
-  cleaned = cleaned.replace(/\b\(\d{3}\)\s*\d{3}[-.]?\d{4}\b/g, "[PHONE]");
+  cleaned = cleaned.replace(/\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g, '[PHONE]');
+  cleaned = cleaned.replace(/\b\(\d{3}\)\s*\d{3}[-.]?\d{4}\b/g, '[PHONE]');
 
   // Remove SSN-like patterns
-  cleaned = cleaned.replace(/\b\d{3}-\d{2}-\d{4}\b/g, "[SSN]");
+  cleaned = cleaned.replace(/\b\d{3}-\d{2}-\d{4}\b/g, '[SSN]');
 
   return cleaned;
 }
@@ -80,7 +80,7 @@ export function parseVector(vectorJson: string): number[] {
   try {
     return JSON.parse(vectorJson);
   } catch (error) {
-    console.error("[parseVector] Error parsing vector:", error);
+    console.error('[parseVector] Error parsing vector:', error);
     return [];
   }
 }
@@ -91,4 +91,3 @@ export function parseVector(vectorJson: string): number[] {
 export function encodeVector(vector: number[]): string {
   return JSON.stringify(vector);
 }
-

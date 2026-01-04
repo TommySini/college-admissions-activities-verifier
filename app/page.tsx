@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { WebGLShader } from "@/components/ui/web-gl-shader";
-import { LiquidButton } from "@/components/ui/liquid-glass-button";
-import { BookOpen, BarChart3, CheckCircle, Lock, Zap } from "lucide-react";
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { WebGLShader } from '@/components/ui/web-gl-shader';
+import { LiquidButton } from '@/components/ui/liquid-glass-button';
+import { BookOpen, BarChart3, CheckCircle, Lock, Zap } from 'lucide-react';
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -14,18 +14,18 @@ export default function Home() {
   const [hasRedirected, setHasRedirected] = useState(false);
 
   useEffect(() => {
-    if (status === "authenticated" && session && !hasRedirected) {
+    if (status === 'authenticated' && session && !hasRedirected) {
       setHasRedirected(true);
       // Redirect admins to admin dashboard, others to regular dashboard
-      if (session.user.role === "admin") {
-        router.replace("/admin");
+      if (session.user.role === 'admin') {
+        router.replace('/admin');
       } else {
-        router.replace("/dashboard");
+        router.replace('/dashboard');
       }
     }
   }, [status, session, router, hasRedirected]);
 
-  if (status === "loading") {
+  if (status === 'loading') {
     return (
       <div className="relative min-h-screen overflow-hidden">
         <WebGLShader />
@@ -60,16 +60,9 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-lg overflow-hidden shadow-lg shadow-blue-500/50">
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="h-full w-full object-cover"
-                >
+                <video autoPlay loop muted playsInline className="h-full w-full object-cover">
                   <source src="/logo-video.mp4" type="video/mp4" />
-                  {/* Fallback content if video cannot load */}
-                  A
+                  {/* Fallback content if video cannot load */}A
                 </video>
               </div>
               <span className="text-xl font-bold text-black">Actify</span>
@@ -102,19 +95,12 @@ export default function Home() {
           <div className="max-w-2xl mx-auto">
             <div className="bg-black/5 backdrop-blur-xl rounded-2xl p-8 md:p-12 shadow-2xl border border-black/10">
               <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-black mb-3">
-                  Get Started Today
-                </h2>
-                <p className="text-black/60">
-                  Choose your role and sign in with Google to begin
-                </p>
+                <h2 className="text-3xl font-bold text-black mb-3">Get Started Today</h2>
+                <p className="text-black/60">Choose your role and sign in with Google to begin</p>
               </div>
 
               <div className="space-y-4">
-                <Link
-                  href="/auth/signin?role=student"
-                  className="block w-full group"
-                >
+                <Link href="/auth/signin?role=student" className="block w-full group">
                   <div className="bg-black/5 backdrop-blur-sm border-2 border-blue-200 rounded-xl p-6 hover:border-blue-400 hover:bg-black/10 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-200">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
@@ -130,17 +116,24 @@ export default function Home() {
                           </p>
                         </div>
                       </div>
-                      <svg className="w-5 h-5 text-blue-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      <svg
+                        className="w-5 h-5 text-blue-600 group-hover:translate-x-1 transition-transform"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
                       </svg>
                     </div>
                   </div>
                 </Link>
 
-                <Link
-                  href="/auth/signin?role=admin"
-                  className="block w-full group"
-                >
+                <Link href="/auth/signin?role=admin" className="block w-full group">
                   <div className="bg-black/5 backdrop-blur-sm border-2 border-purple-200 rounded-xl p-6 hover:border-purple-400 hover:bg-black/10 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-200">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
@@ -156,8 +149,18 @@ export default function Home() {
                           </p>
                         </div>
                       </div>
-                      <svg className="w-5 h-5 text-purple-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      <svg
+                        className="w-5 h-5 text-purple-600 group-hover:translate-x-1 transition-transform"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
                       </svg>
                     </div>
                   </div>

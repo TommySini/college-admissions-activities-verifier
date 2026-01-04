@@ -1,16 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth';
 
 // PATCH - Update goal
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -21,27 +18,25 @@ export async function PATCH(
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: "Goal not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
     }
 
     // Students can only update their own goals
-    if (user.role !== "admin" && existing.studentId !== user.id) {
+    if (user.role !== 'admin' && existing.studentId !== user.id) {
       return NextResponse.json(
-        { error: "Forbidden: You can only update your own goals" },
+        { error: 'Forbidden: You can only update your own goals' },
         { status: 403 }
       );
     }
 
     const updateData: any = {};
     if (body.targetHours !== undefined) updateData.targetHours = parseFloat(body.targetHours);
-    if (body.targetDate !== undefined) updateData.targetDate = body.targetDate ? new Date(body.targetDate) : null;
+    if (body.targetDate !== undefined)
+      updateData.targetDate = body.targetDate ? new Date(body.targetDate) : null;
     if (body.description !== undefined) updateData.description = body.description || null;
     if (body.status !== undefined) {
       updateData.status = body.status;
-      if (body.status === "completed") {
+      if (body.status === 'completed') {
         updateData.completedAt = new Date();
       }
     }
@@ -70,11 +65,8 @@ export async function PATCH(
 
     return NextResponse.json({ goal });
   } catch (error) {
-    console.error("Error updating goal:", error);
-    return NextResponse.json(
-      { error: "Failed to update goal" },
-      { status: 500 }
-    );
+    console.error('Error updating goal:', error);
+    return NextResponse.json({ error: 'Failed to update goal' }, { status: 500 });
   }
 }
 
@@ -86,7 +78,7 @@ export async function DELETE(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -96,16 +88,13 @@ export async function DELETE(
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: "Goal not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
     }
 
     // Students can only delete their own goals
-    if (user.role !== "admin" && existing.studentId !== user.id) {
+    if (user.role !== 'admin' && existing.studentId !== user.id) {
       return NextResponse.json(
-        { error: "Forbidden: You can only delete your own goals" },
+        { error: 'Forbidden: You can only delete your own goals' },
         { status: 403 }
       );
     }
@@ -116,11 +105,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting goal:", error);
-    return NextResponse.json(
-      { error: "Failed to delete goal" },
-      { status: 500 }
-    );
+    console.error('Error deleting goal:', error);
+    return NextResponse.json({ error: 'Failed to delete goal' }, { status: 500 });
   }
 }
-

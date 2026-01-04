@@ -1,32 +1,32 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { signOut } from "next-auth/react";
-import { useColors } from "../../context/ColorContext";
+import { useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { signOut } from 'next-auth/react';
+import { useColors } from '../../context/ColorContext';
 
 export default function LogHoursPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const colors = useColors();
   const [formData, setFormData] = useState({
-    organizationName: "",
-    activityName: "",
-    activityDescription: "",
-    startDate: "",
-    endDate: "",
+    organizationName: '',
+    activityName: '',
+    activityDescription: '',
+    startDate: '',
+    endDate: '',
     isOneDay: false,
-    totalHours: "",
-    serviceSheetUrl: "",
+    totalHours: '',
+    serviceSheetUrl: '',
   });
   const [uploadedFile, setUploadedFile] = useState<{ url: string; name: string } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
-  if (status === "loading") {
+  if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-gray-600">Loading...</div>
@@ -34,13 +34,13 @@ export default function LogHoursPage() {
     );
   }
 
-  if (status === "unauthenticated") {
-    router.push("/auth/signin");
+  if (status === 'unauthenticated') {
+    router.push('/auth/signin');
     return null;
   }
 
-  if (!session || session.user.role !== "student") {
-    router.push("/volunteering");
+  if (!session || session.user.role !== 'student') {
+    router.push('/volunteering');
     return null;
   }
 
@@ -58,27 +58,27 @@ export default function LogHoursPage() {
     if (!file) return;
 
     // Validate file type
-    const allowedTypes = ["application/pdf", "image/jpeg", "image/png", "image/gif", "image/webp"];
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      setError("Invalid file type. Please upload a PDF or image file.");
+      setError('Invalid file type. Please upload a PDF or image file.');
       return;
     }
 
     // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      setError("File size exceeds 5MB limit.");
+      setError('File size exceeds 5MB limit.');
       return;
     }
 
     setIsUploading(true);
-    setError("");
+    setError('');
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append('file', file);
 
-      const response = await fetch("/api/upload", {
-        method: "POST",
+      const response = await fetch('/api/upload', {
+        method: 'POST',
         body: formData,
       });
 
@@ -88,10 +88,10 @@ export default function LogHoursPage() {
         setUploadedFile({ url: data.url, name: data.fileName });
         setFormData((prev) => ({ ...prev, serviceSheetUrl: data.url }));
       } else {
-        setError(data.error || "Failed to upload file");
+        setError(data.error || 'Failed to upload file');
       }
     } catch (err) {
-      setError("Failed to upload file. Please try again.");
+      setError('Failed to upload file. Please try again.');
     } finally {
       setIsUploading(false);
     }
@@ -99,11 +99,13 @@ export default function LogHoursPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setError('');
 
     // Check user role before submitting
-    if (!session || session.user.role !== "student") {
-      setError(`You must be a student to log hours. Current role: ${session?.user?.role || "unknown"}`);
+    if (!session || session.user.role !== 'student') {
+      setError(
+        `You must be a student to log hours. Current role: ${session?.user?.role || 'unknown'}`
+      );
       return;
     }
 
@@ -115,21 +117,21 @@ export default function LogHoursPage() {
       !formData.startDate ||
       !formData.totalHours
     ) {
-      setError("Please fill in all required fields");
+      setError('Please fill in all required fields');
       return;
     }
 
     if (parseFloat(formData.totalHours) <= 0) {
-      setError("Total hours must be greater than 0");
+      setError('Total hours must be greater than 0');
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/volunteering-participations/log-hours", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/volunteering-participations/log-hours', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           organizationName: formData.organizationName,
           activityName: formData.activityName,
@@ -142,19 +144,19 @@ export default function LogHoursPage() {
       });
 
       const data = await response.json();
-      console.log("API Response:", { status: response.status, ok: response.ok, data });
+      console.log('API Response:', { status: response.status, ok: response.ok, data });
 
       if (response.ok) {
-        router.push("/volunteering?logged=true");
+        router.push('/volunteering?logged=true');
       } else {
-        let errorMessage = data.error || "Failed to log hours";
-        console.error("Full error response:", data);
-        
+        let errorMessage = data.error || 'Failed to log hours';
+        console.error('Full error response:', data);
+
         if (data.debug) {
           errorMessage += ` (Debug: role="${data.debug.role}", type=${data.debug.roleType})`;
         }
         if (data.details) {
-          console.error("API Error Details:", data.details);
+          console.error('API Error Details:', data.details);
           if (data.details.message) {
             errorMessage += ` - ${data.details.message}`;
           }
@@ -170,8 +172,8 @@ export default function LogHoursPage() {
         setIsSubmitting(false);
       }
     } catch (err: any) {
-      console.error("Error submitting form:", err);
-      setError(`An error occurred: ${err?.message || "Please try again."}`);
+      console.error('Error submitting form:', err);
+      setError(`An error occurred: ${err?.message || 'Please try again.'}`);
       setIsSubmitting(false);
     }
   };
@@ -203,7 +205,7 @@ export default function LogHoursPage() {
                 Back to Volunteering
               </Link>
               <button
-                onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+                onClick={() => signOut({ callbackUrl: '/auth/signin' })}
                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
               >
                 Sign Out
@@ -221,7 +223,10 @@ export default function LogHoursPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white rounded-xl p-6 shadow-sm border border-gray-200"
+        >
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
               {error}
@@ -275,9 +280,7 @@ export default function LogHoursPage() {
 
           {/* Date Range */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Date Range *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Date Range *</label>
             <div className="space-y-3">
               <div className="flex items-center gap-2 mb-3">
                 <input
@@ -328,9 +331,7 @@ export default function LogHoursPage() {
 
           {/* Total Hours */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Total Hours *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Total Hours *</label>
             <input
               type="number"
               required
@@ -361,9 +362,7 @@ export default function LogHoursPage() {
                   disabled={isUploading}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 />
-                {isUploading && (
-                  <p className="text-sm text-gray-500 mt-2">Uploading...</p>
-                )}
+                {isUploading && <p className="text-sm text-gray-500 mt-2">Uploading...</p>}
               </div>
             ) : (
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -398,7 +397,7 @@ export default function LogHoursPage() {
                     type="button"
                     onClick={() => {
                       setUploadedFile(null);
-                      setFormData({ ...formData, serviceSheetUrl: "" });
+                      setFormData({ ...formData, serviceSheetUrl: '' });
                     }}
                     className="text-red-600 hover:text-red-800 text-sm"
                   >
@@ -417,13 +416,13 @@ export default function LogHoursPage() {
               className="flex-1 px-6 py-3 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: colors.primary }}
               onMouseEnter={(e) => {
-                if (!isSubmitting) e.currentTarget.style.opacity = "0.9";
+                if (!isSubmitting) e.currentTarget.style.opacity = '0.9';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.opacity = "1";
+                e.currentTarget.style.opacity = '1';
               }}
             >
-              {isSubmitting ? "Logging Hours..." : "Log Hours"}
+              {isSubmitting ? 'Logging Hours...' : 'Log Hours'}
             </button>
             <Link
               href="/volunteering"
@@ -437,4 +436,3 @@ export default function LogHoursPage() {
     </div>
   );
 }
-

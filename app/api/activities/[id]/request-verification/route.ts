@@ -1,16 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
 // POST - Request verification from an organization
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
@@ -18,10 +15,7 @@ export async function POST(
     const { organizationEmail } = body;
 
     if (!organizationEmail) {
-      return NextResponse.json(
-        { error: "Organization email is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Organization email is required' }, { status: 400 });
     }
 
     // Check if activity belongs to user
@@ -30,17 +24,11 @@ export async function POST(
     });
 
     if (!activity) {
-      return NextResponse.json(
-        { error: "Activity not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
 
     if (activity.studentId !== user.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     // Find verifier by email
@@ -49,10 +37,7 @@ export async function POST(
     });
 
     if (!verifier) {
-      return NextResponse.json(
-        { error: "Verifier not found with that email" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Verifier not found with that email' }, { status: 404 });
     }
 
     // Check if verification already exists for this activity
@@ -62,7 +47,7 @@ export async function POST(
 
     if (existingVerification) {
       return NextResponse.json(
-        { error: "Verification request already exists for this activity" },
+        { error: 'Verification request already exists for this activity' },
         { status: 400 }
       );
     }
@@ -73,20 +58,16 @@ export async function POST(
         verifierId: verifier.id,
         studentId: user.id,
         activityId: activity.id,
-        status: "pending",
+        status: 'pending',
       },
     });
 
     return NextResponse.json(
-      { message: "Verification request sent", verification },
+      { message: 'Verification request sent', verification },
       { status: 201 }
     );
   } catch (error) {
-    console.error("Error requesting verification:", error);
-    return NextResponse.json(
-      { error: "Failed to request verification" },
-      { status: 500 }
-    );
+    console.error('Error requesting verification:', error);
+    return NextResponse.json({ error: 'Failed to request verification' }, { status: 500 });
   }
 }
-

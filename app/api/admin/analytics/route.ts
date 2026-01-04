@@ -1,20 +1,17 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
 // GET - Get analytics data for admin dashboard
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (user.role !== "admin") {
-      return NextResponse.json(
-        { error: "Only admins can access this endpoint" },
-        { status: 403 }
-      );
+    if (user.role !== 'admin') {
+      return NextResponse.json({ error: 'Only admins can access this endpoint' }, { status: 403 });
     }
 
     // Get all activities with their categories and verification status
@@ -37,7 +34,7 @@ export async function GET(request: NextRequest) {
     // Calculate most common activity categories
     const categoryCounts: Record<string, number> = {};
     activities.forEach((activity) => {
-      const category = activity.category || "Other";
+      const category = activity.category || 'Other';
       categoryCounts[category] = (categoryCounts[category] || 0) + 1;
     });
 
@@ -50,49 +47,45 @@ export async function GET(request: NextRequest) {
     // Since we don't have grade in the schema, we'll group by verification status
     const verifiedCount = activities.filter(
       (activity) =>
-        activity.verification?.status === "verified" ||
-        activity.verification?.status === "accepted" ||
-        activity.status === "verified"
+        activity.verification?.status === 'verified' ||
+        activity.verification?.status === 'accepted' ||
+        activity.status === 'verified'
     ).length;
 
     const unverifiedCount = activities.filter(
       (activity) =>
         !activity.verification ||
-        (activity.verification.status !== "verified" &&
-          activity.verification.status !== "accepted") ||
-        activity.status === "pending"
+        (activity.verification.status !== 'verified' &&
+          activity.verification.status !== 'accepted') ||
+        activity.status === 'pending'
     ).length;
 
     const deniedCount = activities.filter(
       (activity) =>
-        activity.verification?.status === "denied" ||
-        activity.verification?.status === "rejected" ||
-        activity.status === "denied"
+        activity.verification?.status === 'denied' ||
+        activity.verification?.status === 'rejected' ||
+        activity.status === 'denied'
     ).length;
 
     // For now, we'll return overall stats
     // In production, you might want to extract grade from email or store it in DB
     const verificationByStatus = [
-      { status: "Verified", count: verifiedCount },
-      { status: "Unverified", count: unverifiedCount },
-      { status: "Denied", count: deniedCount },
+      { status: 'Verified', count: verifiedCount },
+      { status: 'Unverified', count: unverifiedCount },
+      { status: 'Denied', count: deniedCount },
     ];
 
     return NextResponse.json({
       mostCommonCategories,
       verificationByStatus,
       totalActivities: activities.length,
-      totalStudents: await prisma.user.count({ where: { role: "student" } }),
+      totalStudents: await prisma.user.count({ where: { role: 'student' } }),
       totalOrganizations: await prisma.organization.count({
-        where: { status: "APPROVED" },
+        where: { status: 'APPROVED' },
       }),
     });
   } catch (error) {
-    console.error("Error fetching analytics:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch analytics" },
-      { status: 500 }
-    );
+    console.error('Error fetching analytics:', error);
+    return NextResponse.json({ error: 'Failed to fetch analytics' }, { status: 500 });
   }
 }
-

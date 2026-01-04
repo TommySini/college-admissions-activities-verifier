@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/prisma";
-import { User } from "@prisma/client";
+import { prisma } from '@/lib/prisma';
+import { User } from '@prisma/client';
 import {
   getPrivacyConstraints,
   mergeWhereClause,
@@ -7,20 +7,28 @@ import {
   isSafeOrderByField,
   sanitizeFieldSelection,
   applyAlumniPrivacy,
-} from "./privacy";
-import { describeModel } from "./runtimeModels";
+} from './privacy';
+import { describeModel } from './runtimeModels';
+
+type WhereClause = Record<string, unknown>;
+type OrderByClause = Record<string, 'asc' | 'desc'>;
+type PrismaModelLike = {
+  findMany: (args: Record<string, unknown>) => Promise<Record<string, unknown>[]>;
+  count?: (args: { where?: WhereClause }) => Promise<number>;
+};
+type PrismaClientLike = Record<string, PrismaModelLike | undefined>;
 
 export interface QueryParams {
   model: string;
-  where?: any;
+  where?: WhereClause;
   select?: string[];
   limit?: number;
-  orderBy?: { field: string; direction: "asc" | "desc" };
+  orderBy?: { field: string; direction: 'asc' | 'desc' };
 }
 
 export interface QueryResult {
   success: boolean;
-  data?: any[];
+  data?: Record<string, unknown>[];
   count?: number;
   error?: string;
 }
@@ -28,10 +36,7 @@ export interface QueryResult {
 /**
  * Execute a generic, privacy-safe query against any Prisma model
  */
-export async function executeGenericQuery(
-  params: QueryParams,
-  user: User
-): Promise<QueryResult> {
+export async function executeGenericQuery(params: QueryParams, user: User): Promise<QueryResult> {
   try {
     const { model, where, select, limit, orderBy } = params;
 
@@ -49,7 +54,7 @@ export async function executeGenericQuery(
     if (!privacy.allowed) {
       return {
         success: false,
-        error: privacy.errorMessage || "Access denied",
+        error: privacy.errorMessage || 'Access denied',
       };
     }
 
@@ -63,19 +68,20 @@ export async function executeGenericQuery(
     const finalLimit = getValidatedLimit(limit);
 
     // Build orderBy clause
-    let finalOrderBy: any = undefined;
+    let finalOrderBy: OrderByClause | undefined;
     if (orderBy && isSafeOrderByField(orderBy.field)) {
-      finalOrderBy = { [orderBy.field]: orderBy.direction || "desc" };
+      finalOrderBy = { [orderBy.field]: orderBy.direction || 'desc' };
     } else {
       // Default ordering by createdAt or id
-      finalOrderBy = modelDescription.fields.find((f) => f.name === "createdAt")
-        ? { createdAt: "desc" }
-        : { id: "desc" };
+      finalOrderBy = modelDescription.fields.find((f) => f.name === 'createdAt')
+        ? { createdAt: 'desc' }
+        : { id: 'desc' };
     }
 
     // Execute the query
-    const prismaModel = (prisma as any)[model.charAt(0).toLowerCase() + model.slice(1)];
-    
+    const modelKey = model.charAt(0).toLowerCase() + model.slice(1);
+    const prismaModel = (prisma as PrismaClientLike)[modelKey];
+
     if (!prismaModel) {
       return {
         success: false,
@@ -83,7 +89,7 @@ export async function executeGenericQuery(
       };
     }
 
-    const queryOptions: any = {
+    const queryOptions: Record<string, unknown> = {
       where: finalWhere,
       take: finalLimit,
       orderBy: finalOrderBy,
@@ -91,7 +97,7 @@ export async function executeGenericQuery(
 
     // Add select if specified
     if (finalSelect && finalSelect.length > 0) {
-      queryOptions.select = finalSelect.reduce((acc: any, field: string) => {
+      queryOptions.select = finalSelect.reduce<Record<string, boolean>>((acc, field) => {
         acc[field] = true;
         return acc;
       }, {});
@@ -100,18 +106,18 @@ export async function executeGenericQuery(
     let results = await prismaModel.findMany(queryOptions);
 
     // Apply additional privacy filtering (e.g., alumni privacy)
-    results = applyAlumniPrivacy(results, model);
+    results = applyAlumniPrivacy(results, model) as Record<string, unknown>[];
 
     return {
       success: true,
       data: results,
       count: results.length,
     };
-  } catch (error: any) {
-    console.error("Error executing generic query:", error);
+  } catch (error) {
+    console.error('Error executing generic query:', error);
     return {
       success: false,
-      error: error.message || "Query execution failed",
+      error: error instanceof Error ? error.message : 'Query execution failed',
     };
   }
 }
@@ -120,8 +126,8 @@ export async function executeGenericQuery(
  * Build a WHERE clause from natural language filters
  * Supports: equals, contains, gt, lt, gte, lte
  */
-export function buildWhereClause(filters: Record<string, any>): any {
-  const where: any = {};
+export function buildWhereClause(filters: Record<string, unknown>): WhereClause {
+  const where: WhereClause = {};
 
   for (const [field, value] of Object.entries(filters)) {
     if (value === null || value === undefined) {
@@ -129,7 +135,7 @@ export function buildWhereClause(filters: Record<string, any>): any {
     }
 
     // Handle different filter types
-    if (typeof value === "object" && !Array.isArray(value)) {
+    if (typeof value === 'object' && !Array.isArray(value)) {
       // Complex filter like { contains: "text" } or { gt: 100 }
       where[field] = value;
     } else if (Array.isArray(value)) {
@@ -148,20 +154,20 @@ export function buildWhereClause(filters: Record<string, any>): any {
  * Parse a simple search query into WHERE clause
  * Example: "name contains Finance" -> { name: { contains: "Finance" } }
  */
-export function parseSearchQuery(searchText: string, model: string): any {
+export function parseSearchQuery(searchText: string, model: string): WhereClause {
   const modelDesc = describeModel(model);
   if (!modelDesc) return {};
 
   // Get searchable text fields
   const textFields = modelDesc.fields
-    .filter((f) => f.type === "String" && !f.isRelation)
+    .filter((f) => f.type === 'String' && !f.isRelation)
     .map((f) => f.name);
 
   if (textFields.length === 0) return {};
 
   // Simple OR search across all text fields
   const searchLower = searchText.toLowerCase();
-  
+
   // For SQLite compatibility, we'll do case-insensitive search in the query
   // by using multiple OR conditions
   return {
@@ -176,16 +182,16 @@ export function parseSearchQuery(searchText: string, model: string): any {
  */
 export function validateFilterOperator(operator: string): boolean {
   const allowedOperators = [
-    "equals",
-    "contains",
-    "startsWith",
-    "endsWith",
-    "gt",
-    "gte",
-    "lt",
-    "lte",
-    "in",
-    "notIn",
+    'equals',
+    'contains',
+    'startsWith',
+    'endsWith',
+    'gt',
+    'gte',
+    'lt',
+    'lte',
+    'in',
+    'notIn',
   ];
 
   return allowedOperators.includes(operator);
@@ -194,11 +200,7 @@ export function validateFilterOperator(operator: string): boolean {
 /**
  * Count records matching a query (for pagination)
  */
-export async function countRecords(
-  model: string,
-  where: any,
-  user: User
-): Promise<number> {
+export async function countRecords(model: string, where: WhereClause, user: User): Promise<number> {
   try {
     // Get privacy constraints
     const privacy = getPrivacyConstraints({ user, modelName: model });
@@ -210,16 +212,20 @@ export async function countRecords(
     const finalWhere = mergeWhereClause(where, privacy.whereClause);
 
     // Execute count
-    const prismaModel = (prisma as any)[model.charAt(0).toLowerCase() + model.slice(1)];
+    const modelKey = model.charAt(0).toLowerCase() + model.slice(1);
+    const prismaModel = (prisma as PrismaClientLike)[modelKey];
     if (!prismaModel) {
       return 0;
     }
 
-    const count = await prismaModel.count({ where: finalWhere });
+    const count = await prismaModel.count?.({ where: finalWhere });
+    if (typeof count !== 'number') {
+      return 0;
+    }
+
     return count;
   } catch (error) {
-    console.error("Error counting records:", error);
+    console.error('Error counting records:', error);
     return 0;
   }
 }
-

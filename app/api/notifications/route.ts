@@ -1,22 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth';
 
 // Get user notifications
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
-    
+
     if (!user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
+
     const searchParams = request.nextUrl.searchParams;
-    const unreadOnly = searchParams.get("unread") === "true";
-    
+    const unreadOnly = searchParams.get('unread') === 'true';
+
     const notifications = await prisma.notification.findMany({
       where: {
         userId: user.id,
@@ -35,11 +32,11 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: {
-        scheduledAt: "desc",
+        scheduledAt: 'desc',
       },
       take: 50,
     });
-    
+
     const unreadCount = await prisma.notification.count({
       where: {
         userId: user.id,
@@ -49,17 +46,13 @@ export async function GET(request: NextRequest) {
         },
       },
     });
-    
+
     return NextResponse.json({
       notifications,
       unreadCount,
     });
   } catch (error) {
-    console.error("Error fetching notifications:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch notifications" },
-      { status: 500 }
-    );
+    console.error('Error fetching notifications:', error);
+    return NextResponse.json({ error: 'Failed to fetch notifications' }, { status: 500 });
   }
 }
-

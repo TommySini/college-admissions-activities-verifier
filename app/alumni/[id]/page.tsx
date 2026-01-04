@@ -1,8 +1,12 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ListChecks, PenSquare, Trophy, ArrowLeft, GraduationCap } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Activity {
   id: string;
@@ -57,7 +61,7 @@ interface Application {
   results: Result[];
 }
 
-type TabType = "activities" | "essays" | "awards";
+type TabType = 'activities' | 'essays' | 'awards';
 
 export default function AlumniProfilePage() {
   const params = useParams();
@@ -66,7 +70,7 @@ export default function AlumniProfilePage() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabType>("activities");
+  const [activeTab, setActiveTab] = useState<TabType>('activities');
   const [selectedAppIndex, setSelectedAppIndex] = useState(0);
 
   useEffect(() => {
@@ -75,7 +79,7 @@ export default function AlumniProfilePage() {
         // Fetch the first application to get profile info
         const res = await fetch(`/api/alumni/applications/${params.id}`);
         if (!res.ok) {
-          throw new Error("Failed to fetch application");
+          throw new Error('Failed to fetch application');
         }
         const data = await res.json();
         const firstApp = data.application;
@@ -90,7 +94,7 @@ export default function AlumniProfilePage() {
           setApplications([firstApp]);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
+        setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
         setLoading(false);
       }
@@ -113,7 +117,7 @@ export default function AlumniProfilePage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error || "Profile not found"}</p>
+          <p className="text-red-600 mb-4">{error || 'Profile not found'}</p>
           <Link href="/alumni" className="text-blue-600 hover:underline">
             Back to Alumni Database
           </Link>
@@ -127,68 +131,82 @@ export default function AlumniProfilePage() {
   return (
     <div className="min-h-screen">
       {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Link href="/" className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
                   <span className="text-white font-bold text-xl">A</span>
                 </div>
-                <span className="text-xl font-bold text-gray-900">Actify</span>
+                <span className="text-xl font-bold text-slate-900">Actify</span>
               </Link>
-              <div className="h-6 w-px bg-gray-300 mx-2"></div>
-              <Link href="/alumni" className="text-sm text-gray-500 hover:text-gray-700">
+              <div className="h-6 w-px bg-slate-300 mx-2"></div>
+              <Link
+                href="/alumni"
+                className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
+              >
                 Alumni Database
               </Link>
             </div>
             <Link
               href="/alumni"
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-colors"
             >
+              <ArrowLeft className="h-4 w-4" />
               Back to Browse
             </Link>
           </div>
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         {/* Profile Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            {profile.displayName || "Anonymous Alumni"}
+        <Card className="text-center mb-8 p-8">
+          <div className="flex justify-center mb-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-100 to-blue-50 border border-blue-200">
+              <GraduationCap className="h-8 w-8 text-blue-600" />
+            </div>
+          </div>
+          <h1 className="text-3xl font-semibold text-slate-900 mb-2">
+            {profile.displayName || 'Anonymous Alumni'}
           </h1>
           {profile.intendedMajor && (
-            <p className="text-xl text-gray-600 mb-3">{profile.intendedMajor}</p>
+            <p className="text-lg text-slate-600 mb-3">{profile.intendedMajor}</p>
           )}
           {profile.careerInterestTags && profile.careerInterestTags.length > 0 && (
-            <div className="flex gap-2 justify-center flex-wrap">
+            <div className="flex gap-2 justify-center flex-wrap mt-4">
               {profile.careerInterestTags.map((tag: string) => (
-                <span key={tag} className="px-3 py-1 bg-blue-50 text-blue-700 text-sm rounded-full">
+                <Badge key={tag} variant="secondary">
                   {tag}
-                </span>
+                </Badge>
               ))}
             </div>
           )}
           {profile.contactEmail && (
-            <p className="text-sm text-gray-500 mt-3">Contact: {profile.contactEmail}</p>
+            <p className="text-sm text-slate-500 mt-4">Contact: {profile.contactEmail}</p>
           )}
-        </div>
+        </Card>
 
         {/* Application Selector */}
         {applications.length > 1 && (
-          <div className="mb-8">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
               Select Application
             </label>
             <select
               value={selectedAppIndex}
               onChange={(e) => setSelectedAppIndex(Number(e.target.value))}
-              className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full max-w-md px-4 py-2 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-900"
             >
               {applications.map((app, index) => (
                 <option key={app.id} value={index}>
-                  Application {index + 1} - {new Date(app.createdAt).toLocaleDateString()}
+                  Application {index + 1} -{' '}
+                  {new Date(app.createdAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
                 </option>
               ))}
             </select>
@@ -196,77 +214,88 @@ export default function AlumniProfilePage() {
         )}
 
         {/* Tabs */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          {/* Tab Headers */}
-          <div className="flex border-b border-gray-200">
+        <div className="mb-6 flex justify-center">
+          <div className="inline-flex rounded-full bg-slate-100 p-1">
             <button
-              onClick={() => setActiveTab("activities")}
-              className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${
-                activeTab === "activities"
-                  ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
+              onClick={() => setActiveTab('activities')}
+              className={cn(
+                'inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-200',
+                activeTab === 'activities'
+                  ? 'bg-white border border-slate-200 shadow-sm text-slate-900'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+              )}
             >
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-xl">📋</span>
-                <span>Activities ({currentApp.activities.length})</span>
-              </div>
+              <ListChecks className="h-4 w-4" />
+              <span>Activities ({currentApp.activities.length})</span>
             </button>
             <button
-              onClick={() => setActiveTab("essays")}
-              className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${
-                activeTab === "essays"
-                  ? "text-purple-600 border-b-2 border-purple-600 bg-purple-50"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
+              onClick={() => setActiveTab('essays')}
+              className={cn(
+                'inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-200',
+                activeTab === 'essays'
+                  ? 'bg-white border border-slate-200 shadow-sm text-slate-900'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+              )}
             >
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-xl">✍️</span>
-                <span>Essays ({currentApp.essays.length})</span>
-              </div>
+              <PenSquare className="h-4 w-4" />
+              <span>Essays ({currentApp.essays.length})</span>
             </button>
             <button
-              onClick={() => setActiveTab("awards")}
-              className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${
-                activeTab === "awards"
-                  ? "text-yellow-600 border-b-2 border-yellow-600 bg-yellow-50"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
+              onClick={() => setActiveTab('awards')}
+              className={cn(
+                'inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-200',
+                activeTab === 'awards'
+                  ? 'bg-white border border-slate-200 shadow-sm text-slate-900'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+              )}
             >
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-xl">🏆</span>
-                <span>Awards ({currentApp.awards.length})</span>
-              </div>
+              <Trophy className="h-4 w-4" />
+              <span>Awards ({currentApp.awards.length})</span>
             </button>
           </div>
+        </div>
 
-          {/* Tab Content */}
+        {/* Tab Content */}
+        <Card className="overflow-hidden">
           <div className="p-6">
-            {activeTab === "activities" && (
-              <div className="space-y-4">
+            {activeTab === 'activities' && (
+              <div className="space-y-3">
                 {currentApp.activities.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">No activities found</p>
+                  <div className="text-center py-12">
+                    <ListChecks className="h-12 w-12 mx-auto mb-3 text-slate-300" />
+                    <p className="text-slate-500">No activities found</p>
+                  </div>
                 ) : (
                   currentApp.activities.map((activity) => (
                     <div
                       key={activity.id}
-                      className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-300 transition-colors"
+                      className="p-4 bg-slate-50 rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-sm transition-all"
                     >
-                      <h4 className="font-semibold text-gray-900 mb-2">{activity.title}</h4>
+                      <h4 className="font-semibold text-slate-900 mb-2">{activity.title}</h4>
                       {activity.role && (
-                        <p className="text-sm text-gray-600 mb-1">Role: {activity.role}</p>
+                        <p className="text-sm text-slate-600 mb-1">
+                          <span className="font-medium">Role:</span> {activity.role}
+                        </p>
                       )}
                       {activity.organization && (
-                        <p className="text-sm text-gray-600 mb-1">
-                          Organization: {activity.organization}
+                        <p className="text-sm text-slate-600 mb-1">
+                          <span className="font-medium">Organization:</span> {activity.organization}
                         </p>
                       )}
                       {activity.description && (
-                        <p className="text-sm text-gray-700 mb-2">{activity.description}</p>
+                        <p className="text-sm text-slate-700 mb-2 mt-2">{activity.description}</p>
                       )}
-                      <div className="flex gap-4 text-xs text-gray-500">
-                        {activity.hours && <span>{activity.hours} hours</span>}
-                        {activity.years && <span>Years: {activity.years}</span>}
+                      <div className="flex gap-3 text-xs mt-2">
+                        {activity.hours && (
+                          <Badge variant="secondary" className="text-xs">
+                            {activity.hours} hours
+                          </Badge>
+                        )}
+                        {activity.years && (
+                          <Badge variant="secondary" className="text-xs">
+                            Years: {activity.years}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   ))
@@ -274,32 +303,34 @@ export default function AlumniProfilePage() {
               </div>
             )}
 
-            {activeTab === "essays" && (
-              <div className="space-y-4">
+            {activeTab === 'essays' && (
+              <div className="space-y-3">
                 {currentApp.essays.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">No essays found</p>
+                  <div className="text-center py-12">
+                    <PenSquare className="h-12 w-12 mx-auto mb-3 text-slate-300" />
+                    <p className="text-slate-500">No essays found</p>
+                  </div>
                 ) : (
                   currentApp.essays.map((essay) => (
                     <div
                       key={essay.id}
-                      className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-purple-300 transition-colors"
+                      className="p-4 bg-slate-50 rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-sm transition-all"
                     >
-                      <h4 className="font-semibold text-gray-900 mb-2">{essay.topic}</h4>
+                      <h4 className="font-semibold text-slate-900 mb-2">{essay.topic}</h4>
                       {essay.prompt && (
-                        <p className="text-sm text-gray-600 mb-2 italic">{essay.prompt}</p>
+                        <p className="text-sm text-slate-600 mb-2 italic border-l-2 border-slate-300 pl-3">
+                          {essay.prompt}
+                        </p>
                       )}
                       {essay.summary && (
-                        <p className="text-sm text-gray-700 mb-2">{essay.summary}</p>
+                        <p className="text-sm text-slate-700 mb-2">{essay.summary}</p>
                       )}
                       {essay.tags.length > 0 && (
-                        <div className="flex gap-2 flex-wrap">
+                        <div className="flex gap-2 flex-wrap mt-3">
                           {essay.tags.map((tag) => (
-                            <span
-                              key={tag}
-                              className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-md"
-                            >
+                            <Badge key={tag} variant="secondary" className="text-xs">
                               {tag}
-                            </span>
+                            </Badge>
                           ))}
                         </div>
                       )}
@@ -309,27 +340,30 @@ export default function AlumniProfilePage() {
               </div>
             )}
 
-            {activeTab === "awards" && (
-              <div className="space-y-4">
+            {activeTab === 'awards' && (
+              <div className="space-y-3">
                 {currentApp.awards.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">No awards found</p>
+                  <div className="text-center py-12">
+                    <Trophy className="h-12 w-12 mx-auto mb-3 text-slate-300" />
+                    <p className="text-slate-500">No awards found</p>
+                  </div>
                 ) : (
                   currentApp.awards.map((award) => (
                     <div
                       key={award.id}
-                      className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-yellow-300 transition-colors"
+                      className="p-4 bg-slate-50 rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-sm transition-all"
                     >
-                      <h4 className="font-semibold text-gray-900 mb-2">{award.title}</h4>
-                      <div className="flex gap-4 text-sm text-gray-600 mb-2">
+                      <h4 className="font-semibold text-slate-900 mb-2">{award.title}</h4>
+                      <div className="flex gap-3 text-sm text-slate-600 mb-2">
                         {award.level && (
-                          <span className="px-2 py-1 bg-yellow-50 text-yellow-700 text-xs rounded-md capitalize">
+                          <Badge variant="secondary" className="text-xs capitalize">
                             {award.level}
-                          </span>
+                          </Badge>
                         )}
-                        {award.year && <span>{award.year}</span>}
+                        {award.year && <span className="text-xs text-slate-500">{award.year}</span>}
                       </div>
                       {award.description && (
-                        <p className="text-sm text-gray-700">{award.description}</p>
+                        <p className="text-sm text-slate-700 mt-2">{award.description}</p>
                       )}
                     </div>
                   ))
@@ -337,19 +371,19 @@ export default function AlumniProfilePage() {
               </div>
             )}
           </div>
-        </div>
+        </Card>
 
         {/* Parse Status */}
-        {currentApp.parseStatus === "pending" && (
-          <div className="mt-4 text-center">
-            <div className="inline-block px-4 py-2 bg-yellow-50 text-yellow-700 rounded-lg text-sm">
+        {currentApp.parseStatus === 'pending' && (
+          <div className="mt-6 text-center">
+            <div className="inline-block px-4 py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl text-sm font-medium">
               Parsing in progress...
             </div>
           </div>
         )}
-        {currentApp.parseStatus === "failed" && (
-          <div className="mt-4 text-center">
-            <div className="inline-block px-4 py-2 bg-red-50 text-red-700 rounded-lg text-sm">
+        {currentApp.parseStatus === 'failed' && (
+          <div className="mt-6 text-center">
+            <div className="inline-block px-4 py-2 bg-red-50 text-red-700 border border-red-200 rounded-xl text-sm font-medium">
               Parse failed: {currentApp.parseError}
             </div>
           </div>

@@ -1,26 +1,26 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { ProfileProvider } from "./context/ProfileContext";
-import { VerificationProvider } from "./context/VerificationContext";
-import { Providers } from "./providers";
-import { FontLoader } from "./components/FontLoader";
-import { AssistantWidget } from "./components/assistant/AssistantWidget";
-import AppShell from "./components/layout/AppShell";
+import type { Metadata } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
+import './globals.css';
+import { ProfileProvider } from './context/ProfileContext';
+import { VerificationProvider } from './context/VerificationContext';
+import { Providers } from './providers';
+import { FontLoader } from './components/FontLoader';
+import AppShell from './components/layout/AppShell';
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
 });
 
 export const metadata: Metadata = {
-  title: "Actify - Activity Verification Platform",
-  description: "Making the college admissions process more efficient and trustworthy than ever. Track and verify your extracurricular activities for college applications.",
+  title: 'Actify - Activity Verification Platform',
+  description:
+    'Making the college admissions process more efficient and trustworthy than ever. Track and verify your extracurricular activities for college applications.',
 };
 
 export default function RootLayout({
@@ -30,17 +30,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <FontLoader />
         <Providers>
           <ProfileProvider>
             <VerificationProvider>
-              <AppShell>
-                {children}
-              </AppShell>
-              <AssistantWidget />
+              <AppShell>{children}</AppShell>
             </VerificationProvider>
           </ProfileProvider>
         </Providers>

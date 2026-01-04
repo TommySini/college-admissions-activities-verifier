@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import { useSession, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useEffect, useMemo, useState } from 'react';
+import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
-type DifficultyLevel = "Beginner" | "Intermediate" | "Advanced";
-type CompetitionType = "Trading" | "Investment" | "Case Study" | "Quiz" | "Hackathon" | "Other";
+type DifficultyLevel = 'Beginner' | 'Intermediate' | 'Advanced';
+type CompetitionType = 'Trading' | 'Investment' | 'Case Study' | 'Quiz' | 'Hackathon' | 'Other';
 
 interface FinanceCompetition {
   id: string;
@@ -22,7 +22,7 @@ interface FinanceCompetition {
   description: string;
   eligibility: string;
   websiteUrl: string;
-  location: "Online" | "In-Person" | "Hybrid";
+  location: 'Online' | 'In-Person' | 'Hybrid';
   maxTeamSize?: number;
   registrationFee?: string;
   tags: string[];
@@ -31,169 +31,178 @@ interface FinanceCompetition {
 // Sample finance competition data
 const COMPETITIONS: FinanceCompetition[] = [
   {
-    id: "1",
-    name: "Wharton Investment Competition",
-    organizer: "Wharton School of Business",
-    type: "Investment",
-    difficulty: "Advanced",
-    registrationDeadline: "2025-01-15",
-    competitionDate: "2025-02-10",
-    endDate: "2025-02-15",
-    prizeAmount: "$10,000",
-    prizeDescription: "First place: $5,000, Second: $3,000, Third: $2,000",
-    description: "A prestigious investment competition where teams manage a virtual portfolio and compete for the highest returns.",
-    eligibility: "High school students (grades 9-12)",
-    websiteUrl: "https://example.com/wharton-competition",
-    location: "Online",
-    tags: ["Investment", "Portfolio Management", "Finance"],
+    id: '1',
+    name: 'Wharton Investment Competition',
+    organizer: 'Wharton School of Business',
+    type: 'Investment',
+    difficulty: 'Advanced',
+    registrationDeadline: '2025-01-15',
+    competitionDate: '2025-02-10',
+    endDate: '2025-02-15',
+    prizeAmount: '$10,000',
+    prizeDescription: 'First place: $5,000, Second: $3,000, Third: $2,000',
+    description:
+      'A prestigious investment competition where teams manage a virtual portfolio and compete for the highest returns.',
+    eligibility: 'High school students (grades 9-12)',
+    websiteUrl: 'https://example.com/wharton-competition',
+    location: 'Online',
+    tags: ['Investment', 'Portfolio Management', 'Finance'],
   },
   {
-    id: "2",
-    name: "Fed Challenge",
-    organizer: "Federal Reserve",
-    type: "Case Study",
-    difficulty: "Advanced",
-    registrationDeadline: "2025-02-01",
-    competitionDate: "2025-03-20",
-    prizeAmount: "Scholarships",
-    prizeDescription: "Winners receive scholarships and recognition from the Federal Reserve",
-    description: "Teams analyze economic conditions and present monetary policy recommendations to Federal Reserve judges.",
-    eligibility: "High school students",
-    websiteUrl: "https://example.com/fed-challenge",
-    location: "In-Person",
-    tags: ["Economics", "Monetary Policy", "Public Speaking"],
+    id: '2',
+    name: 'Fed Challenge',
+    organizer: 'Federal Reserve',
+    type: 'Case Study',
+    difficulty: 'Advanced',
+    registrationDeadline: '2025-02-01',
+    competitionDate: '2025-03-20',
+    prizeAmount: 'Scholarships',
+    prizeDescription: 'Winners receive scholarships and recognition from the Federal Reserve',
+    description:
+      'Teams analyze economic conditions and present monetary policy recommendations to Federal Reserve judges.',
+    eligibility: 'High school students',
+    websiteUrl: 'https://example.com/fed-challenge',
+    location: 'In-Person',
+    tags: ['Economics', 'Monetary Policy', 'Public Speaking'],
   },
   {
-    id: "3",
-    name: "Stock Market Game",
-    organizer: "SIFMA Foundation",
-    type: "Trading",
-    difficulty: "Beginner",
-    registrationDeadline: "2025-01-20",
-    competitionDate: "2025-02-01",
-    endDate: "2025-04-30",
-    prizeAmount: "Various Prizes",
-    prizeDescription: "Regional and national prizes for top-performing teams",
-    description: "A 10-week simulation where students invest a virtual $100,000 in stocks, bonds, and mutual funds.",
-    eligibility: "Students in grades 4-12",
-    websiteUrl: "https://example.com/stock-market-game",
-    location: "Online",
-    tags: ["Trading", "Stocks", "Investing"],
+    id: '3',
+    name: 'Stock Market Game',
+    organizer: 'SIFMA Foundation',
+    type: 'Trading',
+    difficulty: 'Beginner',
+    registrationDeadline: '2025-01-20',
+    competitionDate: '2025-02-01',
+    endDate: '2025-04-30',
+    prizeAmount: 'Various Prizes',
+    prizeDescription: 'Regional and national prizes for top-performing teams',
+    description:
+      'A 10-week simulation where students invest a virtual $100,000 in stocks, bonds, and mutual funds.',
+    eligibility: 'Students in grades 4-12',
+    websiteUrl: 'https://example.com/stock-market-game',
+    location: 'Online',
+    tags: ['Trading', 'Stocks', 'Investing'],
   },
   {
-    id: "4",
-    name: "DECA Finance Challenge",
-    organizer: "DECA Inc.",
-    type: "Case Study",
-    difficulty: "Intermediate",
-    registrationDeadline: "2025-01-10",
-    competitionDate: "2025-02-25",
-    prizeAmount: "Scholarships & Awards",
-    prizeDescription: "Scholarships and recognition at regional and national levels",
-    description: "Students analyze financial scenarios and present solutions to business professionals.",
-    eligibility: "DECA members in grades 9-12",
-    websiteUrl: "https://example.com/deca-finance",
-    location: "Hybrid",
-    tags: ["Business", "Finance", "Case Study"],
+    id: '4',
+    name: 'DECA Finance Challenge',
+    organizer: 'DECA Inc.',
+    type: 'Case Study',
+    difficulty: 'Intermediate',
+    registrationDeadline: '2025-01-10',
+    competitionDate: '2025-02-25',
+    prizeAmount: 'Scholarships & Awards',
+    prizeDescription: 'Scholarships and recognition at regional and national levels',
+    description:
+      'Students analyze financial scenarios and present solutions to business professionals.',
+    eligibility: 'DECA members in grades 9-12',
+    websiteUrl: 'https://example.com/deca-finance',
+    location: 'Hybrid',
+    tags: ['Business', 'Finance', 'Case Study'],
   },
   {
-    id: "5",
-    name: "Finance Olympiad",
-    organizer: "International Finance Education",
-    type: "Quiz",
-    difficulty: "Intermediate",
-    registrationDeadline: "2025-02-15",
-    competitionDate: "2025-03-10",
-    prizeAmount: "$5,000",
-    prizeDescription: "Top 3 teams receive cash prizes and certificates",
-    description: "A comprehensive quiz competition covering financial markets, economics, and investment strategies.",
-    eligibility: "High school students worldwide",
-    websiteUrl: "https://example.com/finance-olympiad",
-    location: "Online",
+    id: '5',
+    name: 'Finance Olympiad',
+    organizer: 'International Finance Education',
+    type: 'Quiz',
+    difficulty: 'Intermediate',
+    registrationDeadline: '2025-02-15',
+    competitionDate: '2025-03-10',
+    prizeAmount: '$5,000',
+    prizeDescription: 'Top 3 teams receive cash prizes and certificates',
+    description:
+      'A comprehensive quiz competition covering financial markets, economics, and investment strategies.',
+    eligibility: 'High school students worldwide',
+    websiteUrl: 'https://example.com/finance-olympiad',
+    location: 'Online',
     maxTeamSize: 3,
-    tags: ["Quiz", "Finance Knowledge", "Global"],
+    tags: ['Quiz', 'Finance Knowledge', 'Global'],
   },
   {
-    id: "6",
-    name: "FinTech Innovation Hackathon",
-    organizer: "Tech Finance Alliance",
-    type: "Hackathon",
-    difficulty: "Advanced",
-    registrationDeadline: "2025-02-20",
-    competitionDate: "2025-03-15",
-    endDate: "2025-03-16",
-    prizeAmount: "$15,000",
-    prizeDescription: "First: $7,500, Second: $4,500, Third: $3,000",
-    description: "Build innovative financial technology solutions in a 48-hour hackathon.",
-    eligibility: "High school and college students",
-    websiteUrl: "https://example.com/fintech-hackathon",
-    location: "Hybrid",
+    id: '6',
+    name: 'FinTech Innovation Hackathon',
+    organizer: 'Tech Finance Alliance',
+    type: 'Hackathon',
+    difficulty: 'Advanced',
+    registrationDeadline: '2025-02-20',
+    competitionDate: '2025-03-15',
+    endDate: '2025-03-16',
+    prizeAmount: '$15,000',
+    prizeDescription: 'First: $7,500, Second: $4,500, Third: $3,000',
+    description: 'Build innovative financial technology solutions in a 48-hour hackathon.',
+    eligibility: 'High school and college students',
+    websiteUrl: 'https://example.com/fintech-hackathon',
+    location: 'Hybrid',
     maxTeamSize: 5,
-    registrationFee: "$25",
-    tags: ["FinTech", "Coding", "Innovation"],
+    registrationFee: '$25',
+    tags: ['FinTech', 'Coding', 'Innovation'],
   },
   {
-    id: "7",
-    name: "Personal Finance Challenge",
-    organizer: "Jump$tart Coalition",
-    type: "Quiz",
-    difficulty: "Beginner",
-    registrationDeadline: "2025-01-30",
-    competitionDate: "2025-02-20",
-    prizeAmount: "Certificates & Recognition",
-    prizeDescription: "Certificates for all participants, special recognition for top performers",
-    description: "Test your knowledge of personal finance, budgeting, credit, and financial planning.",
-    eligibility: "Students in grades 6-12",
-    websiteUrl: "https://example.com/personal-finance-challenge",
-    location: "Online",
-    tags: ["Personal Finance", "Budgeting", "Financial Literacy"],
+    id: '7',
+    name: 'Personal Finance Challenge',
+    organizer: 'Jump$tart Coalition',
+    type: 'Quiz',
+    difficulty: 'Beginner',
+    registrationDeadline: '2025-01-30',
+    competitionDate: '2025-02-20',
+    prizeAmount: 'Certificates & Recognition',
+    prizeDescription: 'Certificates for all participants, special recognition for top performers',
+    description:
+      'Test your knowledge of personal finance, budgeting, credit, and financial planning.',
+    eligibility: 'Students in grades 6-12',
+    websiteUrl: 'https://example.com/personal-finance-challenge',
+    location: 'Online',
+    tags: ['Personal Finance', 'Budgeting', 'Financial Literacy'],
   },
   {
-    id: "8",
-    name: "Cryptocurrency Trading Competition",
-    organizer: "Crypto Education Network",
-    type: "Trading",
-    difficulty: "Intermediate",
-    registrationDeadline: "2025-02-10",
-    competitionDate: "2025-03-01",
-    endDate: "2025-03-31",
-    prizeAmount: "$8,000",
-    prizeDescription: "Top traders receive cash prizes and mentorship opportunities",
-    description: "Compete in a month-long cryptocurrency trading simulation with real-time market data.",
-    eligibility: "High school students (ages 14-18)",
-    websiteUrl: "https://example.com/crypto-competition",
-    location: "Online",
-    tags: ["Cryptocurrency", "Trading", "Blockchain"],
+    id: '8',
+    name: 'Cryptocurrency Trading Competition',
+    organizer: 'Crypto Education Network',
+    type: 'Trading',
+    difficulty: 'Intermediate',
+    registrationDeadline: '2025-02-10',
+    competitionDate: '2025-03-01',
+    endDate: '2025-03-31',
+    prizeAmount: '$8,000',
+    prizeDescription: 'Top traders receive cash prizes and mentorship opportunities',
+    description:
+      'Compete in a month-long cryptocurrency trading simulation with real-time market data.',
+    eligibility: 'High school students (ages 14-18)',
+    websiteUrl: 'https://example.com/crypto-competition',
+    location: 'Online',
+    tags: ['Cryptocurrency', 'Trading', 'Blockchain'],
   },
 ];
 
 export default function FinanceCompetitionsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedCompetition, setSelectedCompetition] = useState<FinanceCompetition | null>(null);
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
-  const [filterType, setFilterType] = useState<CompetitionType | "All">("All");
-  const [filterDifficulty, setFilterDifficulty] = useState<DifficultyLevel | "All">("All");
-  const [filterLocation, setFilterLocation] = useState<"All" | "Online" | "In-Person" | "Hybrid">("All");
-  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
+  const [filterType, setFilterType] = useState<CompetitionType | 'All'>('All');
+  const [filterDifficulty, setFilterDifficulty] = useState<DifficultyLevel | 'All'>('All');
+  const [filterLocation, setFilterLocation] = useState<'All' | 'Online' | 'In-Person' | 'Hybrid'>(
+    'All'
+  );
+  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/signin");
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin');
       return;
     }
-    
-    if (!session || status !== "authenticated") {
+
+    if (!session || status !== 'authenticated') {
       return;
     }
   }, [status, session, router]);
 
   useEffect(() => {
     // Load bookmarks from localStorage
-    const saved = localStorage.getItem("finance-competition-bookmarks");
+    const saved = localStorage.getItem('finance-competition-bookmarks');
     if (saved) {
       setBookmarkedIds(new Set(JSON.parse(saved)));
     }
@@ -207,7 +216,7 @@ export default function FinanceCompetitionsPage() {
       newBookmarks.add(id);
     }
     setBookmarkedIds(newBookmarks);
-    localStorage.setItem("finance-competition-bookmarks", JSON.stringify(Array.from(newBookmarks)));
+    localStorage.setItem('finance-competition-bookmarks', JSON.stringify(Array.from(newBookmarks)));
   };
 
   const filteredCompetitions = useMemo(() => {
@@ -226,17 +235,17 @@ export default function FinanceCompetitionsPage() {
     }
 
     // Type filter
-    if (filterType !== "All") {
+    if (filterType !== 'All') {
       competitions = competitions.filter((comp) => comp.type === filterType);
     }
 
     // Difficulty filter
-    if (filterDifficulty !== "All") {
+    if (filterDifficulty !== 'All') {
       competitions = competitions.filter((comp) => comp.difficulty === filterDifficulty);
     }
 
     // Location filter
-    if (filterLocation !== "All") {
+    if (filterLocation !== 'All') {
       competitions = competitions.filter((comp) => comp.location === filterLocation);
     }
 
@@ -255,8 +264,18 @@ export default function FinanceCompetitionsPage() {
   const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
   const firstDayOfMonth = new Date(selectedYear, selectedMonth, 1).getDay();
   const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   const getCompetitionsForDate = (day: number) => {
@@ -271,8 +290,8 @@ export default function FinanceCompetitionsPage() {
     });
   };
 
-  const navigateMonth = (direction: "prev" | "next") => {
-    if (direction === "prev") {
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
       if (selectedMonth === 0) {
         setSelectedMonth(11);
         setSelectedYear(selectedYear - 1);
@@ -292,37 +311,37 @@ export default function FinanceCompetitionsPage() {
   const exportToCalendar = (competition: FinanceCompetition) => {
     const startDate = new Date(competition.competitionDate);
     const endDate = competition.endDate ? new Date(competition.endDate) : startDate;
-    
+
     // Create iCal format
     const formatDate = (date: Date) => {
-      return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+      return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
     };
 
     const icalContent = [
-      "BEGIN:VCALENDAR",
-      "VERSION:2.0",
-      "PRODID:-//Finance Competitions//EN",
-      "BEGIN:VEVENT",
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Finance Competitions//EN',
+      'BEGIN:VEVENT',
       `DTSTART:${formatDate(startDate)}`,
       `DTEND:${formatDate(endDate)}`,
       `SUMMARY:${competition.name}`,
       `DESCRIPTION:${competition.description}\\n\\nOrganizer: ${competition.organizer}\\nPrize: ${competition.prizeAmount}`,
       `LOCATION:${competition.location}`,
       `URL:${competition.websiteUrl}`,
-      "END:VEVENT",
-      "END:VCALENDAR",
-    ].join("\r\n");
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n');
 
-    const blob = new Blob([icalContent], { type: "text/calendar" });
+    const blob = new Blob([icalContent], { type: 'text/calendar' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = url;
-    link.download = `${competition.name.replace(/\s+/g, "-")}.ics`;
+    link.download = `${competition.name.replace(/\s+/g, '-')}.ics`;
     link.click();
     URL.revokeObjectURL(url);
   };
 
-  if (status === "loading") {
+  if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <p className="text-gray-500">Loading...</p>
@@ -364,7 +383,7 @@ export default function FinanceCompetitionsPage() {
                 Profile
               </Link>
               <button
-                onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+                onClick={() => signOut({ callbackUrl: '/auth/signin' })}
                 className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
               >
                 Sign Out
@@ -382,30 +401,38 @@ export default function FinanceCompetitionsPage() {
               <p className="text-sm uppercase tracking-wide text-slate-500 font-semibold mb-2">
                 Extracurricular Opportunities
               </p>
-              <h1 className="text-4xl font-bold text-slate-900">
-                Finance Competitions Database
-              </h1>
+              <h1 className="text-4xl font-bold text-slate-900">Finance Competitions Database</h1>
               <p className="mt-3 text-slate-600 max-w-2xl">
-                Discover and track finance competitions, trading challenges, and investment opportunities. 
-                Plan your participation with our interactive calendar.
+                Discover and track finance competitions, trading challenges, and investment
+                opportunities. Plan your participation with our interactive calendar.
               </p>
             </div>
             <div className="flex gap-3">
               <button
-                onClick={() => setViewMode(viewMode === "calendar" ? "list" : "calendar")}
+                onClick={() => setViewMode(viewMode === 'calendar' ? 'list' : 'calendar')}
                 className="px-5 py-3 rounded-lg border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors flex items-center gap-2"
               >
-                {viewMode === "calendar" ? (
+                {viewMode === 'calendar' ? (
                   <>
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 6h16M4 10h16M4 14h16M4 18h16"
+                      />
                     </svg>
                     List View
                   </>
                 ) : (
                   <>
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
                     </svg>
                     Calendar View
                   </>
@@ -431,8 +458,17 @@ export default function FinanceCompetitionsPage() {
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-3 flex items-center text-slate-400">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                    <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 103.43 9.86l3.1 3.1a.75.75 0 101.06-1.06l-3.1-3.1A5.5 5.5 0 009 3.5zM4.5 9a4.5 4.5 0 118.53 2.09.75.75 0 00-.12.12A4.5 4.5 0 014.5 9z" clipRule="evenodd" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="w-5 h-5"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M9 3.5a5.5 5.5 0 103.43 9.86l3.1 3.1a.75.75 0 101.06-1.06l-3.1-3.1A5.5 5.5 0 009 3.5zM4.5 9a4.5 4.5 0 118.53 2.09.75.75 0 00-.12.12A4.5 4.5 0 014.5 9z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </span>
                 <input
@@ -452,24 +488,33 @@ export default function FinanceCompetitionsPage() {
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => setFilterType("All")}
+                    onClick={() => setFilterType('All')}
                     className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
-                      filterType === "All"
-                        ? "bg-blue-600 text-white border-blue-600"
-                        : "bg-white text-slate-600 border-slate-300 hover:bg-slate-100"
+                      filterType === 'All'
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'
                     }`}
                   >
                     All
                   </button>
-                  {(["Trading", "Investment", "Case Study", "Quiz", "Hackathon", "Other"] as CompetitionType[]).map((type) => (
+                  {(
+                    [
+                      'Trading',
+                      'Investment',
+                      'Case Study',
+                      'Quiz',
+                      'Hackathon',
+                      'Other',
+                    ] as CompetitionType[]
+                  ).map((type) => (
                     <button
                       key={type}
                       type="button"
                       onClick={() => setFilterType(type)}
                       className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
                         filterType === type
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-slate-600 border-slate-300 hover:bg-slate-100"
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'
                       }`}
                     >
                       {type}
@@ -483,29 +528,31 @@ export default function FinanceCompetitionsPage() {
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => setFilterDifficulty("All")}
+                    onClick={() => setFilterDifficulty('All')}
                     className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
-                      filterDifficulty === "All"
-                        ? "bg-blue-600 text-white border-blue-600"
-                        : "bg-white text-slate-600 border-slate-300 hover:bg-slate-100"
+                      filterDifficulty === 'All'
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'
                     }`}
                   >
                     All
                   </button>
-                  {(["Beginner", "Intermediate", "Advanced"] as DifficultyLevel[]).map((difficulty) => (
-                    <button
-                      key={difficulty}
-                      type="button"
-                      onClick={() => setFilterDifficulty(difficulty)}
-                      className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
-                        filterDifficulty === difficulty
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-slate-600 border-slate-300 hover:bg-slate-100"
-                      }`}
-                    >
-                      {difficulty}
-                    </button>
-                  ))}
+                  {(['Beginner', 'Intermediate', 'Advanced'] as DifficultyLevel[]).map(
+                    (difficulty) => (
+                      <button
+                        key={difficulty}
+                        type="button"
+                        onClick={() => setFilterDifficulty(difficulty)}
+                        className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
+                          filterDifficulty === difficulty
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'
+                        }`}
+                      >
+                        {difficulty}
+                      </button>
+                    )
+                  )}
                 </div>
               </div>
 
@@ -514,24 +561,24 @@ export default function FinanceCompetitionsPage() {
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => setFilterLocation("All")}
+                    onClick={() => setFilterLocation('All')}
                     className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
-                      filterLocation === "All"
-                        ? "bg-blue-600 text-white border-blue-600"
-                        : "bg-white text-slate-600 border-slate-300 hover:bg-slate-100"
+                      filterLocation === 'All'
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'
                     }`}
                   >
                     All
                   </button>
-                  {(["Online", "In-Person", "Hybrid"] as const).map((location) => (
+                  {(['Online', 'In-Person', 'Hybrid'] as const).map((location) => (
                     <button
                       key={location}
                       type="button"
                       onClick={() => setFilterLocation(location)}
                       className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
                         filterLocation === location
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-slate-600 border-slate-300 hover:bg-slate-100"
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'
                       }`}
                     >
                       {location}
@@ -546,36 +593,57 @@ export default function FinanceCompetitionsPage() {
         {/* Results Count */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-semibold text-slate-900">
-            {viewMode === "calendar" ? "Calendar View" : "List View"}
+            {viewMode === 'calendar' ? 'Calendar View' : 'List View'}
           </h2>
           <p className="text-sm text-slate-500">
-            Showing {filteredCompetitions.length} competition{filteredCompetitions.length === 1 ? "" : "s"}
+            Showing {filteredCompetitions.length} competition
+            {filteredCompetitions.length === 1 ? '' : 's'}
             {bookmarkedIds.size > 0 && ` • ${bookmarkedIds.size} bookmarked`}
           </p>
         </div>
 
         {/* Calendar View */}
-        {viewMode === "calendar" && (
+        {viewMode === 'calendar' && (
           <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
             {/* Calendar Header */}
             <div className="flex items-center justify-between mb-6">
               <button
-                onClick={() => navigateMonth("prev")}
+                onClick={() => navigateMonth('prev')}
                 className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
               >
-                <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                <svg
+                  className="w-6 h-6 text-slate-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
                 </svg>
               </button>
               <h3 className="text-2xl font-bold text-slate-900">
                 {monthNames[selectedMonth]} {selectedYear}
               </h3>
               <button
-                onClick={() => navigateMonth("next")}
+                onClick={() => navigateMonth('next')}
                 className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
               >
-                <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <svg
+                  className="w-6 h-6 text-slate-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </button>
             </div>
@@ -583,7 +651,7 @@ export default function FinanceCompetitionsPage() {
             {/* Calendar Grid */}
             <div className="grid grid-cols-7 gap-2">
               {/* Day headers */}
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
                 <div key={day} className="text-center text-sm font-semibold text-slate-600 py-2">
                   {day}
                 </div>
@@ -607,11 +675,15 @@ export default function FinanceCompetitionsPage() {
                   <div
                     key={day}
                     className={`aspect-square border border-slate-200 rounded-lg p-2 ${
-                      isToday ? "bg-blue-50 border-blue-300" : "bg-white"
-                    } ${competitions.length > 0 ? "hover:bg-slate-50 cursor-pointer" : ""}`}
-                    onClick={() => competitions.length > 0 && setSelectedCompetition(competitions[0])}
+                      isToday ? 'bg-blue-50 border-blue-300' : 'bg-white'
+                    } ${competitions.length > 0 ? 'hover:bg-slate-50 cursor-pointer' : ''}`}
+                    onClick={() =>
+                      competitions.length > 0 && setSelectedCompetition(competitions[0])
+                    }
                   >
-                    <div className={`text-sm font-medium mb-1 ${isToday ? "text-blue-600" : "text-slate-700"}`}>
+                    <div
+                      className={`text-sm font-medium mb-1 ${isToday ? 'text-blue-600' : 'text-slate-700'}`}
+                    >
                       {day}
                     </div>
                     {competitions.length > 0 && (
@@ -626,7 +698,9 @@ export default function FinanceCompetitionsPage() {
                           </div>
                         ))}
                         {competitions.length > 2 && (
-                          <div className="text-xs text-slate-500">+{competitions.length - 2} more</div>
+                          <div className="text-xs text-slate-500">
+                            +{competitions.length - 2} more
+                          </div>
                         )}
                       </div>
                     )}
@@ -659,7 +733,7 @@ export default function FinanceCompetitionsPage() {
         )}
 
         {/* List View */}
-        {viewMode === "list" && (
+        {viewMode === 'list' && (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredCompetitions.length === 0 ? (
               <div className="col-span-full bg-white border border-slate-200 rounded-2xl p-12 text-center shadow-sm">
@@ -726,16 +800,17 @@ function CompetitionCard({
   onExport: () => void;
 }) {
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
     });
   };
 
   const isRegistrationOpen = new Date(competition.registrationDeadline) >= new Date();
   const daysUntilDeadline = Math.ceil(
-    (new Date(competition.registrationDeadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+    (new Date(competition.registrationDeadline).getTime() - new Date().getTime()) /
+      (1000 * 60 * 60 * 24)
   );
 
   return (
@@ -756,7 +831,7 @@ function CompetitionCard({
                 className="text-slate-400 hover:text-yellow-500 transition-colors"
               >
                 <svg
-                  className={`w-5 h-5 ${isBookmarked ? "fill-yellow-500 text-yellow-500" : ""}`}
+                  className={`w-5 h-5 ${isBookmarked ? 'fill-yellow-500 text-yellow-500' : ''}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -777,11 +852,11 @@ function CompetitionCard({
               </span>
               <span
                 className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${
-                  competition.difficulty === "Beginner"
-                    ? "bg-green-50 text-green-600 border-green-100"
-                    : competition.difficulty === "Intermediate"
-                    ? "bg-yellow-50 text-yellow-600 border-yellow-100"
-                    : "bg-red-50 text-red-600 border-red-100"
+                  competition.difficulty === 'Beginner'
+                    ? 'bg-green-50 text-green-600 border-green-100'
+                    : competition.difficulty === 'Intermediate'
+                      ? 'bg-yellow-50 text-yellow-600 border-yellow-100'
+                      : 'bg-red-50 text-red-600 border-red-100'
                 }`}
               >
                 {competition.difficulty}
@@ -793,13 +868,26 @@ function CompetitionCard({
           </div>
         </div>
 
-        <p className="text-sm text-slate-600 leading-relaxed line-clamp-2">{competition.description}</p>
+        <p className="text-sm text-slate-600 leading-relaxed line-clamp-2">
+          {competition.description}
+        </p>
 
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-600 space-y-2">
           <div className="flex items-start gap-3">
             <span className="text-slate-400 mt-0.5">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12.75h6.75m-6.75 3H12m3.75-9H12m-9 .375v12.75c0 1.012.818 1.83 1.83 1.83h12.75c1.012 0 1.83-.818 1.83-1.83V6.375c0-1.012-.818-1.83-1.83-1.83H4.83c-1.012 0-1.83.818-1.83 1.83z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-5 h-5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M8.625 12.75h6.75m-6.75 3H12m3.75-9H12m-9 .375v12.75c0 1.012.818 1.83 1.83 1.83h12.75c1.012 0 1.83-.818 1.83-1.83V6.375c0-1.012-.818-1.83-1.83-1.83H4.83c-1.012 0-1.83.818-1.83 1.83z"
+                />
               </svg>
             </span>
             <div>
@@ -809,13 +897,24 @@ function CompetitionCard({
           </div>
           <div className="flex items-start gap-3">
             <span className="text-slate-400 mt-0.5">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-5 h-5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
             </span>
             <div>
               <p className="font-medium text-slate-900">Registration Deadline</p>
-              <p className={isRegistrationOpen ? "" : "text-red-600"}>
+              <p className={isRegistrationOpen ? '' : 'text-red-600'}>
                 {formatDate(competition.registrationDeadline)}
                 {isRegistrationOpen && daysUntilDeadline > 0 && (
                   <span className="ml-2 text-xs">({daysUntilDeadline} days left)</span>
@@ -825,8 +924,19 @@ function CompetitionCard({
           </div>
           <div className="flex items-start gap-3">
             <span className="text-slate-400 mt-0.5">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.818.182L12 18l2.182-.636L15 15.182V6m-3 2.818L9.818 8.182 9 8v6.182l.818.182L12 15l2.182-.636L15 14.182V8l-.818.182L12 8.818z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-5 h-5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 6v12m-3-2.818l.818.182L12 18l2.182-.636L15 15.182V6m-3 2.818L9.818 8.182 9 8v6.182l.818.182L12 15l2.182-.636L15 14.182V8l-.818.182L12 8.818z"
+                />
               </svg>
             </span>
             <div>
@@ -855,7 +965,12 @@ function CompetitionCard({
             title="Export to calendar"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
             </svg>
           </button>
         </div>
@@ -878,21 +993,25 @@ function CompetitionModal({
   onExport: () => void;
 }) {
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
+    return new Date(dateString).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
     });
   };
 
   const isRegistrationOpen = new Date(competition.registrationDeadline) >= new Date();
   const daysUntilDeadline = Math.ceil(
-    (new Date(competition.registrationDeadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+    (new Date(competition.registrationDeadline).getTime() - new Date().getTime()) /
+      (1000 * 60 * 60 * 24)
   );
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={onClose}>
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      onClick={onClose}
+    >
       <div
         className="bg-white rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
@@ -908,7 +1027,7 @@ function CompetitionModal({
                   className="text-slate-400 hover:text-yellow-500 transition-colors"
                 >
                   <svg
-                    className={`w-6 h-6 ${isBookmarked ? "fill-yellow-500 text-yellow-500" : ""}`}
+                    className={`w-6 h-6 ${isBookmarked ? 'fill-yellow-500 text-yellow-500' : ''}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -929,11 +1048,11 @@ function CompetitionModal({
                 </span>
                 <span
                   className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${
-                    competition.difficulty === "Beginner"
-                      ? "bg-green-50 text-green-600 border-green-100"
-                      : competition.difficulty === "Intermediate"
-                      ? "bg-yellow-50 text-yellow-600 border-yellow-100"
-                      : "bg-red-50 text-red-600 border-red-100"
+                    competition.difficulty === 'Beginner'
+                      ? 'bg-green-50 text-green-600 border-green-100'
+                      : competition.difficulty === 'Intermediate'
+                        ? 'bg-yellow-50 text-yellow-600 border-yellow-100'
+                        : 'bg-red-50 text-red-600 border-red-100'
                   }`}
                 >
                   {competition.difficulty}
@@ -957,8 +1076,18 @@ function CompetitionModal({
               onClick={onClose}
               className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
             >
-              <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-6 h-6 text-slate-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -983,12 +1112,12 @@ function CompetitionModal({
                 </div>
                 <div>
                   <p className="text-sm font-medium text-slate-500">Registration Deadline</p>
-                  <p className={isRegistrationOpen ? "text-slate-900" : "text-red-600"}>
+                  <p className={isRegistrationOpen ? 'text-slate-900' : 'text-red-600'}>
                     {formatDate(competition.registrationDeadline)}
                   </p>
                   {isRegistrationOpen && daysUntilDeadline > 0 && (
                     <p className="text-sm text-blue-600">
-                      {daysUntilDeadline} day{daysUntilDeadline === 1 ? "" : "s"} remaining
+                      {daysUntilDeadline} day{daysUntilDeadline === 1 ? '' : 's'} remaining
                     </p>
                   )}
                   {!isRegistrationOpen && (
@@ -1046,7 +1175,12 @@ function CompetitionModal({
               className="px-6 py-3 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 transition-colors flex items-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
               </svg>
               Export to Calendar
             </button>
@@ -1062,4 +1196,3 @@ function CompetitionModal({
     </div>
   );
 }
-

@@ -1,24 +1,21 @@
-"use server";
+'use server';
 
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { Prisma, OrganizationStatus } from "@prisma/client";
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { Prisma, OrganizationStatus } from '@prisma/client';
 
-export async function POST(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const user = await getCurrentUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (user.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (user.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Check if organization exists first
@@ -27,7 +24,7 @@ export async function POST(
     });
 
     if (!existing) {
-      return NextResponse.json({ error: "Organization not found" }, { status: 404 });
+      return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
     }
 
     // If already rejected, return as-is
@@ -43,21 +40,20 @@ export async function POST(
     return NextResponse.json({ organization });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2025") {
-        return NextResponse.json({ error: "Organization not found" }, { status: 404 });
+      if (error.code === 'P2025') {
+        return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
       }
-      console.error("[POST /api/admin/organizations/:id/reject] Prisma error:", error);
+      console.error('[POST /api/admin/organizations/:id/reject] Prisma error:', error);
       return NextResponse.json(
-        { error: error.message || "Failed to reject organization" },
+        { error: error.message || 'Failed to reject organization' },
         { status: 500 }
       );
     }
 
-    console.error("[POST /api/admin/organizations/:id/reject] Error:", error);
+    console.error('[POST /api/admin/organizations/:id/reject] Error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to reject organization" },
+      { error: error instanceof Error ? error.message : 'Failed to reject organization' },
       { status: 500 }
     );
   }
 }
-
